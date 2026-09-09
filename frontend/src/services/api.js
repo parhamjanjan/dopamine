@@ -2,7 +2,7 @@ import axios from 'axios'
 import { useAuthStore } from '../stores/auth'
 
 const api = axios.create({
-  baseURL: 'http://127.0.0.1:8000/api',
+  baseURL: 'https://dopamine-backend-3vbz.onrender.com/api',
   headers: {
     'Content-Type': 'application/json'
   }
@@ -178,7 +178,7 @@ api.interceptors.response.use(
     try {
 
       const response = await axios.post(
-        'http://127.0.0.1:8000/api/accounts/token/refresh/',
+        'https://dopamine-backend-3vbz.onrender.com/api/accounts/token/refresh/',
         {
           refresh: auth.refreshToken
         }
