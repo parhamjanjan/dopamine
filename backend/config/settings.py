@@ -33,13 +33,12 @@ DEBUG = os.environ.get(
 
 ALLOWED_HOSTS = [
     host.strip()
-    for host in os.environ.get(
-        'DJANGO_ALLOWED_HOSTS',
-        'localhost,127.0.0.1'
-    ).split(',')
+    for host in os.getenv(
+        "ALLOWED_HOSTS",
+        os.getenv("RENDER_EXTERNAL_HOSTNAME", "localhost")
+    ).split(",")
     if host.strip()
 ]
-
 
 # ============================================================
 # Application definition
