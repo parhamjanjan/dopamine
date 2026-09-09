@@ -1,0 +1,506 @@
+@import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800;900&display=swap');
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: 'Vazirmatn', sans-serif;
+  background: linear-gradient(135deg, #eee8ff, #e5f7ff);
+}
+
+.auth-shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: minmax(420px, 1.1fr) minmax(280px, 0.9fr);
+  max-width: 1450px;
+  margin: auto;
+  padding: 28px;
+  gap: 0;
+}
+
+
+/* =========================================================
+   بخش تصویری
+========================================================= */
+
+.login-visual {
+  position: relative;
+  min-height: 650px;
+  border-radius: 32px 0 0 32px;
+  overflow: hidden;
+
+  background:
+    radial-gradient(
+      circle at 20% 15%,
+      rgba(255, 255, 255, .25) 0 2px,
+      transparent 3px
+    ),
+    linear-gradient(
+      160deg,
+      #30287c 0%,
+      #5c45c9 45%,
+      #9a72e8 100%
+    );
+}
+
+.login-visual::after {
+  content: '';
+  position: absolute;
+  inset: auto -10% -15% -10%;
+  height: 48%;
+
+  background:
+    radial-gradient(
+      ellipse at center,
+      rgba(255, 255, 255, .25),
+      transparent 65%
+    );
+}
+
+.visual-overlay {
+  position: absolute;
+  inset: 0;
+
+  background:
+    radial-gradient(
+      circle at 70% 70%,
+      rgba(255, 150, 255, .18),
+      transparent 30%
+    );
+}
+
+.visual-content {
+  position: relative;
+  z-index: 2;
+
+  height: 100%;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  color: white;
+  text-align: center;
+
+  padding: 30px;
+}
+
+.brand-mark {
+  width: 96px;
+  height: 96px;
+
+  border: 2px solid rgba(255, 255, 255, .7);
+  border-radius: 30px;
+
+  display: grid;
+  place-items: center;
+
+  margin-bottom: 28px;
+
+  backdrop-filter: blur(10px);
+}
+
+.visual-content h1 {
+  font-size: clamp(2rem, 4vw, 3.2rem);
+  margin: 0;
+  font-weight: 900;
+}
+
+.visual-content p {
+  opacity: .9;
+  font-size: 1.05rem;
+  margin-top: 12px;
+}
+
+.floating-heart {
+  margin-top: 22px;
+  font-size: 32px;
+  color: #e7b5ff;
+
+  animation: heartFloat 3s ease-in-out infinite;
+}
+
+@keyframes heartFloat {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-8px);
+  }
+
+}
+
+
+/* =========================================================
+   کارت ورود
+========================================================= */
+
+.login-card {
+  background: rgba(255, 255, 255, .94);
+
+  border-radius: 0 32px 32px 0;
+
+  padding: clamp(35px, 6vw, 85px);
+
+  display: flex;
+  align-items: center;
+
+  box-shadow:
+    0 30px 80px rgba(66, 44, 130, .15);
+}
+
+.login-form-container {
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+
+/* =========================================================
+   عنوان
+========================================================= */
+
+.eyebrow {
+  color: #6648d8;
+  font-weight: 800;
+  font-size: .9rem;
+}
+
+
+/* =========================================================
+   فیلد
+========================================================= */
+
+.field {
+  display: block;
+}
+
+.field > span {
+  display: block;
+  margin-bottom: 9px;
+
+  color: #334155;
+  font-weight: 700;
+}
+
+
+/* =========================================================
+   Input
+========================================================= */
+
+.input-wrap {
+  height: 56px;
+
+  border: 1px solid #dbe1ea;
+  border-radius: 16px;
+
+  display: flex;
+  align-items: center;
+
+  gap: 12px;
+  padding: 0 16px;
+
+  transition: .2s;
+
+  background: #fff;
+}
+
+.input-wrap:focus-within {
+  border-color: #7956e8;
+
+  box-shadow:
+    0 0 0 4px rgba(121, 86, 232, .1);
+}
+
+.input-icon {
+  flex-shrink: 0;
+  color: #94a3b8;
+}
+
+.input-wrap input {
+  width: 100%;
+
+  border: 0;
+  outline: 0;
+
+  font-family: inherit;
+
+  background: transparent;
+
+  color: #1e293b;
+}
+
+.input-wrap input::placeholder {
+  color: #94a3b8;
+}
+
+
+/* =========================================================
+   نمایش رمز
+========================================================= */
+
+.show-pass {
+  border: 0;
+  background: none;
+
+  cursor: pointer;
+
+  color: #94a3b8;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 4px;
+
+  transition: .2s;
+}
+
+.show-pass:hover {
+  color: #7956e8;
+}
+
+
+/* =========================================================
+   مرا به خاطر بسپار
+========================================================= */
+
+.remember-me {
+  display: flex;
+  align-items: center;
+
+  gap: 8px;
+
+  color: #64748b;
+
+  cursor: pointer;
+}
+
+
+/* =========================================================
+   فراموشی رمز
+========================================================= */
+
+.forgot-password {
+  border: 0;
+  background: transparent;
+
+  padding: 0;
+
+  color: #7c5ce5;
+
+  font-family: inherit;
+  font-weight: 700;
+
+  cursor: pointer;
+}
+
+.forgot-password:hover {
+  text-decoration: underline;
+}
+
+
+/* =========================================================
+   خطا
+========================================================= */
+
+.login-error {
+  display: flex;
+  align-items: center;
+
+  gap: 9px;
+
+  padding: 12px 14px;
+
+  border-radius: 14px;
+
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+
+  color: #dc2626;
+
+  font-size: .9rem;
+  font-weight: 600;
+}
+
+
+/* =========================================================
+   دکمه ورود
+========================================================= */
+
+.primary-btn {
+  width: 100%;
+
+  border: 0;
+  border-radius: 16px;
+
+  padding: 16px;
+
+  color: #fff;
+
+  font: 800 1rem 'Vazirmatn';
+
+  cursor: pointer;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 9px;
+
+  background:
+    linear-gradient(
+      90deg,
+      #8a63ef,
+      #5d3bd1
+    );
+
+  box-shadow:
+    0 12px 25px rgba(105, 71, 214, .25);
+
+  transition: .2s;
+}
+
+.primary-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+
+  box-shadow:
+    0 16px 30px rgba(105, 71, 214, .3);
+}
+
+.primary-btn:disabled {
+  opacity: .7;
+  cursor: not-allowed;
+}
+
+.loading-icon {
+  animation: spin .8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+
+/* =========================================================
+   جداکننده
+========================================================= */
+
+.divider {
+  display: flex;
+  align-items: center;
+
+  gap: 14px;
+
+  color: #94a3b8;
+
+  margin: 25px 0;
+}
+
+.divider::before,
+.divider::after {
+  content: '';
+
+  height: 1px;
+
+  background: #e5e7eb;
+
+  flex: 1;
+}
+
+
+/* =========================================================
+   ورود اجتماعی
+========================================================= */
+
+.social-btn {
+  height: 50px;
+
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+
+  background: #fff;
+
+  cursor: pointer;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-weight: 900;
+
+  color: #334155;
+
+  transition: .2s;
+}
+
+.social-btn:hover {
+  background: #f8fafc;
+
+  transform: translateY(-1px);
+
+  border-color: #d8dce4;
+}
+
+
+/* =========================================================
+   ثبت نام
+========================================================= */
+
+.register-link {
+  text-align: center;
+
+  font-size: .9rem;
+
+  color: #64748b;
+
+  margin-top: 32px;
+}
+
+.register-link a {
+  color: #7c5ce5;
+
+  font-weight: 800;
+
+  text-decoration: none;
+}
+
+.register-link a:hover {
+  text-decoration: underline;
+}
+
+
+/* =========================================================
+   موبایل
+========================================================= */
+
+@media (max-width: 800px) {
+
+  .auth-shell {
+    grid-template-columns: 1fr;
+
+    padding: 14px;
+  }
+
+  .login-visual {
+    min-height: 260px;
+
+    border-radius: 26px 26px 0 0;
+  }
+
+  .login-card {
+    border-radius: 0 0 26px 26px;
+
+    padding: 35px 24px;
+  }
+
+}
