@@ -250,6 +250,12 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 
+CSRF_TRUSTED_ORIGINS = [
+    'https://dopamine-backend-3vbz.onrender.com',
+    'https://dopamine-st2u.onrender.com',
+]
+
+
 # ============================================================
 # Production Security
 # ============================================================
