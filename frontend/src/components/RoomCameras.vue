@@ -1131,43 +1131,72 @@ function connectSocket() {
   disconnectSocket()
   closeAllPeerConnections()
 
-  const protocol = window.location.protocol === 'https:'
+  const isProduction = window.location.hostname === 'dopamine-st2u.onrender.com'
+
+  const wsProtocol = window.location.protocol === 'https:'
     ? 'wss:'
     : 'ws:'
 
+  const wsHost = isProduction
+    ? 'dopamine-backend-3vbz.onrender.com'
+    : '127.0.0.1:8000'
+
   const wsUrl =
-    `${protocol}//127.0.0.1:8000/ws/rooms/${props.roomId}/` +
+    `${wsProtocol}//${wsHost}/ws/rooms/${props.roomId}/` +
     `?token=${encodeURIComponent(token)}`
 
   console.log('ROOM CAMERAS SOCKET CONNECTING:', wsUrl)
 
   const ws = new WebSocket(wsUrl)
+
   socket.value = ws
 
   ws.onopen = () => {
     emitSocketState(true)
-    console.log('ROOM CAMERAS SOCKET CONNECTED:', props.roomId)
+
+    console.log(
+      'ROOM CAMERAS SOCKET CONNECTED:',
+      props.roomId
+    )
+
     startRankingPing()
   }
 
   ws.onmessage = event => {
     try {
       const data = JSON.parse(event.data)
-      console.log('ROOM CAMERAS SOCKET MESSAGE:', data)
+
+      console.log(
+        'ROOM CAMERAS SOCKET MESSAGE:',
+        data
+      )
+
       handleSocketMessage(data)
     } catch (error) {
-      console.error('WebSocket message error:', error)
+      console.error(
+        'WebSocket message error:',
+        error
+      )
     }
   }
 
   ws.onerror = error => {
-    console.error('WebSocket error:', error)
+    console.error(
+      'WebSocket error:',
+      error
+    )
   }
 
   ws.onclose = event => {
-    console.log('ROOM CAMERAS SOCKET CLOSED:', event)
+    console.log(
+      'ROOM CAMERAS SOCKET CLOSED:',
+      event
+    )
+
     emitSocketState(false)
+
     stopRankingPing()
+
     closeAllPeerConnections()
   }
 }

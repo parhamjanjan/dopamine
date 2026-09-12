@@ -704,6 +704,9 @@ function buildSocketUrl() {
       getAccessToken()
     )
 
+  const isProduction =
+    window.location.hostname ===
+    'dopamine-st2u.onrender.com'
 
   const protocol =
     window.location.protocol ===
@@ -711,9 +714,13 @@ function buildSocketUrl() {
       ? 'wss:'
       : 'ws:'
 
+  const host =
+    isProduction
+      ? 'dopamine-backend-3vbz.onrender.com'
+      : '127.0.0.1:8000'
 
   return (
-    `${protocol}//127.0.0.1:8000` +
+    `${protocol}//${host}` +
     `/ws/rooms/${props.roomId}/` +
     `?token=${token}`
   )
