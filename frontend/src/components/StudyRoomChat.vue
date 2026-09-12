@@ -10,64 +10,24 @@
          ============================== -->
     <div class="chat-header">
 
-      <div class="chat-title-wrap">
-
-        <div
-          class="chat-icon"
-          aria-hidden="true"
-        >
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.8"
-          >
-            <path
-              d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5
-                 8.3 8.3 0 0 1-3.1-.6L4 20l1.6-4.2
-                 A7.5 7.5 0 1 1 20 11.5Z"
-            />
-
-            <path d="M8 11.5h.01" />
-            <path d="M12 11.5h.01" />
-            <path d="M16 11.5h.01" />
-          </svg>
-        </div>
-
-        <div class="chat-heading">
-
-          <span class="chat-eyebrow">
-            ارتباط اعضای سالن
-          </span>
-
-          <h2>
-            گفت‌وگوی سالن
-          </h2>
-
-        </div>
-
-      </div>
+      
 
 
-      <div
-        class="chat-status"
-        :class="
+      
+
+      <div :class="
           socketConnected
             ? 'online'
             : 'offline'
-        "
-      >
-
-        <span class="status-dot"></span>
-
-        <span>
+        " class="room-chat-badge">
+              <span class="room-chat-badge-dot"></span>
+              <span>
           {{
             socketConnected
               ? 'آنلاین'
               : 'اتصال قطع است'
           }}
         </span>
-
       </div>
 
     </div>
@@ -744,9 +704,6 @@ function buildSocketUrl() {
       getAccessToken()
     )
 
-  const isProduction =
-    window.location.hostname ===
-    'dopamine-st2u.onrender.com'
 
   const protocol =
     window.location.protocol ===
@@ -754,13 +711,9 @@ function buildSocketUrl() {
       ? 'wss:'
       : 'ws:'
 
-  const host =
-    isProduction
-      ? 'dopamine-backend-3vbz.onrender.com'
-      : '127.0.0.1:8000'
 
   return (
-    `${protocol}//${host}` +
+    `${protocol}//127.0.0.1:8000` +
     `/ws/rooms/${props.roomId}/` +
     `?token=${token}`
   )
@@ -2190,6 +2143,60 @@ onBeforeUnmount(() => {
 
 }
 
+.room-chat-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 10px;
+  border-radius: 999px;
+  color: #047857;
+  background: #ecfdf5;
+  border: 1px solid #d1fae5;
+  font-size: 10px;
+  font-weight: 850;
+  white-space: nowrap;
+}
+
+.room-chat-badge-dot,
+.room-chat-badge-dot::after {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+.room-chat-badge-dot {
+  position: relative;
+  background: #10b981;
+}
+
+.room-chat-badge-dot::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: #10b981;
+  animation: roomChatPulse 1.8s infinite ease-out;
+}
+
+.room-chat-host {
+  min-width: 0;
+}
+
+@keyframes roomChatPulse {
+  0% {
+    transform: scale(1);
+    opacity: .45;
+  }
+  70%, 100% {
+    transform: scale(2.5);
+    opacity: 0;
+  }
+}
+
+.study-room-page.is-dark .room-chat-badge {
+  color: #6ee7b7;
+  background: rgba(16,185,129,.10);
+  border-color: rgba(16,185,129,.18);
+}
 
 .empty-chat p {
 

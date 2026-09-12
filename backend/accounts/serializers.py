@@ -5,6 +5,7 @@ from django.db import transaction
 from rest_framework import serializers
 
 from planner.models import PlannerList
+from django.contrib.auth import password_validation
 
 
 User = get_user_model()
@@ -189,5 +190,97 @@ class LoginSerializer(serializers.Serializer):
             )
 
         attrs['user'] = user
+
+        return attrs
+
+class ProfileSerializer(serializers.ModelSerializer):
+
+    profile_image = serializers.ImageField(
+        required=False,
+        allow_null=True
+    )
+
+    class Meta:
+        model = User
+
+        fields = [
+            'id',
+            'username',
+            'first_name',
+            'last_name',
+            'phone_number',
+            'gender',
+            'bio',
+            'birth_date_gregorian',
+            'birth_date_jalali',
+            'grade',
+            'field',
+            'province',
+            'school',
+            'theme',
+            'primary_color',
+            'profile_image',
+        ]
+
+        read_only_fields = [
+            'id',
+            'username',
+        ]
+
+
+class ChangePasswordSerializer(serializers.Serializer):
+
+    current_password = serializers.CharField(
+        write_only=True,
+        required=True
+    )
+
+    new_password = serializers.CharField(
+        write_only=True,
+        required=True
+    )
+
+    new_password_confirm = serializers.CharField(
+        write_only=True,
+        required=True
+    )
+
+    def validate_current_password(self, value):
+
+        user = self.context['request'].user
+
+        if not user.check_password(value):
+            raise serializers.ValidationError(
+                'رمز عبور فعلی صحیح نیست.'
+            )
+
+        return value
+
+    def validate(self, attrs):
+
+        new_password = attrs['new_password']
+        new_password_confirm = attrs['new_password_confirm']
+
+        if new_password != new_password_confirm:
+            raise serializers.ValidationError({
+                'new_password_confirm':
+                    'تکرار رمز عبور جدید با رمز عبور جدید یکسان نیست.'
+            })
+
+        if attrs['current_password'] == new_password:
+            raise serializers.ValidationError({
+                'new_password':
+                    'رمز عبور جدید باید با رمز عبور فعلی متفاوت باشد.'
+            })
+
+        try:
+            password_validation.validate_password(
+                new_password,
+                self.context['request'].user
+            )
+        except serializers.ValidationError as error:
+            raise serializers.ValidationError({
+                'new_password': error.messages
+            })
 
         return attrs

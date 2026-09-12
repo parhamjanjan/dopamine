@@ -7,9 +7,11 @@ import MainLayout from '../layouts/MainLayout.vue'
 
 import HomeView from '../views/HomeView.vue'
 import PlannerView from '../views/PlannerView.vue'
-
+import ProfileView from '../views/ProfileView.vue'
 import RoomsView from '../views/RoomsView.vue'
+
 import StudyRoomView from '../views/StudyRoomView.vue'
+
 
 const PlaceholderView = {
   template: `
@@ -113,7 +115,7 @@ const router = createRouter({
         {
           path: 'profile',
           name: 'profile',
-          component: PlaceholderView
+          component: ProfileView
         }
       ]
     }

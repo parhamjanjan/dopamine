@@ -3,9 +3,6 @@ import { useAuthStore } from '../stores/auth'
 
 const api = axios.create({
   baseURL: 'https://dopamine-backend-3vbz.onrender.com/api',
-  headers: {
-    'Content-Type': 'application/json'
-  }
 })
 
 
@@ -34,6 +31,9 @@ api.interceptors.request.use(
       config.headers.Authorization =
         `Bearer ${auth.accessToken}`
     }
+    if (config.data instanceof FormData) {
+  delete config.headers['Content-Type']
+}
 
     return config
   },

@@ -10,9 +10,6 @@ from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework_simplejwt.exceptions import TokenError
 
 
-User = get_user_model()
-
-
 @database_sync_to_async
 def get_user_from_token(token):
     try:
@@ -22,6 +19,8 @@ def get_user_from_token(token):
 
         if not user_id:
             return AnonymousUser()
+
+        User = get_user_model()
 
         return User.objects.get(
             id=user_id,

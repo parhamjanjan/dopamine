@@ -626,19 +626,19 @@ const provinces = [
 const visualData = [
 
   {
-    bg: '/signup/signup-step-1-primary-info.webp'
+    bg: '/signup/signup-step-1-primary-info.png'
   },
 
   {
-    bg: '/signup/signup-step-2-security-info.webp'
+    bg: '/signup/signup-step-2-security-info.png'
   },
 
   {
-    bg: '/signup/signup-step-3-identity-info.webp'
+    bg: '/signup/signup-step-3-identity-info.png'
   },
 
   {
-    bg: '/signup/signup-step-4-theme-ui.webp'
+    bg: '/signup/signup-step-4-theme-ui.png'
   }
 
 ]

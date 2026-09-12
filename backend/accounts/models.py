@@ -24,6 +24,13 @@ class User(AbstractUser):
 
     # اطلاعات پروفایل
 
+    profile_image = models.ImageField(
+    upload_to='profile_images/',
+    null=True,
+    blank=True,
+    verbose_name='تصویر پروفایل'
+    )
+    
     gender = models.CharField(
     max_length=10,
     choices=[
