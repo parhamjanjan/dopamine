@@ -1,10 +1,15 @@
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from channels.db import database_sync_to_async
 
+from django.utils import timezone
+
 from .models import (
     RoomMembership,
     RoomChatMessage,
+    RoomChatMessageEditHistory,
+    RoomChatReaction,
 )
+
 from .services import get_room_ranking
 
 
@@ -142,10 +147,6 @@ class StudyRoomConsumer(
         close_code
     ):
 
-        # -------------------------------------------------
-        # Notify members that user left
-        # -------------------------------------------------
-
         try:
 
             await self.channel_layer.group_send(
@@ -164,10 +165,6 @@ class StudyRoomConsumer(
         except Exception:
 
             pass
-
-        # -------------------------------------------------
-        # Leave group
-        # -------------------------------------------------
 
         try:
 
@@ -544,9 +541,9 @@ class StudyRoomConsumer(
                 ''
             )
 
-            # -------------------------------------------------
-            # Validation
-            # -------------------------------------------------
+            reply_to_id = content.get(
+                'reply_to_id'
+            )
 
             if not isinstance(
                 message,
@@ -562,23 +559,28 @@ class StudyRoomConsumer(
             if len(message) > 1000:
                 return
 
-            # -------------------------------------------------
-            # Save
-            # -------------------------------------------------
+            if reply_to_id is not None:
+
+                try:
+                    reply_to_id = int(
+                        reply_to_id
+                    )
+                except (
+                    TypeError,
+                    ValueError
+                ):
+                    return
 
             message_data = (
                 await self.create_chat_message(
                     message,
                     client_id,
+                    reply_to_id,
                 )
             )
 
             if not message_data:
                 return
-
-            # -------------------------------------------------
-            # Broadcast to all room members
-            # -------------------------------------------------
 
             await self.channel_layer.group_send(
 
@@ -590,6 +592,245 @@ class StudyRoomConsumer(
 
                     'message_data':
                         message_data,
+                }
+            )
+
+        # =================================================
+        # EDIT MESSAGE
+        # =================================================
+
+        elif (
+            message_type ==
+            'chat_message_edit'
+        ):
+
+            message_id = content.get(
+                'message_id'
+            )
+
+            new_message = content.get(
+                'message',
+                ''
+            )
+
+            try:
+
+                message_id = int(
+                    message_id
+                )
+
+            except (
+                TypeError,
+                ValueError
+            ):
+
+                return
+
+            if not isinstance(
+                new_message,
+                str
+            ):
+                return
+
+            new_message = (
+                new_message.strip()
+            )
+
+            if not new_message:
+                return
+
+            if len(new_message) > 1000:
+                return
+
+            message_data = (
+                await self.edit_chat_message(
+                    message_id,
+                    new_message,
+                )
+            )
+
+            if not message_data:
+                return
+
+            await self.channel_layer.group_send(
+
+                self.room_group_name,
+
+                {
+                    'type':
+                        'chat_message_edited',
+
+                    'message_data':
+                        message_data,
+                }
+            )
+
+        # =================================================
+        # DELETE MESSAGE
+        # =================================================
+
+        elif (
+            message_type ==
+            'chat_message_delete'
+        ):
+
+            message_id = content.get(
+                'message_id'
+            )
+
+            try:
+
+                message_id = int(
+                    message_id
+                )
+
+            except (
+                TypeError,
+                ValueError
+            ):
+
+                return
+
+            message_data = (
+                await self.delete_chat_message(
+                    message_id
+                )
+            )
+
+            if not message_data:
+                return
+
+            await self.channel_layer.group_send(
+
+                self.room_group_name,
+
+                {
+                    'type':
+                        'chat_message_deleted',
+
+                    'message_data':
+                        message_data,
+                }
+            )
+
+        # =================================================
+        # REPLY
+        # =================================================
+        #
+        # Reply itself is stored when chat_message is sent.
+        # This block is intentionally not needed.
+        #
+        # =================================================
+
+        # =================================================
+        # REACTION
+        # =================================================
+
+        elif (
+            message_type ==
+            'chat_message_reaction'
+        ):
+
+            message_id = content.get(
+                'message_id'
+            )
+
+            reaction = content.get(
+                'reaction'
+            )
+
+            try:
+
+                message_id = int(
+                    message_id
+                )
+
+            except (
+                TypeError,
+                ValueError
+            ):
+
+                return
+
+            valid_reactions = {
+                'cry',
+                'laugh',
+                'heart',
+                'like',
+                'dislike',
+            }
+
+            if reaction not in valid_reactions:
+                return
+
+            reaction_data = (
+                await self.set_chat_reaction(
+                    message_id,
+                    reaction,
+                )
+            )
+
+            if not reaction_data:
+                return
+
+            await self.channel_layer.group_send(
+
+                self.room_group_name,
+
+                {
+                    'type':
+                        'chat_message_reaction_updated',
+
+                    'reaction_data':
+                        reaction_data,
+                }
+            )
+
+        # =================================================
+        # REMOVE REACTION
+        # =================================================
+
+        elif (
+            message_type ==
+            'chat_message_reaction_remove'
+        ):
+
+            message_id = content.get(
+                'message_id'
+            )
+
+            try:
+
+                message_id = int(
+                    message_id
+                )
+
+            except (
+                TypeError,
+                ValueError
+            ):
+
+                return
+
+            reaction_data = (
+                await self.remove_chat_reaction(
+                    message_id
+                )
+            )
+
+            if not reaction_data:
+                return
+
+            await self.channel_layer.group_send(
+
+                self.room_group_name,
+
+                {
+                    'type':
+                        'chat_message_reaction_removed',
+
+                    'reaction_data':
+                        reaction_data,
                 }
             )
 
@@ -901,6 +1142,114 @@ class StudyRoomConsumer(
         })
 
     # =====================================================
+    # CHAT MESSAGE EDITED
+    # =====================================================
+
+    async def chat_message_edited(
+        self,
+        event
+    ):
+
+        message_data = (
+            event.get(
+                'message_data'
+            )
+        )
+
+        if not message_data:
+            return
+
+        await self.send_json({
+
+            'type':
+                'chat_message_edited',
+
+            'message_data':
+                message_data,
+        })
+
+    # =====================================================
+    # CHAT MESSAGE DELETED
+    # =====================================================
+
+    async def chat_message_deleted(
+        self,
+        event
+    ):
+
+        message_data = (
+            event.get(
+                'message_data'
+            )
+        )
+
+        if not message_data:
+            return
+
+        await self.send_json({
+
+            'type':
+                'chat_message_deleted',
+
+            'message_data':
+                message_data,
+        })
+
+    # =====================================================
+    # CHAT REACTION UPDATED
+    # =====================================================
+
+    async def chat_message_reaction_updated(
+        self,
+        event
+    ):
+
+        reaction_data = (
+            event.get(
+                'reaction_data'
+            )
+        )
+
+        if not reaction_data:
+            return
+
+        await self.send_json({
+
+            'type':
+                'chat_message_reaction_updated',
+
+            'reaction_data':
+                reaction_data,
+        })
+
+    # =====================================================
+    # CHAT REACTION REMOVED
+    # =====================================================
+
+    async def chat_message_reaction_removed(
+        self,
+        event
+    ):
+
+        reaction_data = (
+            event.get(
+                'reaction_data'
+            )
+        )
+
+        if not reaction_data:
+            return
+
+        await self.send_json({
+
+            'type':
+                'chat_message_reaction_removed',
+
+            'reaction_data':
+                reaction_data,
+        })
+
+    # =====================================================
     # Chat History
     # =====================================================
 
@@ -914,34 +1263,25 @@ class StudyRoomConsumer(
             .filter(
                 room_id=self.room_id
             )
-            .select_related('user')
+            .select_related(
+                'user',
+                'reply_to',
+                'reply_to__user',
+                'deleted_by',
+            )
+            .prefetch_related(
+                'reactions',
+                'reactions__user',
+            )
             .order_by('-created_at')[:300]
         )
 
         messages.reverse()
 
         return [
-
-            {
-                'id':
-                    message.id,
-
-                'client_id':
-                    message.client_id,
-
-                'user_id':
-                    message.user_id,
-
-                'username':
-                    message.user.username,
-
-                'message':
-                    message.message,
-
-                'created_at':
-                    message.created_at.isoformat(),
-            }
-
+            self.serialize_message(
+                message
+            )
             for message in messages
         ]
 
@@ -953,10 +1293,27 @@ class StudyRoomConsumer(
     def create_chat_message(
         self,
         message,
-        client_id
+        client_id,
+        reply_to_id=None,
     ):
 
         try:
+
+            reply_to = None
+
+            if reply_to_id is not None:
+
+                reply_to = (
+                    RoomChatMessage.objects
+                    .filter(
+                        id=reply_to_id,
+                        room_id=self.room_id,
+                    )
+                    .first()
+                )
+
+                if not reply_to:
+                    return None
 
             message_obj = (
                 RoomChatMessage.objects.create(
@@ -968,29 +1325,14 @@ class StudyRoomConsumer(
                     message=message,
 
                     client_id=client_id or '',
+
+                    reply_to=reply_to,
                 )
             )
 
-            return {
-
-                'id':
-                    message_obj.id,
-
-                'client_id':
-                    message_obj.client_id,
-
-                'user_id':
-                    self.user_id,
-
-                'username':
-                    self.username,
-
-                'message':
-                    message_obj.message,
-
-                'created_at':
-                    message_obj.created_at.isoformat(),
-            }
+            return self.serialize_message(
+                message_obj
+            )
 
         except Exception as error:
 
@@ -1000,6 +1342,409 @@ class StudyRoomConsumer(
             )
 
             return None
+
+    # =====================================================
+    # Edit Chat Message
+    # =====================================================
+
+    @database_sync_to_async
+    def edit_chat_message(
+        self,
+        message_id,
+        new_message,
+    ):
+
+        try:
+
+            message_obj = (
+                RoomChatMessage.objects
+                .select_related(
+                    'user',
+                    'reply_to',
+                    'reply_to__user',
+                    'deleted_by',
+                )
+                .prefetch_related(
+                    'reactions',
+                    'reactions__user',
+                )
+                .filter(
+                    id=message_id,
+                    room_id=self.room_id,
+                )
+                .first()
+            )
+
+            if not message_obj:
+                return None
+
+            # فقط صاحب پیام
+            if message_obj.user_id != self.user_id:
+                return None
+
+            # پیام حذف‌شده قابل ویرایش نیست
+            if message_obj.is_deleted:
+                return None
+
+            # اگر متن واقعاً تغییر نکرده
+            if message_obj.message == new_message:
+                return None
+
+            # ذخیره نسخه قبلی
+            RoomChatMessageEditHistory.objects.create(
+
+                message=message_obj,
+
+                old_message=message_obj.message,
+
+                edited_by_id=self.user_id,
+            )
+
+            message_obj.message = new_message
+            message_obj.edited_at = timezone.now()
+
+            message_obj.save(
+                update_fields=[
+                    'message',
+                    'edited_at',
+                ]
+            )
+
+            return self.serialize_message(
+                message_obj
+            )
+
+        except Exception as error:
+
+            print(
+                'CHAT MESSAGE EDIT ERROR:',
+                error
+            )
+
+            return None
+
+    # =====================================================
+    # Delete Chat Message
+    # =====================================================
+
+    @database_sync_to_async
+    def delete_chat_message(
+        self,
+        message_id
+    ):
+
+        try:
+
+            message_obj = (
+                RoomChatMessage.objects
+                .select_related(
+                    'user',
+                    'reply_to',
+                    'reply_to__user',
+                    'deleted_by',
+                )
+                .prefetch_related(
+                    'reactions',
+                    'reactions__user',
+                )
+                .filter(
+                    id=message_id,
+                    room_id=self.room_id,
+                )
+                .first()
+            )
+
+            if not message_obj:
+                return None
+
+            # فقط صاحب پیام
+            if message_obj.user_id != self.user_id:
+                return None
+
+            # قبلاً حذف شده
+            if message_obj.is_deleted:
+                return None
+
+            message_obj.is_deleted = True
+            message_obj.deleted_at = timezone.now()
+            message_obj.deleted_by_id = self.user_id
+
+            message_obj.save(
+                update_fields=[
+                    'is_deleted',
+                    'deleted_at',
+                    'deleted_by',
+                ]
+            )
+
+            return self.serialize_message(
+                message_obj
+            )
+
+        except Exception as error:
+
+            print(
+                'CHAT MESSAGE DELETE ERROR:',
+                error
+            )
+
+            return None
+
+    # =====================================================
+    # Set Reaction
+    # =====================================================
+
+    @database_sync_to_async
+    def set_chat_reaction(
+        self,
+        message_id,
+        reaction,
+    ):
+
+        try:
+
+            message_obj = (
+                RoomChatMessage.objects
+                .filter(
+                    id=message_id,
+                    room_id=self.room_id,
+                )
+                .first()
+            )
+
+            if not message_obj:
+                return None
+
+            if message_obj.is_deleted:
+                return None
+
+            reaction_obj = (
+                RoomChatReaction.objects
+                .filter(
+                    message_id=message_id,
+                    user_id=self.user_id,
+                )
+                .first()
+            )
+
+            if reaction_obj:
+
+                reaction_obj.reaction = reaction
+
+                reaction_obj.save(
+                    update_fields=[
+                        'reaction'
+                    ]
+                )
+
+            else:
+
+                reaction_obj = (
+                    RoomChatReaction.objects.create(
+
+                        message=message_obj,
+
+                        user_id=self.user_id,
+
+                        reaction=reaction,
+                    )
+                )
+
+            return self.serialize_reaction(
+                reaction_obj
+            )
+
+        except Exception as error:
+
+            print(
+                'CHAT REACTION ERROR:',
+                error
+            )
+
+            return None
+
+    # =====================================================
+    # Remove Reaction
+    # =====================================================
+
+    @database_sync_to_async
+    def remove_chat_reaction(
+        self,
+        message_id
+    ):
+
+        try:
+
+            reaction_obj = (
+                RoomChatReaction.objects
+                .select_related(
+                    'user',
+                    'message',
+                )
+                .filter(
+                    message_id=message_id,
+                    user_id=self.user_id,
+                )
+                .first()
+            )
+
+            if not reaction_obj:
+                return None
+
+            data = self.serialize_reaction(
+                reaction_obj
+            )
+
+            reaction_obj.delete()
+
+            return data
+
+        except Exception as error:
+
+            print(
+                'CHAT REACTION REMOVE ERROR:',
+                error
+            )
+
+            return None
+
+    # =====================================================
+    # Serialize Message
+    # =====================================================
+
+    def serialize_message(
+        self,
+        message
+    ):
+
+        reactions = []
+
+        try:
+
+            for reaction in (
+                message.reactions.all()
+            ):
+
+                reactions.append({
+
+                    'id':
+                        reaction.id,
+
+                    'user_id':
+                        reaction.user_id,
+
+                    'username':
+                        reaction.user.username,
+
+                    'reaction':
+                        reaction.reaction,
+
+                    'created_at':
+                        reaction.created_at.isoformat(),
+                })
+
+        except Exception:
+
+            reactions = []
+
+        reply_data = None
+
+        if message.reply_to:
+
+            reply_data = {
+
+                'id':
+                    message.reply_to.id,
+
+                'user_id':
+                    message.reply_to.user_id,
+
+                'username':
+                    message.reply_to.user.username,
+
+                'message':
+                    message.reply_to.message,
+
+                'is_deleted':
+                    message.reply_to.is_deleted,
+            }
+
+        return {
+
+            'id':
+                message.id,
+
+            'client_id':
+                message.client_id,
+
+            'user_id':
+                message.user_id,
+
+            'username':
+                message.user.username,
+
+            'message':
+                message.message,
+
+            'created_at':
+                message.created_at.isoformat(),
+
+            'edited_at':
+                (
+                    message.edited_at.isoformat()
+                    if message.edited_at
+                    else None
+                ),
+
+            'is_deleted':
+                message.is_deleted,
+
+            'deleted_at':
+                (
+                    message.deleted_at.isoformat()
+                    if message.deleted_at
+                    else None
+                ),
+
+            'deleted_by_id':
+                message.deleted_by_id,
+
+            'reply_to':
+                reply_data,
+
+            'reactions':
+                reactions,
+        }
+
+    # =====================================================
+    # Serialize Reaction
+    # =====================================================
+
+    def serialize_reaction(
+        self,
+        reaction
+    ):
+
+        return {
+
+            'id':
+                reaction.id,
+
+            'message_id':
+                reaction.message_id,
+
+            'user_id':
+                reaction.user_id,
+
+            'username':
+                reaction.user.username,
+
+            'reaction':
+                reaction.reaction,
+
+            'created_at':
+                reaction.created_at.isoformat(),
+        }
 
     # =====================================================
     # Membership

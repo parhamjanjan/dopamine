@@ -4,9 +4,10 @@ from .models import (
     StudyRoom,
     RoomMembership,
     StudySession,
+    RoomChatMessage,
+    RoomChatMessageEditHistory,
+    RoomChatReaction,
 )
-from .models import RoomChatMessage
-
 
 class RoomMembershipInline(admin.TabularInline):
     model = RoomMembership
@@ -159,16 +160,23 @@ class StudySessionAdmin(admin.ModelAdmin):
 
 @admin.register(RoomChatMessage)
 class RoomChatMessageAdmin(admin.ModelAdmin):
+
     list_display = (
         'id',
         'room',
         'user',
         'message_preview',
+        'status',
+        'edited_at',
+        'deleted_at',
+        'deleted_by',
         'created_at',
     )
 
     list_filter = (
         'room',
+        'is_deleted',
+        'edited_at',
         'created_at',
     )
 
@@ -176,6 +184,148 @@ class RoomChatMessageAdmin(admin.ModelAdmin):
         'message',
         'user__username',
         'room__name',
+        'deleted_by__username',
+    )
+
+    ordering = (
+        '-created_at',
+    )
+
+    readonly_fields = (
+        'created_at',
+        'edited_at',
+        'deleted_at',
+    )
+
+    list_select_related = (
+        'room',
+        'user',
+        'deleted_by',
+        'reply_to',
+    )
+
+    fieldsets = (
+        (
+            'اطلاعات پیام',
+            {
+                'fields': (
+                    'room',
+                    'user',
+                    'message',
+                    'client_id',
+                    'reply_to',
+                    'created_at',
+                )
+            }
+        ),
+
+        (
+            'ویرایش',
+            {
+                'fields': (
+                    'edited_at',
+                )
+            }
+        ),
+
+        (
+            'حذف پیام',
+            {
+                'fields': (
+                    'is_deleted',
+                    'deleted_at',
+                    'deleted_by',
+                )
+            }
+        ),
+    )
+
+    def message_preview(self, obj):
+
+        if obj.is_deleted:
+            return '[پیام حذف شده]'
+
+        return obj.message[:70]
+
+    message_preview.short_description = 'پیش‌نمایش پیام'
+
+    def status(self, obj):
+
+        if obj.is_deleted:
+            return 'حذف شده'
+
+        if obj.edited_at:
+            return 'ویرایش شده'
+
+        return 'عادی'
+
+    status.short_description = 'وضعیت'
+
+
+@admin.register(RoomChatMessageEditHistory)
+class RoomChatMessageEditHistoryAdmin(admin.ModelAdmin):
+
+    list_display = (
+        'id',
+        'message',
+        'edited_by',
+        'edited_at',
+        'old_message_preview',
+    )
+
+    list_filter = (
+        'edited_at',
+    )
+
+    search_fields = (
+        'old_message',
+        'edited_by__username',
+        'message__message',
+    )
+
+    ordering = (
+        '-edited_at',
+    )
+
+    readonly_fields = (
+        'message',
+        'old_message',
+        'edited_by',
+        'edited_at',
+    )
+
+    list_select_related = (
+        'message',
+        'edited_by',
+    )
+
+    def old_message_preview(self, obj):
+
+        return obj.old_message[:80]
+
+    old_message_preview.short_description = 'متن قبلی'
+
+
+@admin.register(RoomChatReaction)
+class RoomChatReactionAdmin(admin.ModelAdmin):
+
+    list_display = (
+        'id',
+        'message',
+        'user',
+        'reaction_display',
+        'created_at',
+    )
+
+    list_filter = (
+        'reaction',
+        'created_at',
+    )
+
+    search_fields = (
+        'user__username',
+        'message__message',
+        'message__room__name',
     )
 
     ordering = (
@@ -186,7 +336,14 @@ class RoomChatMessageAdmin(admin.ModelAdmin):
         'created_at',
     )
 
-    def message_preview(self, obj):
-        return obj.message[:70]
+    list_select_related = (
+        'message',
+        'user',
+        'message__room',
+    )
 
-    message_preview.short_description = 'پیام'
+    def reaction_display(self, obj):
+
+        return obj.get_reaction_display()
+
+    reaction_display.short_description = 'واکنش'

@@ -1,27 +1,27 @@
-```vue
 <template>
   <section
     class="room-chat"
     :class="{ 'is-dark': isDark }"
+    @click="handleRoomClick"
   >
 
-    <!-- ==============================
+    <!-- =====================================================
          HEADER
-         ============================== -->
+         ===================================================== -->
+
     <div class="chat-header">
 
-      
-
-
-      
-
-      <div :class="
+      <div
+        :class="
           socketConnected
             ? 'online'
             : 'offline'
-        " class="room-chat-badge">
-              <span class="room-chat-badge-dot"></span>
-              <span>
+        "
+        class="room-chat-badge"
+      >
+        <span class="room-chat-badge-dot"></span>
+
+        <span>
           {{
             socketConnected
               ? 'آنلاین'
@@ -33,35 +33,40 @@
     </div>
 
 
-    <!-- ==============================
+    <!-- =====================================================
          CHAT BODY
-         ============================== -->
+         ===================================================== -->
+
     <div class="chat-body">
 
-      <!-- Messages -->
-      <div style="  max-height: min(42vh, 390px);"
+      <!-- ===================================================
+           MESSAGES
+           =================================================== -->
+
+      <div
         ref="messagesEl"
         class="messages custom-scrollbar"
         role="log"
         aria-live="polite"
+        style="max-height: min(42vh, 390px);"
       >
 
         <!-- Loading -->
+
         <div
           v-if="loadingHistory"
           class="chat-state"
         >
-
           <span class="mini-loader"></span>
 
           <span>
             در حال دریافت پیام‌ها...
           </span>
-
         </div>
 
 
         <!-- Empty -->
+
         <div
           v-else-if="messages.length === 0"
           class="empty-chat"
@@ -97,17 +102,38 @@
         </div>
 
 
-        <!-- Message List -->
+        <!-- =================================================
+             MESSAGE LIST
+             ================================================= -->
+
         <template v-else>
 
           <article
             v-for="message in messages"
-            :key="message.clientId"
+            :key="getMessageKey(message)"
+            :data-message-id="message.messageId"
             class="message-row"
             :class="{
-              mine: message.isMine
+              mine: message.isMine,
+              deleted: message.isDeleted
             }"
+            @contextmenu.prevent.stop="
+              openMessageMenu(
+                $event,
+                message
+              )
+            "
+            @touchstart="
+              startLongPress(
+                $event,
+                message
+              )
+            "
+            @touchend="cancelLongPress"
+            @touchmove="cancelLongPress"
           >
+
+            <!-- Avatar -->
 
             <div
               class="message-avatar"
@@ -118,13 +144,14 @@
               {{ getInitial(message.username) }}
             </div>
 
-            <div
-              class="message-content"
-            >
 
-              <div
-                class="message-meta"
-              >
+            <!-- Message Content -->
+
+            <div class="message-content">
+
+              <!-- Meta -->
+
+              <div class="message-meta">
 
                 <strong>
                   {{
@@ -144,8 +171,183 @@
 
               </div>
 
-              <div class="message-bubble">
-                {{ message.text }}
+
+              <!-- =================================================
+                   REPLY PREVIEW
+                   ================================================= -->
+
+              <div
+                v-if="message.replyTo"
+                class="message-reply-preview"
+                @click.stop="
+                  scrollToMessage(
+                    message.replyTo.id
+                  )
+                "
+              >
+
+                <span class="reply-preview-line"></span>
+
+                <div class="reply-preview-content">
+
+                  <strong>
+                    {{
+                      message.replyTo.username ||
+                      'کاربر'
+                    }}
+                  </strong>
+
+                  <span>
+                    {{
+                      message.replyTo.isDeleted
+                        ? 'این پیام حذف شده است'
+                        : message.replyTo.message
+                    }}
+                  </span>
+
+                </div>
+
+              </div>
+
+
+              <!-- =================================================
+                   BUBBLE + ACTION BUTTON
+                   ================================================= -->
+
+              <div class="message-bubble-wrap">
+
+                <div
+                  class="message-bubble"
+                  :class="{
+                    deleted: message.isDeleted
+                  }"
+                >
+
+                  <!-- Deleted -->
+
+                  <template
+                    v-if="message.isDeleted"
+                  >
+
+                    <span class="deleted-message">
+
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.8"
+                      >
+                        <path
+                          d="M9 3h6"
+                        />
+
+                        <path
+                          d="M5 6h14"
+                        />
+
+                        <path
+                          d="m8 6 .7 13h6.6L16 6"
+                        />
+
+                        <path
+                          d="M10 10v5M14 10v5"
+                        />
+                      </svg>
+
+                      این پیام حذف شده است
+
+                    </span>
+
+                  </template>
+
+
+                  <!-- Normal -->
+
+                  <template v-else>
+
+                    <span class="message-text">
+                      {{ message.text }}
+                    </span>
+
+                    <span
+                      v-if="message.editedAt"
+                      class="edited-label"
+                    >
+                      ویرایش‌شده
+                    </span>
+
+                  </template>
+
+                </div>
+
+
+                <!-- More button -->
+
+                <button
+                  v-if="!message.isDeleted"
+                  type="button"
+                  class="message-more"
+                  aria-label="عملیات پیام"
+                  title="عملیات پیام"
+                  @click.stop="
+                    openMessageMenuFromButton(
+                      $event,
+                      message
+                    )
+                  "
+                >
+                  ⋮
+                </button>
+
+              </div>
+
+
+              <!-- =================================================
+                   REACTIONS
+                   ================================================= -->
+
+              <div
+                v-if="
+                  !message.isDeleted &&
+                  getReactionSummary(message).length
+                "
+                class="message-reactions"
+              >
+
+                <button
+                  v-for="
+                    reaction in
+                    getReactionSummary(message)
+                  "
+                  :key="reaction.type"
+                  type="button"
+                  class="reaction-chip"
+                  :class="{
+                    selected:
+                      reaction.myReaction
+                  }"
+                  @click.stop="
+                    toggleReaction(
+                      message,
+                      reaction.type
+                    )
+                  "
+                >
+
+                  <span>
+                    {{
+                      getReactionEmoji(
+                        reaction.type
+                      )
+                    }}
+                  </span>
+
+                  <small>
+                    {{ reaction.count }}
+                  </small>
+
+                </button>
+
               </div>
 
             </div>
@@ -157,10 +359,100 @@
       </div>
 
 
-      <!-- ============================
+      <!-- =====================================================
+           EDIT / REPLY BAR
+           ===================================================== -->
+
+      <Transition name="chat-action-bar">
+
+        <div
+          v-if="
+            editingMessage ||
+            replyingTo
+          "
+          class="chat-action-bar"
+        >
+
+          <div class="chat-action-bar-icon">
+
+            <svg
+              v-if="editingMessage"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+            >
+              <path
+                d="M12 20h9"
+              />
+
+              <path
+                d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"
+              />
+            </svg>
+
+            <svg
+              v-else
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+            >
+              <path
+                d="M9 14 4 9l5-5"
+              />
+
+              <path
+                d="M4 9h10a6 6 0 0 1 6 6v1"
+              />
+            </svg>
+
+          </div>
+
+
+          <div class="chat-action-bar-content">
+
+            <strong>
+              {{
+                editingMessage
+                  ? 'ویرایش پیام'
+                  : 'پاسخ به پیام'
+              }}
+            </strong>
+
+            <span>
+              {{
+                editingMessage
+                  ? editingMessage.text
+                  : (
+                      replyingTo?.isDeleted
+                        ? 'این پیام حذف شده است'
+                        : replyingTo?.text
+                    )
+              }}
+            </span>
+
+          </div>
+
+
+          <button
+            type="button"
+            class="chat-action-bar-close"
+            aria-label="لغو"
+            @click="cancelAction"
+          >
+            ×
+          </button>
+
+        </div>
+
+      </Transition>
+
+
+      <!-- =====================================================
            COMPOSER
-           خارج از Messages
-           ============================ -->
+           ===================================================== -->
+
       <form
         class="chat-composer"
         @submit.prevent="sendMessage"
@@ -176,8 +468,16 @@
             sending ||
             !socketConnected
           "
-          placeholder="پیامت را برای اعضای سالن بنویس..."
-          @keydown.enter.exact.prevent="sendMessage"
+          :placeholder="
+            editingMessage
+              ? 'متن پیام را ویرایش کن...'
+              : replyingTo
+                ? 'پاسخت را بنویس...'
+                : 'پیامت را برای اعضای سالن بنویس...'
+          "
+          @keydown.enter.exact.prevent="
+            sendMessage
+          "
           @input="autoResize"
         ></textarea>
 
@@ -190,7 +490,13 @@
             !socketConnected ||
             !draft.trim()
           "
-          aria-label="ارسال پیام"
+          :aria-label="
+            editingMessage
+              ? 'ذخیره ویرایش'
+              : replyingTo
+                ? 'ارسال پاسخ'
+                : 'ارسال پیام'
+          "
         >
 
           <span
@@ -198,6 +504,23 @@
             class="send-loader"
           ></span>
 
+
+          <!-- Save edit -->
+
+          <svg
+            v-else-if="editingMessage"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+          >
+            <path
+              d="m5 12 4 4L19 6"
+            />
+          </svg>
+
+
+          <!-- Send -->
 
           <svg
             v-else
@@ -220,6 +543,252 @@
       </form>
 
     </div>
+
+
+    <!-- =====================================================
+         MESSAGE CONTEXT MENU
+         ===================================================== -->
+
+    <Transition name="message-menu">
+
+      <div
+        v-if="contextMenu.visible"
+        ref="contextMenuEl"
+        class="message-context-menu"
+        :style="contextMenuStyle"
+        @click.stop
+      >
+
+        <!-- Header -->
+
+        <div class="context-menu-user">
+
+          <div class="context-menu-avatar">
+            {{
+              getInitial(
+                contextMenu.message?.username
+              )
+            }}
+          </div>
+
+          <div>
+
+            <strong>
+              {{
+                contextMenu.message?.username ||
+                'کاربر'
+              }}
+            </strong>
+
+            <span>
+              {{
+                contextMenu.message?.isMine
+                  ? 'پیام شما'
+                  : 'پیام کاربر'
+              }}
+            </span>
+
+          </div>
+
+        </div>
+
+
+        <div class="context-menu-divider"></div>
+
+
+        <!-- Reply -->
+
+        <button
+          type="button"
+          class="context-menu-item"
+          @click="
+            replyToMessage(
+              contextMenu.message
+            )
+          "
+        >
+
+          <span class="context-menu-item-icon">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+            >
+              <path
+                d="M9 14 4 9l5-5"
+              />
+
+              <path
+                d="M4 9h10a6 6 0 0 1 6 6v1"
+              />
+            </svg>
+          </span>
+
+          <span>
+            پاسخ
+          </span>
+
+        </button>
+
+
+        <!-- Reaction -->
+
+        <button
+          v-if="
+            !contextMenu.message?.isDeleted
+          "
+          type="button"
+          class="context-menu-item"
+          @click="toggleReactionMenu"
+        >
+
+          <span class="context-menu-item-icon">
+            <span class="reaction-face">
+              😀
+            </span>
+          </span>
+
+          <span>
+            واکنش
+          </span>
+
+          <span class="context-menu-arrow">
+            ‹
+          </span>
+
+        </button>
+
+
+        <!-- Reaction Picker -->
+
+        <div
+          v-if="contextMenu.showReactions"
+          class="reaction-picker"
+        >
+
+          <button
+            v-for="type in reactionTypes"
+            :key="type"
+            type="button"
+            class="reaction-picker-button"
+            :class="{
+              selected:
+                getUserReaction(
+                  contextMenu.message
+                ) === type
+            }"
+            :title="
+              getReactionLabel(type)
+            "
+            @click="
+              selectReactionFromMenu(
+                type
+              )
+            "
+          >
+            {{
+              getReactionEmoji(type)
+            }}
+          </button>
+
+        </div>
+
+
+        <!-- Edit -->
+
+        <button
+          v-if="
+            contextMenu.message &&
+            contextMenu.message.isMine &&
+            !contextMenu.message.isDeleted
+          "
+          type="button"
+          class="context-menu-item"
+          @click="
+            startEditMessage(
+              contextMenu.message
+            )
+          "
+        >
+
+          <span class="context-menu-item-icon">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+            >
+              <path
+                d="M12 20h9"
+              />
+
+              <path
+                d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"
+              />
+            </svg>
+          </span>
+
+          <span>
+            ویرایش
+          </span>
+
+        </button>
+
+
+        <!-- Delete -->
+
+        <button
+          v-if="
+            contextMenu.message &&
+            contextMenu.message.isMine &&
+            !contextMenu.message.isDeleted
+          "
+          type="button"
+          class="context-menu-item danger"
+          @click="
+            deleteMessage(
+              contextMenu.message
+            )
+          "
+        >
+
+          <span class="context-menu-item-icon">
+
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+            >
+              <path
+                d="M9 3h6"
+              />
+
+              <path
+                d="M5 6h14"
+              />
+
+              <path
+                d="m8 6 .7 13h6.6L16 6"
+              />
+
+              <path
+                d="M10 10v5M14 10v5"
+              />
+            </svg>
+
+          </span>
+
+          <span>
+            حذف
+          </span>
+
+        </button>
+
+      </div>
+
+    </Transition>
 
   </section>
 </template>
@@ -253,17 +822,25 @@ const props = defineProps({
    DOM
    ========================================================= */
 
-const messagesEl = ref(null)
-const inputEl = ref(null)
+const messagesEl =
+  ref(null)
+
+const inputEl =
+  ref(null)
+
+const contextMenuEl =
+  ref(null)
 
 
 /* =========================================================
    STATE
    ========================================================= */
 
-const messages = ref([])
+const messages =
+  ref([])
 
-const draft = ref('')
+const draft =
+  ref('')
 
 const loadingHistory =
   ref(false)
@@ -276,6 +853,84 @@ const socketConnected =
 
 const isDark =
   ref(false)
+
+
+/* =========================================================
+   CHAT ACTION STATE
+   ========================================================= */
+
+const editingMessage =
+  ref(null)
+
+const replyingTo =
+  ref(null)
+
+
+/* =========================================================
+   CONTEXT MENU
+   ========================================================= */
+
+const contextMenu =
+  ref({
+
+    visible: false,
+
+    x: 0,
+
+    y: 0,
+
+    message: null,
+
+    showReactions: false,
+
+  })
+
+
+const contextMenuStyle =
+  ref({})
+
+
+/* =========================================================
+   REACTIONS
+   ========================================================= */
+
+const reactionTypes = [
+  'cry',
+  'laugh',
+  'heart',
+  'like',
+  'dislike',
+]
+
+
+const reactionEmojis = {
+
+  cry: '😢',
+
+  laugh: '😂',
+
+  heart: '❤️',
+
+  like: '👍',
+
+  dislike: '👎',
+
+}
+
+
+const reactionLabels = {
+
+  cry: 'گریه',
+
+  laugh: 'خنده',
+
+  heart: 'قلب',
+
+  like: 'لایک',
+
+  dislike: 'دیسلایک',
+
+}
 
 
 /* =========================================================
@@ -294,6 +949,9 @@ let destroyed =
   false
 
 let themeObserver =
+  null
+
+let longPressTimer =
   null
 
 let localUserId =
@@ -343,6 +1001,7 @@ function detectDark() {
     )
 
   return (
+
     dataTheme === 'dark' ||
 
     root.classList.contains(
@@ -360,6 +1019,7 @@ function detectDark() {
     body?.classList.contains(
       'dark-mode'
     )
+
   )
 
 }
@@ -386,6 +1046,7 @@ function observeTheme() {
     document.documentElement,
     {
       attributes: true,
+
       attributeFilter: [
         'class',
         'data-theme',
@@ -401,6 +1062,7 @@ function observeTheme() {
       document.body,
       {
         attributes: true,
+
         attributeFilter: [
           'class',
           'data-theme',
@@ -425,68 +1087,175 @@ function normalizeMessage(raw) {
   }
 
 
+  const source =
+    raw.message_data ??
+    raw
+
+
   const text =
-    raw.message ??
-    raw.text ??
-    raw.content ??
-    raw.body
-
-
-  if (
-    typeof text !== 'string' ||
-    !text.trim()
-  ) {
-
-    return null
-
-  }
+    source.message ??
+    source.text ??
+    source.content ??
+    source.body ??
+    ''
 
 
   const senderId =
-    raw.user_id ??
-    raw.sender_id ??
-    raw.sender?.id ??
-    raw.author_id ??
+    source.user_id ??
+    source.sender_id ??
+    source.sender?.id ??
+    source.author_id ??
+    source.user?.id ??
     null
 
 
   const username =
-    raw.username ??
-    raw.sender_username ??
-    raw.sender?.username ??
-    raw.user?.username ??
+    source.username ??
+    source.sender_username ??
+    source.sender?.username ??
+    source.user?.username ??
     'کاربر'
 
 
   const createdAt =
-    raw.created_at ??
-    raw.timestamp ??
+    source.created_at ??
+    source.timestamp ??
     new Date().toISOString()
+
+
+  const messageId =
+    source.id ??
+    source.message_id ??
+    null
 
 
   const clientId =
     String(
-      raw.client_id ??
-      raw.id ??
-      raw.message_id ??
-      `${senderId || 'u'}-${createdAt}-${Math.random()
-        .toString(36)
-        .slice(2, 8)}`
+      source.client_id ??
+      (
+        messageId != null
+          ? `server-${messageId}`
+          : `${senderId || 'u'}-${createdAt}-${Math.random()
+              .toString(36)
+              .slice(2, 8)}`
+      )
     )
+
+
+  const replyRaw =
+    source.reply_to ??
+    null
+
+
+  const replyTo =
+    replyRaw
+      ? {
+
+          id:
+            replyRaw.id ??
+            replyRaw.message_id ??
+            null,
+
+          userId:
+            replyRaw.user_id ??
+            replyRaw.sender_id ??
+            null,
+
+          username:
+            replyRaw.username ??
+            replyRaw.sender_username ??
+            replyRaw.user?.username ??
+            'کاربر',
+
+          message:
+            replyRaw.message ??
+            replyRaw.text ??
+            '',
+
+          isDeleted:
+            Boolean(
+              replyRaw.is_deleted
+            ),
+
+        }
+      : null
+
+
+  const reactions =
+    Array.isArray(
+      source.reactions
+    )
+      ? source.reactions.map(
+          reaction => ({
+
+            id:
+              reaction.id ??
+              null,
+
+            messageId:
+              reaction.message_id ??
+              messageId,
+
+            userId:
+              reaction.user_id ??
+              null,
+
+            username:
+              reaction.username ??
+              'کاربر',
+
+            reaction:
+              reaction.reaction ??
+              null,
+
+            createdAt:
+              reaction.created_at ??
+              null,
+
+          })
+        )
+      : []
 
 
   return {
 
+    messageId:
+      messageId != null
+        ? Number(messageId)
+        : null,
+
     clientId,
 
-    senderId,
+    senderId:
+      senderId != null
+        ? Number(senderId)
+        : null,
 
     username,
 
     text:
-      text.trim(),
+      typeof text === 'string'
+        ? text.trim()
+        : '',
 
     createdAt,
+
+    editedAt:
+      source.edited_at ??
+      null,
+
+    isDeleted:
+      Boolean(
+        source.is_deleted
+      ),
+
+    deletedAt:
+      source.deleted_at ??
+      null,
+
+    replyTo,
+
+    reactions,
 
     isMine:
       senderId != null &&
@@ -495,6 +1264,59 @@ function normalizeMessage(raw) {
         String(localUserId),
 
   }
+
+}
+
+
+/* =========================================================
+   MESSAGE KEY
+   ========================================================= */
+
+function getMessageKey(message) {
+
+  if (
+    message.messageId != null
+  ) {
+
+    return (
+      `message-${message.messageId}`
+    )
+
+  }
+
+  return (
+    `client-${message.clientId}`
+  )
+
+}
+
+
+/* =========================================================
+   SAME MESSAGE
+   ========================================================= */
+
+function sameMessage(
+  first,
+  second
+) {
+
+  if (
+    first.messageId != null &&
+    second.messageId != null
+  ) {
+
+    return (
+      Number(first.messageId) ===
+      Number(second.messageId)
+    )
+
+  }
+
+
+  return (
+    first.clientId ===
+    second.clientId
+  )
 
 }
 
@@ -510,16 +1332,34 @@ function pushMessage(message) {
   }
 
 
-  const duplicate =
-    messages.value.some(
+  const index =
+    messages.value.findIndex(
       item =>
-        item.clientId ===
-        message.clientId
+        sameMessage(
+          item,
+          message
+        )
     )
 
 
-  if (duplicate) {
+  if (index !== -1) {
+
+    messages.value[index] = {
+
+      ...messages.value[index],
+
+      ...message,
+
+    }
+
+    messages.value = [
+      ...messages.value,
+    ]
+
+    scrollToBottom()
+
     return
+
   }
 
 
@@ -547,9 +1387,9 @@ function handleIncoming(data) {
   }
 
 
-  /* -----------------------------------------------
-     Connection
-     ----------------------------------------------- */
+  /* =====================================================
+     CONNECTION
+     ===================================================== */
 
   if (
     data.type ===
@@ -568,20 +1408,23 @@ function handleIncoming(data) {
       localUserId =
         serverUserId
 
-
       localStorage.setItem(
         'user_id',
-        String(serverUserId)
+        String(
+          serverUserId
+        )
       )
 
     }
 
 
     localUsername =
-  data.username ??
-  data.user?.username ??
-  localStorage.getItem('username') ??
-  'کاربر'
+      data.username ??
+      data.user?.username ??
+      localStorage.getItem(
+        'username'
+      ) ??
+      'کاربر'
 
 
     if (
@@ -600,9 +1443,9 @@ function handleIncoming(data) {
   }
 
 
-  /* -----------------------------------------------
-     History
-     ----------------------------------------------- */
+  /* =====================================================
+     HISTORY
+     ===================================================== */
 
   if (
     data.type ===
@@ -625,23 +1468,30 @@ function handleIncoming(data) {
           normalizeMessage
         )
         .filter(Boolean)
-        .slice(-MAX_MESSAGES)
+        .slice(
+          -MAX_MESSAGES
+        )
 
 
     loadingHistory.value =
       false
 
 
-    scrollToBottom()
+    nextTick(() => {
+
+      scrollToBottom()
+
+    })
+
 
     return
 
   }
 
 
-  /* -----------------------------------------------
-     Chat message
-     ----------------------------------------------- */
+  /* =====================================================
+     NEW MESSAGE
+     ===================================================== */
 
   if (
     [
@@ -690,6 +1540,487 @@ function handleIncoming(data) {
 
   }
 
+
+  /* =====================================================
+     EDITED
+     ===================================================== */
+
+  if (
+    data.type ===
+    'chat_message_edited'
+  ) {
+
+    handleEditedMessage(
+      data.message_data ??
+      data.data ??
+      data
+    )
+
+    return
+
+  }
+
+
+  /* =====================================================
+     DELETED
+     ===================================================== */
+
+  if (
+    data.type ===
+    'chat_message_deleted'
+  ) {
+
+    handleDeletedMessage(
+      data.message_data ??
+      data.data ??
+      data
+    )
+
+    return
+
+  }
+
+
+  /* =====================================================
+     REACTION UPDATED
+     ===================================================== */
+
+  if (
+    data.type ===
+    'chat_message_reaction_updated'
+  ) {
+
+    handleReactionUpdated(
+      data.reaction_data ??
+      data.data ??
+      data
+    )
+
+    return
+
+  }
+
+
+  /* =====================================================
+     REACTION REMOVED
+     ===================================================== */
+
+  if (
+    data.type ===
+    'chat_message_reaction_removed'
+  ) {
+
+    handleReactionRemoved(
+      data.reaction_data ??
+      data.data ??
+      data
+    )
+
+  }
+
+}
+
+
+/* =========================================================
+   EDITED MESSAGE
+   ========================================================= */
+
+function handleEditedMessage(
+  raw
+) {
+
+  const message =
+    normalizeMessage(
+      raw
+    )
+
+
+  if (!message) {
+    return
+  }
+
+
+  const index =
+    findMessageIndex(
+      message.messageId
+    )
+
+
+  if (index === -1) {
+    return
+  }
+
+
+  messages.value[index] = {
+
+    ...messages.value[index],
+
+    ...message,
+
+    isMine:
+      messages.value[index]
+        .isMine,
+
+  }
+
+
+  messages.value = [
+    ...messages.value,
+  ]
+
+
+  if (
+    editingMessage.value &&
+    Number(
+      editingMessage.value.messageId
+    ) ===
+      Number(
+        message.messageId
+      )
+  ) {
+
+    clearEdit()
+
+    draft.value = ''
+
+    autoResize()
+
+  }
+
+
+  sending.value =
+    false
+
+}
+
+
+/* =========================================================
+   DELETED MESSAGE
+   ========================================================= */
+
+function handleDeletedMessage(
+  raw
+) {
+
+  const message =
+    normalizeMessage(
+      raw
+    )
+
+
+  if (!message) {
+    return
+  }
+
+
+  const index =
+    findMessageIndex(
+      message.messageId
+    )
+
+
+  if (index === -1) {
+    return
+  }
+
+
+  messages.value[index] = {
+
+    ...messages.value[index],
+
+    ...message,
+
+    isDeleted:
+      true,
+
+    text:
+      '',
+
+    isMine:
+      messages.value[index]
+        .isMine,
+
+  }
+
+
+  messages.value = [
+    ...messages.value,
+  ]
+
+
+  if (
+    replyingTo.value &&
+    Number(
+      replyingTo.value.messageId
+    ) ===
+      Number(
+        message.messageId
+      )
+  ) {
+
+    replyingTo.value =
+      messages.value[index]
+
+  }
+
+
+  if (
+    editingMessage.value &&
+    Number(
+      editingMessage.value.messageId
+    ) ===
+      Number(
+        message.messageId
+      )
+  ) {
+
+    cancelAction()
+
+  }
+
+}
+
+
+/* =========================================================
+   REACTION UPDATED
+   ========================================================= */
+
+function handleReactionUpdated(
+  raw
+) {
+
+  const reaction =
+    normalizeReaction(
+      raw
+    )
+
+
+  if (!reaction) {
+    return
+  }
+
+
+  const index =
+    findMessageIndex(
+      reaction.messageId
+    )
+
+
+  if (index === -1) {
+    return
+  }
+
+
+  const message =
+    messages.value[index]
+
+
+  const reactions = [
+    ...(message.reactions || [])
+  ]
+
+
+  const sameUserIndex =
+    reactions.findIndex(
+      item =>
+        Number(
+          item.userId
+        ) ===
+        Number(
+          reaction.userId
+        )
+    )
+
+
+  if (
+    sameUserIndex !== -1
+  ) {
+
+    reactions[
+      sameUserIndex
+    ] = reaction
+
+  } else {
+
+    reactions.push(
+      reaction
+    )
+
+  }
+
+
+  messages.value[index] = {
+
+    ...message,
+
+    reactions,
+
+  }
+
+
+  messages.value = [
+    ...messages.value,
+  ]
+
+}
+
+
+/* =========================================================
+   REACTION REMOVED
+   ========================================================= */
+
+function handleReactionRemoved(
+  raw
+) {
+
+  const reaction =
+    normalizeReaction(
+      raw
+    )
+
+
+  if (!reaction) {
+    return
+  }
+
+
+  const index =
+    findMessageIndex(
+      reaction.messageId
+    )
+
+
+  if (index === -1) {
+    return
+  }
+
+
+  const message =
+    messages.value[index]
+
+
+  const reactions =
+    (
+      message.reactions ||
+      []
+    ).filter(
+      item => {
+
+        if (
+          reaction.id != null
+        ) {
+
+          return (
+            Number(item.id) !==
+            Number(reaction.id)
+          )
+
+        }
+
+
+        return !(
+          Number(
+            item.userId
+          ) ===
+          Number(
+            reaction.userId
+          )
+        )
+
+      }
+    )
+
+
+  messages.value[index] = {
+
+    ...message,
+
+    reactions,
+
+  }
+
+
+  messages.value = [
+    ...messages.value,
+  ]
+
+}
+
+
+/* =========================================================
+   NORMALIZE REACTION
+   ========================================================= */
+
+function normalizeReaction(
+  raw
+) {
+
+  if (!raw) {
+    return null
+  }
+
+
+  return {
+
+    id:
+      raw.id ??
+      null,
+
+    messageId:
+      raw.message_id ??
+      raw.messageId ??
+      null,
+
+    userId:
+      raw.user_id ??
+      raw.userId ??
+      null,
+
+    username:
+      raw.username ??
+      'کاربر',
+
+    reaction:
+      raw.reaction ??
+      null,
+
+    createdAt:
+      raw.created_at ??
+      null,
+
+  }
+
+}
+
+
+/* =========================================================
+   FIND MESSAGE
+   ========================================================= */
+
+function findMessageIndex(
+  messageId
+) {
+
+  if (
+    messageId == null
+  ) {
+
+    return -1
+
+  }
+
+
+  return messages.value.findIndex(
+    message =>
+      message.messageId != null &&
+      Number(
+        message.messageId
+      ) ===
+        Number(
+          messageId
+        )
+  )
+
 }
 
 
@@ -728,6 +2059,7 @@ function buildSocketUrl() {
 }
 
 
+
 /* =========================================================
    CONNECT
    ========================================================= */
@@ -764,7 +2096,9 @@ function connect() {
     socket?.close()
 
   } catch {
+
     // ignore
+
   }
 
 
@@ -923,7 +2257,7 @@ function scheduleReconnect() {
 
 
 /* =========================================================
-   SEND MESSAGE
+   SEND / EDIT
    ========================================================= */
 
 function sendMessage() {
@@ -953,10 +2287,96 @@ function sendMessage() {
   }
 
 
+  /* =====================================================
+     EDIT
+     ===================================================== */
+
+  if (
+    editingMessage.value
+  ) {
+
+    const messageId =
+      editingMessage.value
+        .messageId
+
+
+    if (messageId == null) {
+      return
+    }
+
+
+    sending.value =
+      true
+
+
+    try {
+
+      socket.send(
+        JSON.stringify({
+
+          type:
+            'chat_message_edit',
+
+          message_id:
+            messageId,
+
+          message:
+            text,
+
+        })
+      )
+
+    } catch (error) {
+
+      console.error(
+        'ROOM CHAT EDIT ERROR:',
+        error
+      )
+
+      sending.value =
+        false
+
+    }
+
+
+    return
+
+  }
+
+
+  /* =====================================================
+     NORMAL / REPLY
+     ===================================================== */
+
   const clientId =
     `local-${Date.now()}-${Math.random()
       .toString(36)
       .slice(2, 8)}`
+
+
+  const payload = {
+
+    type:
+      'chat_message',
+
+    message:
+      text,
+
+    client_id:
+      clientId,
+
+  }
+
+
+  if (
+    replyingTo.value &&
+    replyingTo.value.messageId != null
+  ) {
+
+    payload.reply_to_id =
+      replyingTo.value.messageId
+
+  }
 
 
   sending.value =
@@ -966,32 +2386,17 @@ function sendMessage() {
   try {
 
     socket.send(
-      JSON.stringify({
-
-        type:
-          'chat_message',
-
-        message:
-          text,
-
-        client_id:
-          clientId,
-
-      })
+      JSON.stringify(
+        payload
+      )
     )
-
-
-    /*
-     * پیام را اینجا به صورت محلی
-     * اضافه نمی‌کنیم.
-     *
-     * Consumer بک‌اند آن را ذخیره
-     * و سپس broadcast می‌کند.
-     */
 
 
     draft.value =
       ''
+
+
+    clearReply()
 
 
     nextTick(() => {
@@ -1007,9 +2412,756 @@ function sendMessage() {
       error
     )
 
-
     sending.value =
       false
+
+  }
+
+}
+
+
+/* =========================================================
+   EDIT MESSAGE
+   ========================================================= */
+
+function startEditMessage(
+  message
+) {
+
+  closeContextMenu()
+
+
+  if (!message) {
+    return
+  }
+
+
+  if (!message.isMine) {
+    return
+  }
+
+
+  if (message.isDeleted) {
+    return
+  }
+
+
+  clearReply()
+
+
+  editingMessage.value = {
+    ...message
+  }
+
+
+  draft.value =
+    message.text
+
+
+  nextTick(() => {
+
+    autoResize()
+
+    inputEl.value?.focus()
+
+
+    if (inputEl.value) {
+
+      inputEl.value.setSelectionRange(
+        inputEl.value.value.length,
+        inputEl.value.value.length
+      )
+
+    }
+
+  })
+
+}
+
+
+function clearEdit() {
+
+  editingMessage.value =
+    null
+
+}
+
+
+/* =========================================================
+   DELETE
+   ========================================================= */
+
+function deleteMessage(
+  message
+) {
+
+  closeContextMenu()
+
+
+  if (!message) {
+    return
+  }
+
+
+  if (!message.isMine) {
+    return
+  }
+
+
+  if (message.isDeleted) {
+    return
+  }
+
+
+  if (
+    message.messageId == null
+  ) {
+
+    return
+
+  }
+
+
+  const confirmed =
+    window.confirm(
+      'آیا مطمئنی می‌خواهی این پیام را حذف کنی؟'
+    )
+
+
+  if (!confirmed) {
+    return
+  }
+
+
+  if (
+    !socket ||
+    socket.readyState !==
+      WebSocket.OPEN
+  ) {
+
+    return
+
+  }
+
+
+  socket.send(
+    JSON.stringify({
+
+      type:
+        'chat_message_delete',
+
+      message_id:
+        message.messageId,
+
+    })
+  )
+
+}
+
+
+/* =========================================================
+   REPLY
+   ========================================================= */
+
+function replyToMessage(
+  message
+) {
+
+  closeContextMenu()
+
+
+  if (!message) {
+    return
+  }
+
+
+  clearEdit()
+
+
+  replyingTo.value = {
+    ...message
+  }
+
+
+  nextTick(() => {
+
+    inputEl.value?.focus()
+
+  })
+
+}
+
+
+/* =========================================================
+   CANCEL ACTION
+   ========================================================= */
+
+function cancelAction() {
+
+  clearEdit()
+
+  clearReply()
+
+  draft.value =
+    ''
+
+
+  nextTick(() => {
+
+    autoResize()
+
+  })
+
+}
+
+
+/* =========================================================
+   REPLY CLEAR
+   ========================================================= */
+
+function clearReply() {
+
+  replyingTo.value =
+    null
+
+}
+
+
+/* =========================================================
+   REACTIONS
+   ========================================================= */
+
+function toggleReaction(
+  message,
+  type
+) {
+
+  if (!message) {
+    return
+  }
+
+
+  if (message.isDeleted) {
+    return
+  }
+
+
+  if (
+    message.messageId == null
+  ) {
+
+    return
+
+  }
+
+
+  const current =
+    getUserReaction(
+      message
+    )
+
+
+  if (
+    current === type
+  ) {
+
+    sendSocket({
+      type:
+        'chat_message_reaction_remove',
+
+      message_id:
+        message.messageId,
+    })
+
+  } else {
+
+    sendSocket({
+
+      type:
+        'chat_message_reaction',
+
+      message_id:
+        message.messageId,
+
+      reaction:
+        type,
+
+    })
+
+  }
+
+}
+
+
+function getUserReaction(
+  message
+) {
+
+  if (!message) {
+    return null
+  }
+
+
+  const reaction =
+    (
+      message.reactions ||
+      []
+    ).find(
+      item =>
+        Number(
+          item.userId
+        ) ===
+        Number(
+          localUserId
+        )
+    )
+
+
+  return reaction
+    ? reaction.reaction
+    : null
+
+}
+
+
+function getReactionSummary(
+  message
+) {
+
+  if (!message) {
+    return []
+  }
+
+
+  const result = []
+
+
+  for (
+    const type of reactionTypes
+  ) {
+
+    const items =
+      (
+        message.reactions ||
+        []
+      ).filter(
+        item =>
+          item.reaction ===
+          type
+      )
+
+
+    if (!items.length) {
+      continue
+    }
+
+
+    result.push({
+
+      type,
+
+      count:
+        items.length,
+
+      myReaction:
+        items.some(
+          item =>
+            Number(
+              item.userId
+            ) ===
+            Number(
+              localUserId
+            )
+        ),
+
+    })
+
+  }
+
+
+  return result
+
+}
+
+
+function getReactionEmoji(
+  type
+) {
+
+  return (
+    reactionEmojis[type] ||
+    '🙂'
+  )
+
+}
+
+
+function getReactionLabel(
+  type
+) {
+
+  return (
+    reactionLabels[type] ||
+    'واکنش'
+  )
+
+}
+
+
+/* =========================================================
+   CONTEXT MENU
+   ========================================================= */
+
+function openMessageMenu(
+  event,
+  message
+) {
+
+  openMessageMenuAt(
+    event.clientX,
+    event.clientY,
+    message
+  )
+
+}
+
+
+function openMessageMenuFromButton(
+  event,
+  message
+) {
+
+  openMessageMenuAt(
+    event.clientX,
+    event.clientY,
+    message
+  )
+
+}
+
+
+function openMessageMenuAt(
+  x,
+  y,
+  message
+) {
+
+  if (!message) {
+    return
+  }
+
+
+  const width =
+    225
+
+  const height =
+    message.isMine
+      ? 255
+      : 175
+
+
+  let finalX =
+    x
+
+  let finalY =
+    y
+
+
+  if (
+    finalX + width >
+    window.innerWidth - 10
+  ) {
+
+    finalX =
+      window.innerWidth -
+      width -
+      10
+
+  }
+
+
+  if (
+    finalY + height >
+    window.innerHeight - 10
+  ) {
+
+    finalY =
+      window.innerHeight -
+      height -
+      10
+
+  }
+
+
+  finalX =
+    Math.max(
+      10,
+      finalX
+    )
+
+
+  finalY =
+    Math.max(
+      10,
+      finalY
+    )
+
+
+  contextMenu.value = {
+
+    visible:
+      true,
+
+    x:
+      finalX,
+
+    y:
+      finalY,
+
+    message,
+
+    showReactions:
+      false,
+
+  }
+
+
+  contextMenuStyle.value = {
+
+    left:
+      `${finalX}px`,
+
+    top:
+      `${finalY}px`,
+
+  }
+
+}
+
+
+function toggleReactionMenu() {
+
+  contextMenu.value.showReactions =
+    !contextMenu.value
+      .showReactions
+
+}
+
+
+function selectReactionFromMenu(
+  type
+) {
+
+  const message =
+    contextMenu.value.message
+
+
+  closeContextMenu()
+
+
+  if (!message) {
+    return
+  }
+
+
+  toggleReaction(
+    message,
+    type
+  )
+
+}
+
+
+function closeContextMenu() {
+
+  contextMenu.value.visible =
+    false
+
+  contextMenu.value.message =
+    null
+
+  contextMenu.value.showReactions =
+    false
+
+}
+
+
+/* =========================================================
+   CLICK OUTSIDE
+   ========================================================= */
+
+function handleRoomClick(
+  event
+) {
+
+  if (
+    contextMenuEl.value &&
+    contextMenuEl.value.contains(
+      event.target
+    )
+  ) {
+
+    return
+
+  }
+
+
+  closeContextMenu()
+
+}
+
+
+/* =========================================================
+   LONG PRESS
+   ========================================================= */
+
+function startLongPress(
+  event,
+  message
+) {
+
+  cancelLongPress()
+
+
+  longPressTimer =
+    window.setTimeout(
+      () => {
+
+        const touch =
+          event.touches?.[0]
+
+
+        if (!touch) {
+          return
+        }
+
+
+        openMessageMenuAt(
+          touch.clientX,
+          touch.clientY,
+          message
+        )
+
+      },
+      550
+    )
+
+}
+
+
+function cancelLongPress() {
+
+  if (
+    longPressTimer
+  ) {
+
+    window.clearTimeout(
+      longPressTimer
+    )
+
+    longPressTimer =
+      null
+
+  }
+
+}
+
+
+/* =========================================================
+   SCROLL TO MESSAGE
+   ========================================================= */
+
+function scrollToMessage(
+  messageId
+) {
+
+  if (
+    messageId == null
+  ) {
+
+    return
+
+  }
+
+
+  const target =
+    messagesEl.value?.querySelector(
+      `[data-message-id="${messageId}"]`
+    )
+
+
+  if (!target) {
+    return
+  }
+
+
+  target.scrollIntoView({
+
+    behavior:
+      'smooth',
+
+    block:
+      'center',
+
+  })
+
+
+  target.classList.add(
+    'message-highlight'
+  )
+
+
+  window.setTimeout(
+    () => {
+
+      target.classList.remove(
+        'message-highlight'
+      )
+
+    },
+    1000
+  )
+
+}
+
+
+/* =========================================================
+   SOCKET SEND
+   ========================================================= */
+
+function sendSocket(
+  data
+) {
+
+  if (
+    !socket ||
+    socket.readyState !==
+      WebSocket.OPEN
+  ) {
+
+    return false
+
+  }
+
+
+  try {
+
+    socket.send(
+      JSON.stringify(
+        data
+      )
+    )
+
+    return true
+
+  } catch (error) {
+
+    console.error(
+      'ROOM CHAT SOCKET SEND ERROR:',
+      error
+    )
+
+    return false
 
   }
 
@@ -1104,7 +3256,9 @@ function formatTime(
 ) {
 
   const date =
-    new Date(value)
+    new Date(
+      value
+    )
 
 
   if (
@@ -1121,11 +3275,13 @@ function formatTime(
   return date.toLocaleTimeString(
     'fa-IR',
     {
+
       hour:
         '2-digit',
 
       minute:
         '2-digit',
+
     }
   )
 
@@ -1144,7 +3300,9 @@ onMounted(() => {
     )
 
 
-  if (storedUserId) {
+  if (
+    storedUserId
+  ) {
 
     localUserId =
       storedUserId
@@ -1159,6 +3317,7 @@ onMounted(() => {
 
 
   observeTheme()
+
 
   connect()
 
@@ -1182,7 +3341,12 @@ onBeforeUnmount(() => {
     true
 
 
-  if (reconnectTimer) {
+  cancelLongPress()
+
+
+  if (
+    reconnectTimer
+  ) {
 
     window.clearTimeout(
       reconnectTimer
@@ -1203,7 +3367,9 @@ onBeforeUnmount(() => {
     socket?.close()
 
   } catch {
+
     // ignore
+
   }
 
 
@@ -1228,12 +3394,20 @@ onBeforeUnmount(() => {
 .room-chat {
 
   --chat-bg:
-    var(--app-card, #ffffff);
+    var(
+      --app-card,
+      #ffffff
+    );
 
   --chat-border:
     var(
       --border,
-      rgba(148, 163, 184, .18)
+      rgba(
+        148,
+        163,
+        184,
+        .18
+      )
     );
 
   --chat-text:
@@ -1263,7 +3437,6 @@ onBeforeUnmount(() => {
       .06
     );
 
-
   width:
     100%;
 
@@ -1283,7 +3456,7 @@ onBeforeUnmount(() => {
     column;
 
   overflow:
-    hidden;
+    visible;
 
   border:
     1px solid
@@ -1373,117 +3546,11 @@ onBeforeUnmount(() => {
 }
 
 
-.chat-title-wrap {
-
-  display:
-    flex;
-
-  align-items:
-    center;
-
-  gap:
-    12px;
-
-  min-width:
-    0;
-
-}
-
-
-.chat-icon {
-
-  width:
-    46px;
-
-  height:
-    46px;
-
-  flex:
-    0 0 46px;
-
-  display:
-    grid;
-
-  place-items:
-    center;
-
-  border:
-    1px solid
-    rgba(
-      var(--primary-rgb),
-      .14
-    );
-
-  border-radius:
-    15px;
-
-  background:
-    var(--chat-soft);
-
-  color:
-    var(--primary);
-
-}
-
-
-.chat-icon svg {
-
-  width:
-    23px;
-
-  height:
-    23px;
-
-}
-
-
-.chat-heading {
-
-  min-width:
-    0;
-
-}
-
-
-.chat-eyebrow {
-
-  display:
-    block;
-
-  margin:
-    0 0 3px;
-
-  color:
-    var(--primary);
-
-  font-size:
-    10px;
-
-  font-weight:
-    800;
-
-}
-
-
-.chat-title-wrap h2 {
-
-  margin:
-    0;
-
-  font-size:
-    19px;
-
-  font-weight:
-    850;
-
-}
-
-
 /* =========================================================
-   STATUS
+   ORIGINAL STATUS BADGE
    ========================================================= */
 
-.chat-status {
+.room-chat-badge {
 
   display:
     inline-flex;
@@ -1491,14 +3558,8 @@ onBeforeUnmount(() => {
   align-items:
     center;
 
-  justify-content:
-    center;
-
   gap:
-    6px;
-
-  flex:
-    0 0 auto;
+    7px;
 
   padding:
     7px 10px;
@@ -1506,27 +3567,29 @@ onBeforeUnmount(() => {
   border-radius:
     999px;
 
-  font-size:
-    10px;
-
-  font-weight:
-    800;
-
-}
-
-
-.chat-status.online {
-
   color:
     #047857;
 
   background:
     #ecfdf5;
 
+  border:
+    1px solid
+    #d1fae5;
+
+  font-size:
+    10px;
+
+  font-weight:
+    850;
+
+  white-space:
+    nowrap;
+
 }
 
 
-.chat-status.offline {
+.room-chat-badge.offline {
 
   color:
     #64748b;
@@ -1534,11 +3597,14 @@ onBeforeUnmount(() => {
   background:
     #f1f5f9;
 
+  border-color:
+    #e2e8f0;
+
 }
 
 
-.chat-status
-.status-dot {
+.room-chat-badge-dot,
+.room-chat-badge-dot::after {
 
   width:
     7px;
@@ -1546,11 +3612,25 @@ onBeforeUnmount(() => {
   height:
     7px;
 
-  flex:
-    0 0 7px;
-
   border-radius:
     50%;
+
+}
+
+
+.room-chat-badge-dot {
+
+  position:
+    relative;
+
+  background:
+    #10b981;
+
+}
+
+
+.room-chat-badge.offline
+.room-chat-badge-dot {
 
   background:
     #94a3b8;
@@ -1558,19 +3638,84 @@ onBeforeUnmount(() => {
 }
 
 
-.chat-status.online
-.status-dot {
+.room-chat-badge-dot::after {
+
+  content:
+    "";
+
+  position:
+    absolute;
+
+  inset:
+    0;
 
   background:
     #10b981;
 
-  box-shadow:
-    0 0 0 4px
+  animation:
+    roomChatPulse
+    1.8s
+    infinite
+    ease-out;
+
+}
+
+
+.room-chat-badge.offline
+.room-chat-badge-dot::after {
+
+  display:
+    none;
+
+}
+
+
+@keyframes roomChatPulse {
+
+  0% {
+
+    transform:
+      scale(1);
+
+    opacity:
+      .45;
+
+  }
+
+  70%,
+  100% {
+
+    transform:
+      scale(2.5);
+
+    opacity:
+      0;
+
+  }
+
+}
+
+
+.study-room-page.is-dark
+.room-chat-badge {
+
+  color:
+    #6ee7b7;
+
+  background:
     rgba(
       16,
       185,
       129,
-      .1
+      .10
+    );
+
+  border-color:
+    rgba(
+      16,
+      185,
+      129,
+      .18
     );
 
 }
@@ -1609,8 +3754,6 @@ onBeforeUnmount(() => {
   width:
     100%;
 
-  
-
   box-sizing:
     border-box;
 
@@ -1630,7 +3773,7 @@ onBeforeUnmount(() => {
 
 
 /* =========================================================
-   MESSAGE
+   MESSAGE ROW
    ========================================================= */
 
 .message-row {
@@ -1650,6 +3793,9 @@ onBeforeUnmount(() => {
   margin:
     0 0 12px;
 
+  touch-action:
+    pan-y;
+
 }
 
 
@@ -1663,6 +3809,10 @@ onBeforeUnmount(() => {
 
 }
 
+
+/* =========================================================
+   AVATAR
+   ========================================================= */
 
 .message-avatar {
 
@@ -1719,6 +3869,10 @@ onBeforeUnmount(() => {
 }
 
 
+/* =========================================================
+   MESSAGE CONTENT
+   ========================================================= */
+
 .message-content {
 
   min-width:
@@ -1735,6 +3889,10 @@ onBeforeUnmount(() => {
 
 }
 
+
+/* =========================================================
+   META
+   ========================================================= */
 
 .message-meta {
 
@@ -1777,6 +3935,162 @@ onBeforeUnmount(() => {
 
 }
 
+
+/* =========================================================
+   REPLY PREVIEW
+   ========================================================= */
+
+.message-reply-preview {
+
+  display:
+    flex;
+
+  align-items:
+    stretch;
+
+  max-width:
+    100%;
+
+  margin:
+    0 0 4px;
+
+  padding:
+    5px 7px;
+
+  box-sizing:
+    border-box;
+
+  border:
+    1px solid
+    var(--chat-border);
+
+  border-radius:
+    9px;
+
+  background:
+    var(--chat-soft);
+
+  cursor:
+    pointer;
+
+  text-align:
+    right;
+
+}
+
+
+.message-reply-preview:hover {
+
+  border-color:
+    rgba(
+      var(--primary-rgb),
+      .25
+    );
+
+}
+
+
+.reply-preview-line {
+
+  width:
+    3px;
+
+  flex:
+    0 0 3px;
+
+  margin-left:
+    7px;
+
+  border-radius:
+    5px;
+
+  background:
+    var(--primary);
+
+}
+
+
+.reply-preview-content {
+
+  min-width:
+    0;
+
+  display:
+    flex;
+
+  flex-direction:
+    column;
+
+  overflow:
+    hidden;
+
+}
+
+
+.reply-preview-content strong {
+
+  color:
+    var(--primary);
+
+  font-size:
+    9px;
+
+  font-weight:
+    850;
+
+}
+
+
+.reply-preview-content span {
+
+  overflow:
+    hidden;
+
+  color:
+    var(--chat-muted);
+
+  font-size:
+    9px;
+
+  white-space:
+    nowrap;
+
+  text-overflow:
+    ellipsis;
+
+}
+
+
+/* =========================================================
+   BUBBLE WRAP
+   ========================================================= */
+
+.message-bubble-wrap {
+
+  display:
+    flex;
+
+  align-items:
+    flex-end;
+
+  gap:
+    3px;
+
+}
+
+
+.message-row.mine
+.message-bubble-wrap {
+
+  flex-direction:
+    row-reverse;
+
+}
+
+
+/* =========================================================
+   BUBBLE
+   ========================================================= */
 
 .message-bubble {
 
@@ -1838,12 +4152,928 @@ onBeforeUnmount(() => {
 }
 
 
+.message-bubble.deleted {
+
+  color:
+    var(--chat-muted);
+
+  background:
+    transparent;
+
+  border-style:
+    dashed;
+
+}
+
+
+.deleted-message {
+
+  display:
+    inline-flex;
+
+  align-items:
+    center;
+
+  gap:
+    5px;
+
+  font-size:
+    11px;
+
+  font-style:
+    italic;
+
+}
+
+
+.deleted-message svg {
+
+  width:
+    14px;
+
+  height:
+    14px;
+
+}
+
+
+/* =========================================================
+   EDITED
+   ========================================================= */
+
+.edited-label {
+
+  display:
+    inline-block;
+
+  margin-right:
+    6px;
+
+  color:
+    rgba(
+      255,
+      255,
+      255,
+      .65
+    );
+
+  font-size:
+    8px;
+
+}
+
+
+.message-row:not(.mine)
+.edited-label {
+
+  color:
+    var(--chat-muted);
+
+}
+
+
+/* =========================================================
+   MORE BUTTON
+   ========================================================= */
+
+.message-more {
+
+  width:
+    24px;
+
+  height:
+    24px;
+
+  flex:
+    0 0 24px;
+
+  display:
+    grid;
+
+  place-items:
+    center;
+
+  padding:
+    0;
+
+  border:
+    0;
+
+  border-radius:
+    8px;
+
+  background:
+    transparent;
+
+  color:
+    var(--chat-muted);
+
+  font-size:
+    17px;
+
+  line-height:
+    1;
+
+  cursor:
+    pointer;
+
+  opacity:
+    0;
+
+  transition:
+    opacity .15s ease,
+    background .15s ease,
+    color .15s ease;
+
+}
+
+
+.message-row:hover
+.message-more {
+
+  opacity:
+    1;
+
+}
+
+
+.message-more:hover {
+
+  color:
+    var(--chat-text);
+
+  background:
+    var(--chat-soft);
+
+}
+
+
+@media (hover: none) {
+
+  .message-more {
+
+    opacity:
+      .75;
+
+  }
+
+}
+
+
+/* =========================================================
+   REACTIONS
+   ========================================================= */
+
+.message-reactions {
+
+  display:
+    flex;
+
+  flex-wrap:
+    wrap;
+
+  align-items:
+    center;
+
+  gap:
+    4px;
+
+  margin-top:
+    4px;
+
+}
+
+
+.message-row.mine
+.message-reactions {
+
+  justify-content:
+    flex-end;
+
+}
+
+
+.reaction-chip {
+
+  display:
+    inline-flex;
+
+  align-items:
+    center;
+
+  gap:
+    3px;
+
+  min-height:
+    23px;
+
+  padding:
+    2px 6px;
+
+  border:
+    1px solid
+    var(--chat-border);
+
+  border-radius:
+    999px;
+
+  background:
+    var(--chat-bg);
+
+  color:
+    var(--chat-text);
+
+  cursor:
+    pointer;
+
+  font-family:
+    inherit;
+
+  transition:
+    border-color .15s ease,
+    background .15s ease,
+    transform .15s ease;
+
+}
+
+
+.reaction-chip:hover {
+
+  transform:
+    translateY(-1px);
+
+  border-color:
+    rgba(
+      var(--primary-rgb),
+      .35
+    );
+
+}
+
+
+.reaction-chip.selected {
+
+  border-color:
+    var(--primary);
+
+  background:
+    var(--chat-soft);
+
+}
+
+
+.reaction-chip span {
+
+  font-size:
+    12px;
+
+}
+
+
+.reaction-chip small {
+
+  font-size:
+    9px;
+
+  font-weight:
+    800;
+
+}
+
+
+/* =========================================================
+   ACTION BAR
+   ========================================================= */
+
+.chat-action-bar {
+
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  gap:
+    9px;
+
+  min-height:
+    48px;
+
+  margin:
+    0 0 7px;
+
+  padding:
+    6px 9px;
+
+  box-sizing:
+    border-box;
+
+  border:
+    1px solid
+    var(--chat-border);
+
+  border-radius:
+    13px;
+
+  background:
+    var(--chat-soft);
+
+}
+
+
+.chat-action-bar-icon {
+
+  width:
+    31px;
+
+  height:
+    31px;
+
+  flex:
+    0 0 31px;
+
+  display:
+    grid;
+
+  place-items:
+    center;
+
+  border-radius:
+    9px;
+
+  color:
+    var(--primary);
+
+  background:
+    rgba(
+      var(--primary-rgb),
+      .08
+    );
+
+}
+
+
+.chat-action-bar-icon svg {
+
+  width:
+    16px;
+
+  height:
+    16px;
+
+}
+
+
+.chat-action-bar-content {
+
+  min-width:
+    0;
+
+  flex:
+    1;
+
+  display:
+    flex;
+
+  flex-direction:
+    column;
+
+}
+
+
+.chat-action-bar-content strong {
+
+  color:
+    var(--primary);
+
+  font-size:
+    9px;
+
+  font-weight:
+    850;
+
+}
+
+
+.chat-action-bar-content span {
+
+  overflow:
+    hidden;
+
+  color:
+    var(--chat-muted);
+
+  font-size:
+    9px;
+
+  white-space:
+    nowrap;
+
+  text-overflow:
+    ellipsis;
+
+}
+
+
+.chat-action-bar-close {
+
+  width:
+    28px;
+
+  height:
+    28px;
+
+  display:
+    grid;
+
+  place-items:
+    center;
+
+  padding:
+    0;
+
+  border:
+    0;
+
+  border-radius:
+    8px;
+
+  background:
+    transparent;
+
+  color:
+    var(--chat-muted);
+
+  font-size:
+    18px;
+
+  cursor:
+    pointer;
+
+}
+
+
+.chat-action-bar-close:hover {
+
+  color:
+    var(--chat-text);
+
+  background:
+    var(--chat-bg);
+
+}
+
+
+.chat-action-bar-enter-active,
+.chat-action-bar-leave-active {
+
+  transition:
+    opacity .15s ease,
+    transform .15s ease;
+
+}
+
+
+.chat-action-bar-enter-from,
+.chat-action-bar-leave-to {
+
+  opacity:
+    0;
+
+  transform:
+    translateY(5px);
+
+}
+
+
+/* =========================================================
+   CONTEXT MENU
+   ========================================================= */
+
+.message-context-menu {
+
+  position:
+    fixed;
+
+  z-index:
+    9999;
+
+  width:
+    225px;
+
+  box-sizing:
+    border-box;
+
+  padding:
+    7px;
+
+  border:
+    1px solid
+    var(--chat-border);
+
+  border-radius:
+    16px;
+
+  background:
+    var(--chat-bg);
+
+  box-shadow:
+    0 18px 45px
+    rgba(
+      15,
+      23,
+      42,
+      .16
+    );
+
+  direction:
+    rtl;
+
+}
+
+
+.context-menu-user {
+
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  gap:
+    8px;
+
+  padding:
+    6px 6px 8px;
+
+}
+
+
+.context-menu-avatar {
+
+  width:
+    32px;
+
+  height:
+    32px;
+
+  flex:
+    0 0 32px;
+
+  display:
+    grid;
+
+  place-items:
+    center;
+
+  border-radius:
+    10px;
+
+  color:
+    var(--primary);
+
+  background:
+    var(--chat-soft);
+
+  font-size:
+    11px;
+
+  font-weight:
+    850;
+
+}
+
+
+.context-menu-user > div:last-child {
+
+  min-width:
+    0;
+
+  display:
+    flex;
+
+  flex-direction:
+    column;
+
+}
+
+
+.context-menu-user strong {
+
+  overflow:
+    hidden;
+
+  color:
+    var(--chat-text);
+
+  font-size:
+    10px;
+
+  white-space:
+    nowrap;
+
+  text-overflow:
+    ellipsis;
+
+}
+
+
+.context-menu-user span {
+
+  color:
+    var(--chat-muted);
+
+  font-size:
+    8px;
+
+}
+
+
+.context-menu-divider {
+
+  height:
+    1px;
+
+  margin:
+    2px 4px 5px;
+
+  background:
+    var(--chat-border);
+
+}
+
+
+.context-menu-item {
+
+  width:
+    100%;
+
+  min-height:
+    38px;
+
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  gap:
+    8px;
+
+  padding:
+    5px 7px;
+
+  border:
+    0;
+
+  border-radius:
+    10px;
+
+  background:
+    transparent;
+
+  color:
+    var(--chat-text);
+
+  font-family:
+    inherit;
+
+  font-size:
+    11px;
+
+  text-align:
+    right;
+
+  cursor:
+    pointer;
+
+  transition:
+    background .15s ease,
+    color .15s ease;
+
+}
+
+
+.context-menu-item:hover {
+
+  background:
+    var(--chat-soft);
+
+}
+
+
+.context-menu-item.danger {
+
+  color:
+    #ef4444;
+
+}
+
+
+.context-menu-item.danger:hover {
+
+  background:
+    rgba(
+      239,
+      68,
+      68,
+      .08
+    );
+
+}
+
+
+.context-menu-item-icon {
+
+  width:
+    28px;
+
+  height:
+    28px;
+
+  flex:
+    0 0 28px;
+
+  display:
+    grid;
+
+  place-items:
+    center;
+
+  border-radius:
+    8px;
+
+  background:
+    var(--chat-soft);
+
+}
+
+
+.context-menu-item-icon svg {
+
+  width:
+    15px;
+
+  height:
+    15px;
+
+}
+
+
+.reaction-face {
+
+  font-size:
+    14px;
+
+}
+
+
+.context-menu-arrow {
+
+  margin-right:
+    auto;
+
+  color:
+    var(--chat-muted);
+
+  font-size:
+    17px;
+
+}
+
+
+/* =========================================================
+   REACTION PICKER
+   ========================================================= */
+
+.reaction-picker {
+
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  justify-content:
+    center;
+
+  gap:
+    2px;
+
+  margin:
+    3px 4px 5px;
+
+  padding:
+    5px;
+
+  border:
+    1px solid
+    var(--chat-border);
+
+  border-radius:
+    11px;
+
+  background:
+    var(--chat-soft);
+
+}
+
+
+.reaction-picker-button {
+
+  width:
+    34px;
+
+  height:
+    34px;
+
+  display:
+    grid;
+
+  place-items:
+    center;
+
+  padding:
+    0;
+
+  border:
+    0;
+
+  border-radius:
+    9px;
+
+  background:
+    transparent;
+
+  font-size:
+    17px;
+
+  cursor:
+    pointer;
+
+  transition:
+    transform .15s ease,
+    background .15s ease;
+
+}
+
+
+.reaction-picker-button:hover {
+
+  transform:
+    scale(1.12);
+
+  background:
+    var(--chat-bg);
+
+}
+
+
+.reaction-picker-button.selected {
+
+  background:
+    var(--chat-bg);
+
+  box-shadow:
+    inset 0 0 0 1px
+    var(--primary);
+
+}
+
+
+/* =========================================================
+   MENU ANIMATION
+   ========================================================= */
+
+.message-menu-enter-active,
+.message-menu-leave-active {
+
+  transition:
+    opacity .12s ease,
+    transform .12s ease;
+
+}
+
+
+.message-menu-enter-from,
+.message-menu-leave-to {
+
+  opacity:
+    0;
+
+  transform:
+    scale(.95)
+    translateY(-4px);
+
+}
+
+
 /* =========================================================
    COMPOSER
    ========================================================= */
 
 .chat-composer {
-  
+
   z-index:
     50;
 
@@ -1868,7 +5098,6 @@ onBeforeUnmount(() => {
   box-sizing:
     border-box;
 
-  
   padding:
     7px;
 
@@ -2150,60 +5379,6 @@ onBeforeUnmount(() => {
 
 }
 
-.room-chat-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  padding: 7px 10px;
-  border-radius: 999px;
-  color: #047857;
-  background: #ecfdf5;
-  border: 1px solid #d1fae5;
-  font-size: 10px;
-  font-weight: 850;
-  white-space: nowrap;
-}
-
-.room-chat-badge-dot,
-.room-chat-badge-dot::after {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-}
-
-.room-chat-badge-dot {
-  position: relative;
-  background: #10b981;
-}
-
-.room-chat-badge-dot::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: #10b981;
-  animation: roomChatPulse 1.8s infinite ease-out;
-}
-
-.room-chat-host {
-  min-width: 0;
-}
-
-@keyframes roomChatPulse {
-  0% {
-    transform: scale(1);
-    opacity: .45;
-  }
-  70%, 100% {
-    transform: scale(2.5);
-    opacity: 0;
-  }
-}
-
-.study-room-page.is-dark .room-chat-badge {
-  color: #6ee7b7;
-  background: rgba(16,185,129,.10);
-  border-color: rgba(16,185,129,.18);
-}
 
 .empty-chat p {
 
@@ -2283,8 +5458,49 @@ onBeforeUnmount(() => {
 @keyframes chat-spin {
 
   to {
+
     transform:
       rotate(360deg);
+
+  }
+
+}
+
+
+/* =========================================================
+   MESSAGE HIGHLIGHT
+   ========================================================= */
+
+.message-highlight
+.message-bubble {
+
+  animation:
+    messageHighlight
+    1s
+    ease;
+
+}
+
+
+@keyframes messageHighlight {
+
+  0%,
+  100% {
+
+    box-shadow:
+      none;
+
+  }
+
+  50% {
+
+    box-shadow:
+      0 0 0 4px
+      rgba(
+        var(--primary-rgb),
+        .20
+      );
+
   }
 
 }
@@ -2309,61 +5525,6 @@ onBeforeUnmount(() => {
   }
 
 
-  .chat-header {
-
-    align-items:
-      flex-start;
-
-  }
-
-
-  .chat-title-wrap {
-
-    gap:
-      9px;
-
-  }
-
-
-  .chat-icon {
-
-    width:
-      42px;
-
-    height:
-      42px;
-
-    flex-basis:
-      42px;
-
-    border-radius:
-      13px;
-
-  }
-
-
-  .chat-icon svg {
-
-    width:
-      21px;
-
-    height:
-      21px;
-
-  }
-
-
-  .chat-title-wrap h2 {
-
-    font-size:
-      17px;
-
-  }
-
-
- 
-
-
   .message-row {
 
     max-width:
@@ -2371,49 +5532,81 @@ onBeforeUnmount(() => {
 
   }
 
+
+  .message-context-menu {
+
+    width:
+      min(
+        225px,
+        calc(
+          100vw - 20px
+        )
+      );
+
+  }
+
 }
 
+
+/* =========================================================
+   SMALL MOBILE
+   ========================================================= */
 
 @media (
   max-width: 480px
 ) {
 
-  .chat-header {
-
-    gap:
-      8px;
-
-  }
-
-
-  .chat-status {
+  .room-chat {
 
     padding:
-      6px 8px;
+      14px;
+
+  }
+
+
+  .message-row {
+
+    max-width:
+      96%;
+
+  }
+
+
+  .message-avatar {
+
+    width:
+      32px;
+
+    height:
+      32px;
+
+    flex-basis:
+      32px;
+
+    border-radius:
+      10px;
+
+  }
+
+
+  .message-bubble {
+
+    font-size:
+      11px;
+
+    padding:
+      9px 11px;
+
+  }
+
+
+  .message-meta strong {
 
     font-size:
       9px;
 
   }
-
-
-  .chat-title-wrap h2 {
-
-    font-size:
-      16px;
-
-  }
-
-
-  .chat-eyebrow {
-
-    font-size:
-      9px;
-
-  }
-
-
- 
 
 }
+
 </style>

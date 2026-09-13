@@ -208,6 +208,7 @@ class StudyTimeLog(models.Model):
         )
 
 class RoomChatMessage(models.Model):
+
     room = models.ForeignKey(
         StudyRoom,
         on_delete=models.CASCADE,
@@ -235,6 +236,58 @@ class RoomChatMessage(models.Model):
         verbose_name='شناسه کلاینت'
     )
 
+    # -----------------------------------------
+    # Reply
+    # -----------------------------------------
+
+    reply_to = models.ForeignKey(
+        'self',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='replies',
+        verbose_name='پاسخ به پیام'
+    )
+
+    # -----------------------------------------
+    # Edit
+    # -----------------------------------------
+
+    edited_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='زمان آخرین ویرایش'
+    )
+
+    # -----------------------------------------
+    # Soft Delete
+    # -----------------------------------------
+
+    is_deleted = models.BooleanField(
+        default=False,
+        db_index=True,
+        verbose_name='حذف شده'
+    )
+
+    deleted_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='زمان حذف'
+    )
+
+    deleted_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='deleted_room_chat_messages',
+        verbose_name='حذف شده توسط'
+    )
+
+    # -----------------------------------------
+    # Created
+    # -----------------------------------------
+
     created_at = models.DateTimeField(
         auto_now_add=True,
         verbose_name='زمان ارسال'
@@ -246,8 +299,120 @@ class RoomChatMessage(models.Model):
         verbose_name_plural = 'پیام‌های چت سالن'
 
     def __str__(self):
+
+        if self.is_deleted:
+            text = '[پیام حذف شده]'
+        else:
+            text = self.message[:40]
+
         return (
             f'{self.user.username} - '
             f'{self.room.name} - '
-            f'{self.message[:40]}'
+            f'{text}'
+        )
+
+
+class RoomChatMessageEditHistory(models.Model):
+
+    message = models.ForeignKey(
+        RoomChatMessage,
+        on_delete=models.CASCADE,
+        related_name='edit_history',
+        verbose_name='پیام'
+    )
+
+    old_message = models.TextField(
+        max_length=1000,
+        verbose_name='متن قبل از ویرایش'
+    )
+
+    edited_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='room_chat_message_edits',
+        verbose_name='ویرایش شده توسط'
+    )
+
+    edited_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='زمان ویرایش'
+    )
+
+    class Meta:
+        ordering = ['-edited_at']
+        verbose_name = 'سابقه ویرایش پیام'
+        verbose_name_plural = 'سوابق ویرایش پیام‌ها'
+
+    def __str__(self):
+
+        return (
+            f'{self.message_id} - '
+            f'{self.edited_by}'
+        )
+
+
+class RoomChatReaction(models.Model):
+
+    class ReactionType(models.TextChoices):
+
+        CRY = 'cry', 'گریه'
+
+        LAUGH = 'laugh', 'خنده'
+
+        HEART = 'heart', 'قلب'
+
+        LIKE = 'like', 'لایک'
+
+        DISLIKE = 'dislike', 'دیسلایک'
+
+    message = models.ForeignKey(
+        RoomChatMessage,
+        on_delete=models.CASCADE,
+        related_name='reactions',
+        verbose_name='پیام'
+    )
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='room_chat_reactions',
+        verbose_name='کاربر'
+    )
+
+    reaction = models.CharField(
+        max_length=20,
+        choices=ReactionType.choices,
+        verbose_name='واکنش'
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='زمان واکنش'
+    )
+
+    class Meta:
+
+        constraints = [
+            models.UniqueConstraint(
+                fields=[
+                    'message',
+                    'user',
+                ],
+                name='unique_chat_message_user_reaction'
+            )
+        ]
+
+        ordering = ['created_at']
+
+        verbose_name = 'واکنش پیام'
+        verbose_name_plural = 'واکنش‌های پیام'
+
+    def __str__(self):
+
+        return (
+            f'{self.user.username} - '
+            f'{self.message_id} - '
+            f'{self.get_reaction_display()}'
         )
