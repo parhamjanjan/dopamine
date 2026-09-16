@@ -9,6 +9,7 @@ from .models import (
     ExamAttemptStatus,
 )
 
+from django.conf import settings
 
 class ExamBookletSerializer(serializers.ModelSerializer):
     end_question = serializers.IntegerField(read_only=True)
@@ -64,11 +65,25 @@ class ExamListSerializer(serializers.ModelSerializer):
 
     def _file_url(self, obj, field_name):
         file = getattr(obj, field_name, None)
+
         if not file:
             return None
+
+        base_url = getattr(
+        settings,
+        "BACKEND_PUBLIC_URL",
+        ""
+    ).rstrip("/")
+
+        if base_url:
+            return f"{base_url}{file.url}"
+
         request = self.context.get("request")
-        url = file.url
-        return request.build_absolute_uri(url) if request else url
+
+        if request:
+            return request.build_absolute_uri(file.url)
+
+        return file.url
 
     def get_questions_pdf_url(self, obj):
         return self._file_url(obj, "questions_pdf")
