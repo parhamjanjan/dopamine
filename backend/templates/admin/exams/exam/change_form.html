@@ -1,0 +1,32 @@
+{% extends "admin/change_form.html" %}
+
+{% block submit_buttons_bottom %}
+    {{ block.super }}
+{% if original and original.pk %}
+    <div style="
+        margin-top: 15px;
+        padding-top: 15px;
+        border-top: 1px solid #ddd;
+    ">
+        <a
+            href="{% url 'admin:exams_exam_finalize' original.pk %}"
+            class="button"
+            style="
+                background: #417690;
+                color: white;
+                padding: 10px 18px;
+                border-radius: 4px;
+                text-decoration: none;
+                font-weight: bold;
+            "
+            onclick="
+                return confirm(
+                    'آیا مطمئن هستید که می‌خواهید تصحیح و رتبه‌بندی این آزمون انجام شود؟'
+                );
+            "
+        >
+            تصحیح و رتبه‌بندی آزمون
+        </a>
+    </div>
+{% endif %}
+{% endblock %}

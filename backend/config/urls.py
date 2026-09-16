@@ -31,6 +31,10 @@ urlpatterns = [
         'api/rooms/',
         include('rooms.urls')
     ),
+    path( 
+        'api/exams/', 
+        include('exams.urls')
+    ),
     
 ]
 

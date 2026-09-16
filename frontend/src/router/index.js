@@ -11,7 +11,15 @@ import ProfileView from '../views/ProfileView.vue'
 import RoomsView from '../views/RoomsView.vue'
 
 import StudyRoomView from '../views/StudyRoomView.vue'
+import ExamsView from '../views/ExamsView.vue'
 
+import ExamTakingView from '../views/ExamTakingView.vue'
+import ExamResultView from '../views/ExamResultView.vue'
+
+
+/* =========================================================
+   PLACEHOLDER
+========================================================= */
 
 const PlaceholderView = {
   template: `
@@ -26,11 +34,22 @@ const PlaceholderView = {
       "
     >
       <div style="text-align:center">
-        <h1 style="margin:0 0 8px;font-size:24px;font-weight:700;">
+        <h1
+          style="
+            margin:0 0 8px;
+            font-size:24px;
+            font-weight:700;
+          "
+        >
           این صفحه به‌زودی ساخته می‌شود
         </h1>
 
-        <p style="margin:0;color:#64748b;">
+        <p
+          style="
+            margin:0;
+            color:#64748b;
+          "
+        >
           فعلاً ساختار ناوبری آماده است.
         </p>
       </div>
@@ -38,10 +57,16 @@ const PlaceholderView = {
   `
 }
 
+
+/* =========================================================
+   ROUTER
+========================================================= */
+
 const router = createRouter({
   history: createWebHistory(),
 
   routes: [
+
     /*
     |--------------------------------------------------------------------------
     | Authentication
@@ -60,9 +85,12 @@ const router = createRouter({
       component: LoginView
     },
 
+
     /*
     |--------------------------------------------------------------------------
     | Main Application
+    |
+    | تمام صفحات داخل MainLayout دارای Taskbar هستند.
     |--------------------------------------------------------------------------
     */
 
@@ -71,6 +99,7 @@ const router = createRouter({
       component: MainLayout,
 
       children: [
+
         {
           path: '',
           redirect: '/home'
@@ -93,17 +122,17 @@ const router = createRouter({
           name: 'rooms',
           component: RoomsView
         },
-          {
-    path: 'rooms/:roomId',
-    name: 'study-room',
-    component: StudyRoomView
-  },
 
+        {
+          path: 'rooms/:roomId',
+          name: 'study-room',
+          component: StudyRoomView
+        },
 
         {
           path: 'exams',
           name: 'exams',
-          component: PlaceholderView
+          component: ExamsView
         },
 
         {
@@ -118,8 +147,47 @@ const router = createRouter({
           component: ProfileView
         }
       ]
+    },
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | EXAM TAKING
+    |
+    | خارج از MainLayout
+    |
+    | بنابراین Taskbar نمایش داده نمی‌شود.
+    |--------------------------------------------------------------------------
+    */
+
+    {
+      path: '/exams/:id/taking',
+      name: 'ExamTaking',
+      component: ExamTakingView
+    },
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | EXAM RESULT
+    |
+    | خارج از MainLayout
+    |
+    | بنابراین Taskbar نمایش داده نمی‌شود.
+    |--------------------------------------------------------------------------
+    */
+
+    {
+      path: '/exams/result/:id',
+      name: 'ExamResult',
+      component: ExamResultView
     }
   ]
 })
+
+
+/* =========================================================
+   EXPORT
+========================================================= */
 
 export default router
