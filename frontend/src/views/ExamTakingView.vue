@@ -742,35 +742,8 @@ function getAccessToken() {
 }
 
 
-function getApiBaseUrl() {
-  return (
-    import.meta.env.VITE_API_URL ||
-    'http://127.0.0.1:8000/api'
-  )
-}
 
 
-function createApi() {
-  const token =
-    getAccessToken()
-
-  return api.create({
-    baseURL:
-      getApiBaseUrl(),
-
-    headers: {
-      'Content-Type':
-        'application/json',
-
-      ...(token
-        ? {
-            Authorization:
-              `Bearer ${token}`,
-          }
-        : {}),
-    },
-  })
-}
 
 
 /* =========================================================
@@ -829,11 +802,9 @@ const totalQuestions = computed(() => {
 
 async function loadExamInfo() {
   try {
-    const apiInstance =
-      createApi()
-
+    
     const response =
-      await apiInstance.get(
+      await api.get(
         `/exams/${examId.value}/`
       )
 
@@ -864,17 +835,14 @@ async function loadAttempt() {
   errorMessage.value = ''
 
   try {
-    const apiInstance =
-      createApi()
-
-
+    
     /* -----------------------------------------------------
        LOAD ATTEMPT
     ----------------------------------------------------- */
 
     if (attemptId.value) {
       const response =
-        await apiInstance.get(
+        await api.get(
           `/exams/attempts/${attemptId.value}/`
         )
 
@@ -1940,10 +1908,7 @@ async function saveAnswers() {
 
 
   try {
-    const apiInstance =
-      createApi()
-
-    await apiInstance.patch(
+    await api.patch(
       `/exams/attempts/${attemptId.value}/answers/`,
       {
         answers:
@@ -2282,12 +2247,9 @@ async function submitExamNow() {
 
 
   try {
-    const apiInstance =
-      createApi()
-
-
+    
     const response =
-      await apiInstance.post(
+      await api.post(
         `/exams/attempts/${attemptId.value}/submit/`,
         {
           answers:
