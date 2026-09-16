@@ -1731,9 +1731,6 @@ async function startExam(exam) {
 
   try {
 
-    const api =
-      createApi()
-
     const response =
       await api.post(
         `/exams/${exam.id}/start/`
