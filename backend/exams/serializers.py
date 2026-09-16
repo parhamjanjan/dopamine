@@ -63,34 +63,58 @@ class ExamListSerializer(serializers.ModelSerializer):
     def get_booklet_count(self, obj):
         return obj.booklets.count()
 
-    def _file_url(self, obj, field_name):
-        file = getattr(obj, field_name, None)
-
+    def _file_url(
+        self,
+        obj,
+        file_field_name,
+        external_url_field_name,
+    ):
+        # اول لینک خارجی را بررسی می‌کنیم.
+        external_url = getattr(
+            obj,
+            external_url_field_name,
+            ""
+        )
+    
+        if external_url:
+            return external_url
+    
+        # اگر لینک خارجی وجود نداشت،
+        # از فایل آپلودشده استفاده می‌کنیم.
+        file = getattr(
+            obj,
+            file_field_name,
+            None
+        )
+    
         if not file:
             return None
-
-        base_url = getattr(
-        settings,
-        "BACKEND_PUBLIC_URL",
-        ""
-    ).rstrip("/")
-
-        if base_url:
-            return f"{base_url}{file.url}"
-
+    
         request = self.context.get("request")
-
-        if request:
-            return request.build_absolute_uri(file.url)
-
-        return file.url
-
+    
+        url = file.url
+    
+        return (
+            request.build_absolute_uri(url)
+            if request
+            else url
+        )
+    
+    
     def get_questions_pdf_url(self, obj):
-        return self._file_url(obj, "questions_pdf")
-
+        return self._file_url(
+            obj,
+            "questions_pdf",
+            "questions_pdf_url",
+        )
+    
+    
     def get_answer_pdf_url(self, obj):
-        return self._file_url(obj, "answer_pdf")
-
+        return self._file_url(
+            obj,
+            "answer_pdf",
+            "answer_pdf_url",
+        )
     def get_current_attempt(self, obj):
         attempts = getattr(obj, "current_user_attempts", [])
         return attempts[0] if attempts else None

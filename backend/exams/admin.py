@@ -45,8 +45,13 @@ class ExamAdmin(admin.ModelAdmin):
             "fields": ("start_at", "end_at", "duration_minutes")
         }),
         ("فایل‌ها", {
-            "fields": ("questions_pdf", "answer_pdf")
-        }),
+    "fields": (
+        "questions_pdf",
+        "questions_pdf_url",
+        "answer_pdf",
+        "answer_pdf_url",
+    )
+}),
         ("تصحیح", {
             "fields": ("total_questions", "answer_key")
         }),

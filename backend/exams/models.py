@@ -25,14 +25,27 @@ class Exam(models.Model):
     duration_minutes = models.PositiveIntegerField()
 
     questions_pdf = models.FileField(
-        upload_to="exams/questions/",
-        blank=True,
-        null=True,
+    upload_to="exams/questions/",
+    blank=True,
+    null=True,
     )
+
+    questions_pdf_url = models.URLField(
+    blank=True,
+    default="",
+    help_text="اگر لینک خارجی وارد شود، لینک خارجی نسبت به فایل آپلودی اولویت دارد.",
+    )
+
     answer_pdf = models.FileField(
-        upload_to="exams/answers/",
-        blank=True,
-        null=True,
+    upload_to="exams/answers/",
+    blank=True,
+    null=True,
+    )
+
+    answer_pdf_url = models.URLField(
+    blank=True,
+    default="",
+    help_text="اگر لینک خارجی وارد شود، لینک خارجی نسبت به فایل آپلودی اولویت دارد.",
     )
 
     answer_key = models.JSONField(default=dict, blank=True)
