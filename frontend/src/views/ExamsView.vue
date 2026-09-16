@@ -1021,8 +1021,6 @@ async function loadExams() {
 
   try {
 
-    const api = createApi()
-
     const response =
       await api.get('/exams/')
 
