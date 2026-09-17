@@ -4,20 +4,14 @@
     :class="{ 'is-dark': isDark }"
     @click="handleRoomClick"
   >
-
     <!-- =====================================================
          HEADER
          ===================================================== -->
 
     <div class="chat-header">
-
       <div
-        :class="
-          socketConnected
-            ? 'online'
-            : 'offline'
-        "
         class="room-chat-badge"
+        :class="socketConnected ? 'online' : 'offline'"
       >
         <span class="room-chat-badge-dot"></span>
 
@@ -29,16 +23,13 @@
           }}
         </span>
       </div>
-
     </div>
-
 
     <!-- =====================================================
          CHAT BODY
          ===================================================== -->
 
     <div class="chat-body">
-
       <!-- ===================================================
            MESSAGES
            =================================================== -->
@@ -50,7 +41,6 @@
         aria-live="polite"
         style="max-height: min(42vh, 390px);"
       >
-
         <!-- Loading -->
 
         <div
@@ -64,16 +54,13 @@
           </span>
         </div>
 
-
         <!-- Empty -->
 
         <div
           v-else-if="messages.length === 0"
           class="empty-chat"
         >
-
           <div class="empty-chat-icon">
-
             <svg
               viewBox="0 0 24 24"
               fill="none"
@@ -88,7 +75,6 @@
                    A7.5 7.5 0 1 1 20 11.5Z"
               />
             </svg>
-
           </div>
 
           <h3>
@@ -98,16 +84,13 @@
           <p>
             اولین پیام را بفرست و گفت‌وگوی سالن را شروع کن.
           </p>
-
         </div>
-
 
         <!-- =================================================
              MESSAGE LIST
              ================================================= -->
 
         <template v-else>
-
           <article
             v-for="message in messages"
             :key="getMessageKey(message)"
@@ -115,7 +98,8 @@
             class="message-row"
             :class="{
               mine: message.isMine,
-              deleted: message.isDeleted
+              deleted: message.isDeleted,
+              admin: message.isStaff === true
             }"
             @contextmenu.prevent.stop="
               openMessageMenu(
@@ -132,32 +116,90 @@
             @touchend="cancelLongPress"
             @touchmove="cancelLongPress"
           >
-
-            <!-- Avatar -->
+            <!-- =================================================
+                 AVATAR
+                 ================================================= -->
 
             <div
               class="message-avatar"
               :class="{
-                mine: message.isMine
+                mine: message.isMine,
+                admin: message.isStaff === true
               }"
             >
-              {{ getInitial(message.username) }}
+              <template v-if="message.isStaff === true">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="m3 7 4.2 3.5L12 4l4.8 6.5L21 7l-2 13H5L3 7Z"
+                  />
+
+                  <path d="M5 20h14" />
+                </svg>
+              </template>
+
+              <template v-else>
+                {{ getInitial(message.username) }}
+              </template>
             </div>
 
-
-            <!-- Message Content -->
+            <!-- =================================================
+                 MESSAGE CONTENT
+                 ================================================= -->
 
             <div class="message-content">
+              <!-- =================================================
+                   ADMIN BADGE
+                   ================================================= -->
 
-              <!-- Meta -->
+              <div
+                v-if="message.isStaff === true"
+                class="admin-badge"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="m3 7 4.2 3.5L12 4l4.8 6.5L21 7l-2 13H5L3 7Z"
+                  />
 
-              <div class="message-meta">
+                  <path d="M5 20h14" />
+                </svg>
 
+                <span>
+                  ادمین وبسایت
+                </span>
+              </div>
+
+              <!-- =================================================
+                   META
+                   ================================================= -->
+
+              <div
+                class="message-meta"
+                :class="{
+                  'has-admin-badge':
+                    message.isStaff === true
+                }"
+              >
                 <strong>
                   {{
-                    message.isMine
-                      ? 'شما'
-                      : message.username
+                    message.isStaff === true
+                      ? message.username
+                      : (
+                          message.isMine
+                            ? 'شما'
+                            : message.username
+                        )
                   }}
                 </strong>
 
@@ -168,9 +210,7 @@
                     )
                   }}
                 </time>
-
               </div>
-
 
               <!-- =================================================
                    REPLY PREVIEW
@@ -179,23 +219,36 @@
               <div
                 v-if="message.replyTo"
                 class="message-reply-preview"
+                :class="{
+                  'reply-from-admin':
+                    message.replyTo.isStaff === true
+                }"
                 @click.stop="
                   scrollToMessage(
                     message.replyTo.id
                   )
                 "
               >
-
                 <span class="reply-preview-line"></span>
 
                 <div class="reply-preview-content">
+                  <div class="reply-preview-author">
+                    <strong>
+                      {{
+                        message.replyTo.username ||
+                        'کاربر'
+                      }}
+                    </strong>
 
-                  <strong>
-                    {{
-                      message.replyTo.username ||
-                      'کاربر'
-                    }}
-                  </strong>
+                    <span
+                      v-if="
+                        message.replyTo.isStaff === true
+                      "
+                      class="reply-admin-badge"
+                    >
+                      ادمین
+                    </span>
+                  </div>
 
                   <span>
                     {{
@@ -204,67 +257,50 @@
                         : message.replyTo.message
                     }}
                   </span>
-
                 </div>
-
               </div>
-
 
               <!-- =================================================
                    BUBBLE + ACTION BUTTON
                    ================================================= -->
 
               <div class="message-bubble-wrap">
-
                 <div
                   class="message-bubble"
                   :class="{
                     deleted: message.isDeleted
                   }"
                 >
-
                   <!-- Deleted -->
 
                   <template
                     v-if="message.isDeleted"
                   >
-
                     <span class="deleted-message">
-
                       <svg
                         viewBox="0 0 24 24"
                         fill="none"
                         stroke="currentColor"
                         stroke-width="1.8"
                       >
-                        <path
-                          d="M9 3h6"
-                        />
+                        <path d="M9 3h6" />
 
-                        <path
-                          d="M5 6h14"
-                        />
+                        <path d="M5 6h14" />
 
                         <path
                           d="m8 6 .7 13h6.6L16 6"
                         />
 
-                        <path
-                          d="M10 10v5M14 10v5"
-                        />
+                        <path d="M10 10v5M14 10v5" />
                       </svg>
 
                       این پیام حذف شده است
-
                     </span>
-
                   </template>
-
 
                   <!-- Normal -->
 
                   <template v-else>
-
                     <span class="message-text">
                       {{ message.text }}
                     </span>
@@ -275,11 +311,8 @@
                     >
                       ویرایش‌شده
                     </span>
-
                   </template>
-
                 </div>
-
 
                 <!-- More button -->
 
@@ -298,9 +331,7 @@
                 >
                   ⋮
                 </button>
-
               </div>
-
 
               <!-- =================================================
                    REACTIONS
@@ -313,7 +344,6 @@
                 "
                 class="message-reactions"
               >
-
                 <button
                   v-for="
                     reaction in
@@ -333,7 +363,6 @@
                     )
                   "
                 >
-
                   <span>
                     {{
                       getReactionEmoji(
@@ -345,26 +374,18 @@
                   <small>
                     {{ reaction.count }}
                   </small>
-
                 </button>
-
               </div>
-
             </div>
-
           </article>
-
         </template>
-
       </div>
-
 
       <!-- =====================================================
            EDIT / REPLY BAR
            ===================================================== -->
 
       <Transition name="chat-action-bar">
-
         <div
           v-if="
             editingMessage ||
@@ -372,9 +393,7 @@
           "
           class="chat-action-bar"
         >
-
           <div class="chat-action-bar-icon">
-
             <svg
               v-if="editingMessage"
               viewBox="0 0 24 24"
@@ -382,9 +401,7 @@
               stroke="currentColor"
               stroke-width="1.8"
             >
-              <path
-                d="M12 20h9"
-              />
+              <path d="M12 20h9" />
 
               <path
                 d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"
@@ -398,20 +415,15 @@
               stroke="currentColor"
               stroke-width="1.8"
             >
-              <path
-                d="M9 14 4 9l5-5"
-              />
+              <path d="M9 14 4 9l5-5" />
 
               <path
                 d="M4 9h10a6 6 0 0 1 6 6v1"
               />
             </svg>
-
           </div>
 
-
           <div class="chat-action-bar-content">
-
             <strong>
               {{
                 editingMessage
@@ -431,9 +443,7 @@
                     )
               }}
             </span>
-
           </div>
-
 
           <button
             type="button"
@@ -443,11 +453,8 @@
           >
             ×
           </button>
-
         </div>
-
       </Transition>
-
 
       <!-- =====================================================
            COMPOSER
@@ -457,7 +464,6 @@
         class="chat-composer"
         @submit.prevent="sendMessage"
       >
-
         <textarea
           ref="inputEl"
           v-model="draft"
@@ -481,7 +487,6 @@
           @input="autoResize"
         ></textarea>
 
-
         <button
           type="submit"
           class="send-button"
@@ -498,12 +503,10 @@
                 : 'ارسال پیام'
           "
         >
-
           <span
             v-if="sending"
             class="send-loader"
           ></span>
-
 
           <!-- Save edit -->
 
@@ -514,11 +517,8 @@
             stroke="currentColor"
             stroke-width="1.8"
           >
-            <path
-              d="m5 12 4 4L19 6"
-            />
+            <path d="m5 12 4 4L19 6" />
           </svg>
-
 
           <!-- Send -->
 
@@ -529,72 +529,100 @@
             stroke="currentColor"
             stroke-width="1.8"
           >
-            <path
-              d="m22 2-7 20-4-9-9-4Z"
-            />
+            <path d="m22 2-7 20-4-9-9-4Z" />
 
-            <path
-              d="M22 2 11 13"
-            />
+            <path d="M22 2 11 13" />
           </svg>
-
         </button>
-
       </form>
-
     </div>
-
 
     <!-- =====================================================
          MESSAGE CONTEXT MENU
          ===================================================== -->
 
     <Transition name="message-menu">
-
       <div
         v-if="contextMenu.visible"
         ref="contextMenuEl"
         class="message-context-menu"
+        :class="{
+          'admin-context-menu':
+            contextMenu.message?.isStaff === true
+        }"
         :style="contextMenuStyle"
         @click.stop
       >
-
         <!-- Header -->
 
         <div class="context-menu-user">
+          <div
+            class="context-menu-avatar"
+            :class="{
+              admin:
+                contextMenu.message?.isStaff === true
+            }"
+          >
+            <svg
+              v-if="
+                contextMenu.message?.isStaff === true
+              "
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              aria-hidden="true"
+            >
+              <path
+                d="m3 7 4.2 3.5L12 4l4.8 6.5L21 7l-2 13H5L3 7Z"
+              />
 
-          <div class="context-menu-avatar">
-            {{
-              getInitial(
-                contextMenu.message?.username
-              )
-            }}
+              <path d="M5 20h14" />
+            </svg>
+
+            <template v-else>
+              {{
+                getInitial(
+                  contextMenu.message?.username
+                )
+              }}
+            </template>
           </div>
 
           <div>
+            <div class="context-menu-name-row">
+              <strong>
+                {{
+                  contextMenu.message?.username ||
+                  'کاربر'
+                }}
+              </strong>
 
-            <strong>
-              {{
-                contextMenu.message?.username ||
-                'کاربر'
-              }}
-            </strong>
+              <span
+                v-if="
+                  contextMenu.message?.isStaff === true
+                "
+                class="context-admin-label"
+              >
+                ادمین
+              </span>
+            </div>
 
             <span>
               {{
-                contextMenu.message?.isMine
-                  ? 'پیام شما'
-                  : 'پیام کاربر'
+                contextMenu.message?.isStaff === true
+                  ? 'ادمین وبسایت'
+                  : (
+                      contextMenu.message?.isMine
+                        ? 'پیام شما'
+                        : 'پیام کاربر'
+                    )
               }}
             </span>
-
           </div>
-
         </div>
 
-
         <div class="context-menu-divider"></div>
-
 
         <!-- Reply -->
 
@@ -607,7 +635,6 @@
             )
           "
         >
-
           <span class="context-menu-item-icon">
             <svg
               viewBox="0 0 24 24"
@@ -615,9 +642,7 @@
               stroke="currentColor"
               stroke-width="1.8"
             >
-              <path
-                d="M9 14 4 9l5-5"
-              />
+              <path d="M9 14 4 9l5-5" />
 
               <path
                 d="M4 9h10a6 6 0 0 1 6 6v1"
@@ -628,9 +653,7 @@
           <span>
             پاسخ
           </span>
-
         </button>
-
 
         <!-- Reaction -->
 
@@ -642,7 +665,6 @@
           class="context-menu-item"
           @click="toggleReactionMenu"
         >
-
           <span class="context-menu-item-icon">
             <span class="reaction-face">
               😀
@@ -656,9 +678,7 @@
           <span class="context-menu-arrow">
             ‹
           </span>
-
         </button>
-
 
         <!-- Reaction Picker -->
 
@@ -666,7 +686,6 @@
           v-if="contextMenu.showReactions"
           class="reaction-picker"
         >
-
           <button
             v-for="type in reactionTypes"
             :key="type"
@@ -691,9 +710,7 @@
               getReactionEmoji(type)
             }}
           </button>
-
         </div>
-
 
         <!-- Edit -->
 
@@ -711,7 +728,6 @@
             )
           "
         >
-
           <span class="context-menu-item-icon">
             <svg
               viewBox="0 0 24 24"
@@ -719,9 +735,7 @@
               stroke="currentColor"
               stroke-width="1.8"
             >
-              <path
-                d="M12 20h9"
-              />
+              <path d="M12 20h9" />
 
               <path
                 d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"
@@ -732,9 +746,7 @@
           <span>
             ویرایش
           </span>
-
         </button>
-
 
         <!-- Delete -->
 
@@ -752,50 +764,35 @@
             )
           "
         >
-
           <span class="context-menu-item-icon">
-
             <svg
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
               stroke-width="1.8"
             >
-              <path
-                d="M9 3h6"
-              />
+              <path d="M9 3h6" />
 
-              <path
-                d="M5 6h14"
-              />
+              <path d="M5 6h14" />
 
               <path
                 d="m8 6 .7 13h6.6L16 6"
               />
 
-              <path
-                d="M10 10v5M14 10v5"
-              />
+              <path d="M10 10v5M14 10v5" />
             </svg>
-
           </span>
 
           <span>
             حذف
           </span>
-
         </button>
-
       </div>
-
     </Transition>
-
   </section>
 </template>
 
-
 <script setup>
-
 import {
   nextTick,
   onBeforeUnmount,
@@ -803,92 +800,56 @@ import {
   ref,
 } from 'vue'
 
-
 /* =========================================================
    PROPS
    ========================================================= */
 
 const props = defineProps({
-
   roomId: {
     type: [String, Number],
     required: true,
   },
-
 })
-
 
 /* =========================================================
    DOM
    ========================================================= */
 
-const messagesEl =
-  ref(null)
-
-const inputEl =
-  ref(null)
-
-const contextMenuEl =
-  ref(null)
-
+const messagesEl = ref(null)
+const inputEl = ref(null)
+const contextMenuEl = ref(null)
 
 /* =========================================================
    STATE
    ========================================================= */
 
-const messages =
-  ref([])
-
-const draft =
-  ref('')
-
-const loadingHistory =
-  ref(false)
-
-const sending =
-  ref(false)
-
-const socketConnected =
-  ref(false)
-
-const isDark =
-  ref(false)
-
+const messages = ref([])
+const draft = ref('')
+const loadingHistory = ref(false)
+const sending = ref(false)
+const socketConnected = ref(false)
+const isDark = ref(false)
 
 /* =========================================================
    CHAT ACTION STATE
    ========================================================= */
 
-const editingMessage =
-  ref(null)
-
-const replyingTo =
-  ref(null)
-
+const editingMessage = ref(null)
+const replyingTo = ref(null)
 
 /* =========================================================
    CONTEXT MENU
    ========================================================= */
 
-const contextMenu =
-  ref({
+const contextMenu = ref({
+  visible: false,
+  x: 0,
+  y: 0,
+  message: null,
+  showReactions: false,
+})
 
-    visible: false,
-
-    x: 0,
-
-    y: 0,
-
-    message: null,
-
-    showReactions: false,
-
-  })
-
-
-const contextMenuStyle =
-  ref({})
-
+const contextMenuStyle = ref({})
 
 /* =========================================================
    REACTIONS
@@ -902,151 +863,82 @@ const reactionTypes = [
   'dislike',
 ]
 
-
 const reactionEmojis = {
-
   cry: '😢',
-
   laugh: '😂',
-
   heart: '❤️',
-
   like: '👍',
-
   dislike: '👎',
-
 }
-
 
 const reactionLabels = {
-
   cry: 'گریه',
-
   laugh: 'خنده',
-
   heart: 'قلب',
-
   like: 'لایک',
-
   dislike: 'دیسلایک',
-
 }
-
 
 /* =========================================================
    INTERNAL
    ========================================================= */
 
 let socket = null
+let reconnectTimer = null
+let reconnectAttempts = 0
+let destroyed = false
+let themeObserver = null
+let longPressTimer = null
+let localUserId = null
+let localUsername = ''
 
-let reconnectTimer =
-  null
-
-let reconnectAttempts =
-  0
-
-let destroyed =
-  false
-
-let themeObserver =
-  null
-
-let longPressTimer =
-  null
-
-let localUserId =
-  null
-
-let localUsername =
-  ''
-
-
-const MAX_MESSAGES =
-  300
-
+const MAX_MESSAGES = 300
 
 /* =========================================================
    ACCESS TOKEN
    ========================================================= */
 
 function getAccessToken() {
-
   return (
     localStorage.getItem(
       'access_token'
     ) || ''
   )
-
 }
-
 
 /* =========================================================
    DARK MODE
    ========================================================= */
 
 function detectDark() {
-
-  const root =
-    document.documentElement
-
-  const body =
-    document.body
+  const root = document.documentElement
+  const body = document.body
 
   const dataTheme =
-    root.getAttribute(
-      'data-theme'
-    ) ||
-    body?.getAttribute(
-      'data-theme'
-    )
+    root.getAttribute('data-theme') ||
+    body?.getAttribute('data-theme')
 
   return (
-
     dataTheme === 'dark' ||
-
-    root.classList.contains(
-      'dark'
-    ) ||
-
-    body?.classList.contains(
-      'dark'
-    ) ||
-
-    root.classList.contains(
-      'dark-mode'
-    ) ||
-
-    body?.classList.contains(
-      'dark-mode'
-    )
-
+    root.classList.contains('dark') ||
+    body?.classList.contains('dark') ||
+    root.classList.contains('dark-mode') ||
+    body?.classList.contains('dark-mode')
   )
-
 }
 
-
 function observeTheme() {
-
-  isDark.value =
-    detectDark()
-
+  isDark.value = detectDark()
 
   themeObserver =
-    new MutationObserver(
-      () => {
-
-        isDark.value =
-          detectDark()
-
-      }
-    )
-
+    new MutationObserver(() => {
+      isDark.value = detectDark()
+    })
 
   themeObserver.observe(
     document.documentElement,
     {
       attributes: true,
-
       attributeFilter: [
         'class',
         'data-theme',
@@ -1055,14 +947,11 @@ function observeTheme() {
     }
   )
 
-
   if (document.body) {
-
     themeObserver.observe(
       document.body,
       {
         attributes: true,
-
         attributeFilter: [
           'class',
           'data-theme',
@@ -1070,27 +959,40 @@ function observeTheme() {
         ],
       }
     )
-
   }
-
 }
 
+/* =========================================================
+   BOOLEAN NORMALIZER
+   ========================================================= */
+
+function normalizeBoolean(value) {
+  if (
+    value === true ||
+    value === 1 ||
+    value === '1' ||
+    value === 'true' ||
+    value === 'True' ||
+    value === 'TRUE'
+  ) {
+    return true
+  }
+
+  return false
+}
 
 /* =========================================================
    NORMALIZE MESSAGE
    ========================================================= */
 
 function normalizeMessage(raw) {
-
   if (!raw) {
     return null
   }
 
-
   const source =
     raw.message_data ??
     raw
-
 
   const text =
     source.message ??
@@ -1098,7 +1000,6 @@ function normalizeMessage(raw) {
     source.content ??
     source.body ??
     ''
-
 
   const senderId =
     source.user_id ??
@@ -1108,7 +1009,6 @@ function normalizeMessage(raw) {
     source.user?.id ??
     null
 
-
   const username =
     source.username ??
     source.sender_username ??
@@ -1116,18 +1016,15 @@ function normalizeMessage(raw) {
     source.user?.username ??
     'کاربر'
 
-
   const createdAt =
     source.created_at ??
     source.timestamp ??
     new Date().toISOString()
 
-
   const messageId =
     source.id ??
     source.message_id ??
     null
-
 
   const clientId =
     String(
@@ -1141,45 +1038,68 @@ function normalizeMessage(raw) {
       )
     )
 
+  /*
+   * مهم:
+   * is_staff را مستقیماً از پیام می‌گیریم.
+   * چند fallback هم گذاشته شده تا اگر backend
+   * آن را داخل user یا sender فرستاد نیز کار کند.
+   */
+
+  const rawIsStaff =
+    source.is_staff ??
+    source.user?.is_staff ??
+    source.sender?.is_staff ??
+    null
+
+  const isStaff =
+    rawIsStaff === null ||
+    rawIsStaff === undefined
+      ? null
+      : normalizeBoolean(
+          rawIsStaff
+        )
 
   const replyRaw =
     source.reply_to ??
     null
 
+  const replyTo = replyRaw
+    ? {
+        id:
+          replyRaw.id ??
+          replyRaw.message_id ??
+          null,
 
-  const replyTo =
-    replyRaw
-      ? {
+        userId:
+          replyRaw.user_id ??
+          replyRaw.sender_id ??
+          null,
 
-          id:
-            replyRaw.id ??
-            replyRaw.message_id ??
-            null,
+        username:
+          replyRaw.username ??
+          replyRaw.sender_username ??
+          replyRaw.user?.username ??
+          replyRaw.sender?.username ??
+          'کاربر',
 
-          userId:
-            replyRaw.user_id ??
-            replyRaw.sender_id ??
-            null,
+        message:
+          replyRaw.message ??
+          replyRaw.text ??
+          replyRaw.content ??
+          '',
 
-          username:
-            replyRaw.username ??
-            replyRaw.sender_username ??
-            replyRaw.user?.username ??
-            'کاربر',
+        isDeleted:
+          normalizeBoolean(
+            replyRaw.is_deleted
+          ),
 
-          message:
-            replyRaw.message ??
-            replyRaw.text ??
-            '',
-
-          isDeleted:
-            Boolean(
-              replyRaw.is_deleted
-            ),
-
-        }
-      : null
-
+        isStaff:
+          replyRaw.is_staff ??
+          replyRaw.user?.is_staff ??
+          replyRaw.sender?.is_staff ??
+          null,
+      }
+    : null
 
   const reactions =
     Array.isArray(
@@ -1187,7 +1107,6 @@ function normalizeMessage(raw) {
     )
       ? source.reactions.map(
           reaction => ({
-
             id:
               reaction.id ??
               null,
@@ -1211,14 +1130,11 @@ function normalizeMessage(raw) {
             createdAt:
               reaction.created_at ??
               null,
-
           })
         )
       : []
 
-
   return {
-
     messageId:
       messageId != null
         ? Number(messageId)
@@ -1233,6 +1149,8 @@ function normalizeMessage(raw) {
 
     username,
 
+    isStaff,
+
     text:
       typeof text === 'string'
         ? text.trim()
@@ -1245,7 +1163,7 @@ function normalizeMessage(raw) {
       null,
 
     isDeleted:
-      Boolean(
+      normalizeBoolean(
         source.is_deleted
       ),
 
@@ -1262,34 +1180,22 @@ function normalizeMessage(raw) {
       localUserId != null &&
       String(senderId) ===
         String(localUserId),
-
   }
-
 }
-
 
 /* =========================================================
    MESSAGE KEY
    ========================================================= */
 
 function getMessageKey(message) {
-
   if (
     message.messageId != null
   ) {
-
-    return (
-      `message-${message.messageId}`
-    )
-
+    return `message-${message.messageId}`
   }
 
-  return (
-    `client-${message.clientId}`
-  )
-
+  return `client-${message.clientId}`
 }
-
 
 /* =========================================================
    SAME MESSAGE
@@ -1299,38 +1205,30 @@ function sameMessage(
   first,
   second
 ) {
-
   if (
     first.messageId != null &&
     second.messageId != null
   ) {
-
     return (
       Number(first.messageId) ===
       Number(second.messageId)
     )
-
   }
-
 
   return (
     first.clientId ===
     second.clientId
   )
-
 }
-
 
 /* =========================================================
    PUSH MESSAGE
    ========================================================= */
 
 function pushMessage(message) {
-
   if (!message) {
     return
   }
-
 
   const index =
     messages.value.findIndex(
@@ -1341,15 +1239,22 @@ function pushMessage(message) {
         )
     )
 
-
   if (index !== -1) {
+    const existing =
+      messages.value[index]
 
     messages.value[index] = {
-
-      ...messages.value[index],
-
+      ...existing,
       ...message,
 
+      /*
+       * اگر پیام جدید is_staff نداشت،
+       * مقدار قبلی را حفظ می‌کنیم.
+       */
+      isStaff:
+        message.isStaff ??
+        existing.isStaff ??
+        null,
     }
 
     messages.value = [
@@ -1359,9 +1264,7 @@ function pushMessage(message) {
     scrollToBottom()
 
     return
-
   }
-
 
   messages.value = [
     ...messages.value,
@@ -1370,22 +1273,17 @@ function pushMessage(message) {
     -MAX_MESSAGES
   )
 
-
   scrollToBottom()
-
 }
-
 
 /* =========================================================
    SOCKET MESSAGE
    ========================================================= */
 
 function handleIncoming(data) {
-
   if (!data) {
     return
   }
-
 
   /* =====================================================
      CONNECTION
@@ -1395,16 +1293,13 @@ function handleIncoming(data) {
     data.type ===
     'connection'
   ) {
-
     const serverUserId =
       data.user_id ??
       data.user?.id
 
-
     if (
       serverUserId != null
     ) {
-
       localUserId =
         serverUserId
 
@@ -1414,9 +1309,7 @@ function handleIncoming(data) {
           serverUserId
         )
       )
-
     }
-
 
     localUsername =
       data.username ??
@@ -1426,22 +1319,17 @@ function handleIncoming(data) {
       ) ??
       'کاربر'
 
-
     if (
       localUsername &&
       localUsername !==
         'کاربر'
     ) {
-
       localStorage.setItem(
         'username',
         localUsername
       )
-
     }
-
   }
-
 
   /* =====================================================
      HISTORY
@@ -1453,14 +1341,12 @@ function handleIncoming(data) {
     data.type ===
       'room_chat_history'
   ) {
-
     const history =
       Array.isArray(
         data.messages
       )
         ? data.messages
         : []
-
 
     messages.value =
       history
@@ -1472,22 +1358,15 @@ function handleIncoming(data) {
           -MAX_MESSAGES
         )
 
-
     loadingHistory.value =
       false
 
-
     nextTick(() => {
-
       scrollToBottom()
-
     })
 
-
     return
-
   }
-
 
   /* =====================================================
      NEW MESSAGE
@@ -1503,43 +1382,33 @@ function handleIncoming(data) {
       data.type
     )
   ) {
-
     const rawMessage =
       data.message_data ??
       data.message ??
       data
-
 
     const message =
       normalizeMessage(
         rawMessage
       )
 
-
     if (!message) {
       return
     }
-
 
     pushMessage(
       message
     )
 
-
     if (
       message.isMine
     ) {
-
       sending.value =
         false
-
     }
 
-
     return
-
   }
-
 
   /* =====================================================
      EDITED
@@ -1549,7 +1418,6 @@ function handleIncoming(data) {
     data.type ===
     'chat_message_edited'
   ) {
-
     handleEditedMessage(
       data.message_data ??
       data.data ??
@@ -1557,9 +1425,7 @@ function handleIncoming(data) {
     )
 
     return
-
   }
-
 
   /* =====================================================
      DELETED
@@ -1569,7 +1435,6 @@ function handleIncoming(data) {
     data.type ===
     'chat_message_deleted'
   ) {
-
     handleDeletedMessage(
       data.message_data ??
       data.data ??
@@ -1577,9 +1442,7 @@ function handleIncoming(data) {
     )
 
     return
-
   }
-
 
   /* =====================================================
      REACTION UPDATED
@@ -1589,7 +1452,6 @@ function handleIncoming(data) {
     data.type ===
     'chat_message_reaction_updated'
   ) {
-
     handleReactionUpdated(
       data.reaction_data ??
       data.data ??
@@ -1597,9 +1459,7 @@ function handleIncoming(data) {
     )
 
     return
-
   }
-
 
   /* =====================================================
      REACTION REMOVED
@@ -1609,17 +1469,13 @@ function handleIncoming(data) {
     data.type ===
     'chat_message_reaction_removed'
   ) {
-
     handleReactionRemoved(
       data.reaction_data ??
       data.data ??
       data
     )
-
   }
-
 }
-
 
 /* =========================================================
    EDITED MESSAGE
@@ -1628,46 +1484,43 @@ function handleIncoming(data) {
 function handleEditedMessage(
   raw
 ) {
-
   const message =
     normalizeMessage(
       raw
     )
 
-
   if (!message) {
     return
   }
-
 
   const index =
     findMessageIndex(
       message.messageId
     )
 
-
   if (index === -1) {
     return
   }
 
+  const existing =
+    messages.value[index]
 
   messages.value[index] = {
-
-    ...messages.value[index],
-
+    ...existing,
     ...message,
 
+    isStaff:
+      message.isStaff ??
+      existing.isStaff ??
+      null,
+
     isMine:
-      messages.value[index]
-        .isMine,
-
+      existing.isMine,
   }
-
 
   messages.value = [
     ...messages.value,
   ]
-
 
   if (
     editingMessage.value &&
@@ -1678,21 +1531,16 @@ function handleEditedMessage(
         message.messageId
       )
   ) {
-
     clearEdit()
 
     draft.value = ''
 
     autoResize()
-
   }
-
 
   sending.value =
     false
-
 }
-
 
 /* =========================================================
    DELETED MESSAGE
@@ -1701,34 +1549,35 @@ function handleEditedMessage(
 function handleDeletedMessage(
   raw
 ) {
-
   const message =
     normalizeMessage(
       raw
     )
 
-
   if (!message) {
     return
   }
-
 
   const index =
     findMessageIndex(
       message.messageId
     )
 
-
   if (index === -1) {
     return
   }
 
+  const existing =
+    messages.value[index]
 
   messages.value[index] = {
-
-    ...messages.value[index],
-
+    ...existing,
     ...message,
+
+    isStaff:
+      message.isStaff ??
+      existing.isStaff ??
+      null,
 
     isDeleted:
       true,
@@ -1737,16 +1586,12 @@ function handleDeletedMessage(
       '',
 
     isMine:
-      messages.value[index]
-        .isMine,
-
+      existing.isMine,
   }
-
 
   messages.value = [
     ...messages.value,
   ]
-
 
   if (
     replyingTo.value &&
@@ -1757,12 +1602,9 @@ function handleDeletedMessage(
         message.messageId
       )
   ) {
-
     replyingTo.value =
       messages.value[index]
-
   }
-
 
   if (
     editingMessage.value &&
@@ -1773,13 +1615,9 @@ function handleDeletedMessage(
         message.messageId
       )
   ) {
-
     cancelAction()
-
   }
-
 }
-
 
 /* =========================================================
    REACTION UPDATED
@@ -1788,37 +1626,30 @@ function handleDeletedMessage(
 function handleReactionUpdated(
   raw
 ) {
-
   const reaction =
     normalizeReaction(
       raw
     )
 
-
   if (!reaction) {
     return
   }
-
 
   const index =
     findMessageIndex(
       reaction.messageId
     )
 
-
   if (index === -1) {
     return
   }
 
-
   const message =
     messages.value[index]
 
-
   const reactions = [
-    ...(message.reactions || [])
+    ...(message.reactions || []),
   ]
-
 
   const sameUserIndex =
     reactions.findIndex(
@@ -1831,39 +1662,27 @@ function handleReactionUpdated(
         )
     )
 
-
   if (
     sameUserIndex !== -1
   ) {
-
     reactions[
       sameUserIndex
     ] = reaction
-
   } else {
-
     reactions.push(
       reaction
     )
-
   }
-
 
   messages.value[index] = {
-
     ...message,
-
     reactions,
-
   }
-
 
   messages.value = [
     ...messages.value,
   ]
-
 }
-
 
 /* =========================================================
    REACTION REMOVED
@@ -1872,32 +1691,26 @@ function handleReactionUpdated(
 function handleReactionRemoved(
   raw
 ) {
-
   const reaction =
     normalizeReaction(
       raw
     )
 
-
   if (!reaction) {
     return
   }
-
 
   const index =
     findMessageIndex(
       reaction.messageId
     )
 
-
   if (index === -1) {
     return
   }
 
-
   const message =
     messages.value[index]
-
 
   const reactions =
     (
@@ -1905,18 +1718,14 @@ function handleReactionRemoved(
       []
     ).filter(
       item => {
-
         if (
           reaction.id != null
         ) {
-
           return (
             Number(item.id) !==
             Number(reaction.id)
           )
-
         }
-
 
         return !(
           Number(
@@ -1926,26 +1735,18 @@ function handleReactionRemoved(
             reaction.userId
           )
         )
-
       }
     )
 
-
   messages.value[index] = {
-
     ...message,
-
     reactions,
-
   }
-
 
   messages.value = [
     ...messages.value,
   ]
-
 }
-
 
 /* =========================================================
    NORMALIZE REACTION
@@ -1954,14 +1755,11 @@ function handleReactionRemoved(
 function normalizeReaction(
   raw
 ) {
-
   if (!raw) {
     return null
   }
 
-
   return {
-
     id:
       raw.id ??
       null,
@@ -1987,11 +1785,8 @@ function normalizeReaction(
     createdAt:
       raw.created_at ??
       null,
-
   }
-
 }
-
 
 /* =========================================================
    FIND MESSAGE
@@ -2000,15 +1795,11 @@ function normalizeReaction(
 function findMessageIndex(
   messageId
 ) {
-
   if (
     messageId == null
   ) {
-
     return -1
-
   }
-
 
   return messages.value.findIndex(
     message =>
@@ -2020,9 +1811,7 @@ function findMessageIndex(
           messageId
         )
   )
-
 }
-
 
 /* =========================================================
    SOCKET URL
@@ -2057,79 +1846,57 @@ function buildSocketUrl() {
   )
 
 }
-
-
-
 /* =========================================================
    CONNECT
    ========================================================= */
 
 function connect() {
-
   if (
     destroyed ||
     !props.roomId
   ) {
-
     return
-
   }
-
 
   const token =
     getAccessToken()
 
-
   if (!token) {
-
     console.error(
       'ROOM CHAT: ACCESS TOKEN NOT FOUND'
     )
 
     return
-
   }
-
 
   try {
-
     socket?.close()
-
   } catch {
-
     // ignore
-
   }
-
 
   loadingHistory.value =
     messages.value.length === 0
-
 
   const ws =
     new WebSocket(
       buildSocketUrl()
     )
 
-
   socket =
     ws
 
-
   ws.onopen = () => {
-
     reconnectAttempts =
       0
 
     socketConnected.value =
       true
 
-
     console.log(
       'ROOM CHAT SOCKET CONNECTED:',
       props.roomId
     )
-
 
     ws.send(
       JSON.stringify({
@@ -2138,93 +1905,66 @@ function connect() {
       })
     )
 
-
     nextTick(() => {
-
       autoResize()
-
     })
-
   }
-
 
   ws.onmessage =
     event => {
-
       try {
-
         const data =
           JSON.parse(
             event.data
           )
-
 
         console.log(
           'ROOM CHAT SOCKET MESSAGE:',
           data
         )
 
-
         handleIncoming(
           data
         )
-
       } catch (error) {
-
         console.error(
           'ROOM CHAT MESSAGE ERROR:',
           error
         )
-
       }
-
     }
-
 
   ws.onerror =
     error => {
-
       console.error(
         'ROOM CHAT SOCKET ERROR:',
         error
       )
-
     }
 
-
   ws.onclose = () => {
-
     socketConnected.value =
       false
-
 
     if (destroyed) {
       return
     }
 
-
     scheduleReconnect()
-
   }
-
 }
-
 
 /* =========================================================
    RECONNECT
    ========================================================= */
 
 function scheduleReconnect() {
-
   if (
     reconnectTimer ||
     destroyed
   ) {
-
     return
-
   }
-
 
   const delay =
     Math.min(
@@ -2236,56 +1976,43 @@ function scheduleReconnect() {
         )
     )
 
-
   reconnectAttempts++
-
 
   reconnectTimer =
     window.setTimeout(
       () => {
-
         reconnectTimer =
           null
 
         connect()
-
       },
       delay
     )
-
 }
-
 
 /* =========================================================
    SEND / EDIT
    ========================================================= */
 
 function sendMessage() {
-
   const text =
     draft.value.trim()
-
 
   if (!text) {
     return
   }
-
 
   if (
     !socket ||
     socket.readyState !==
       WebSocket.OPEN
   ) {
-
     return
-
   }
-
 
   if (sending.value) {
     return
   }
-
 
   /* =====================================================
      EDIT
@@ -2294,26 +2021,20 @@ function sendMessage() {
   if (
     editingMessage.value
   ) {
-
     const messageId =
       editingMessage.value
         .messageId
-
 
     if (messageId == null) {
       return
     }
 
-
     sending.value =
       true
 
-
     try {
-
       socket.send(
         JSON.stringify({
-
           type:
             'chat_message_edit',
 
@@ -2322,12 +2043,9 @@ function sendMessage() {
 
           message:
             text,
-
         })
       )
-
     } catch (error) {
-
       console.error(
         'ROOM CHAT EDIT ERROR:',
         error
@@ -2335,14 +2053,10 @@ function sendMessage() {
 
       sending.value =
         false
-
     }
 
-
     return
-
   }
-
 
   /* =====================================================
      NORMAL / REPLY
@@ -2353,9 +2067,7 @@ function sendMessage() {
       .toString(36)
       .slice(2, 8)}`
 
-
   const payload = {
-
     type:
       'chat_message',
 
@@ -2364,49 +2076,35 @@ function sendMessage() {
 
     client_id:
       clientId,
-
   }
-
 
   if (
     replyingTo.value &&
     replyingTo.value.messageId != null
   ) {
-
     payload.reply_to_id =
       replyingTo.value.messageId
-
   }
-
 
   sending.value =
     true
 
-
   try {
-
     socket.send(
       JSON.stringify(
         payload
       )
     )
 
-
     draft.value =
       ''
 
-
     clearReply()
 
-
     nextTick(() => {
-
       autoResize()
-
     })
-
   } catch (error) {
-
     console.error(
       'ROOM CHAT SEND ERROR:',
       error
@@ -2414,11 +2112,8 @@ function sendMessage() {
 
     sending.value =
       false
-
   }
-
 }
-
 
 /* =========================================================
    EDIT MESSAGE
@@ -2427,65 +2122,47 @@ function sendMessage() {
 function startEditMessage(
   message
 ) {
-
   closeContextMenu()
-
 
   if (!message) {
     return
   }
 
-
   if (!message.isMine) {
     return
   }
-
 
   if (message.isDeleted) {
     return
   }
 
-
   clearReply()
 
-
   editingMessage.value = {
-    ...message
+    ...message,
   }
-
 
   draft.value =
     message.text
 
-
   nextTick(() => {
-
     autoResize()
 
     inputEl.value?.focus()
 
-
     if (inputEl.value) {
-
       inputEl.value.setSelectionRange(
         inputEl.value.value.length,
         inputEl.value.value.length
       )
-
     }
-
   })
-
 }
-
 
 function clearEdit() {
-
   editingMessage.value =
     null
-
 }
-
 
 /* =========================================================
    DELETE
@@ -2494,70 +2171,53 @@ function clearEdit() {
 function deleteMessage(
   message
 ) {
-
   closeContextMenu()
-
 
   if (!message) {
     return
   }
 
-
   if (!message.isMine) {
     return
   }
-
 
   if (message.isDeleted) {
     return
   }
 
-
   if (
     message.messageId == null
   ) {
-
     return
-
   }
-
 
   const confirmed =
     window.confirm(
       'آیا مطمئنی می‌خواهی این پیام را حذف کنی؟'
     )
 
-
   if (!confirmed) {
     return
   }
-
 
   if (
     !socket ||
     socket.readyState !==
       WebSocket.OPEN
   ) {
-
     return
-
   }
-
 
   socket.send(
     JSON.stringify({
-
       type:
         'chat_message_delete',
 
       message_id:
         message.messageId,
-
     })
   )
-
 }
-
 
 /* =========================================================
    REPLY
@@ -2566,38 +2226,28 @@ function deleteMessage(
 function replyToMessage(
   message
 ) {
-
   closeContextMenu()
-
 
   if (!message) {
     return
   }
 
-
   clearEdit()
 
-
   replyingTo.value = {
-    ...message
+    ...message,
   }
 
-
   nextTick(() => {
-
     inputEl.value?.focus()
-
   })
-
 }
-
 
 /* =========================================================
    CANCEL ACTION
    ========================================================= */
 
 function cancelAction() {
-
   clearEdit()
 
   clearReply()
@@ -2605,27 +2255,19 @@ function cancelAction() {
   draft.value =
     ''
 
-
   nextTick(() => {
-
     autoResize()
-
   })
-
 }
-
 
 /* =========================================================
    REPLY CLEAR
    ========================================================= */
 
 function clearReply() {
-
   replyingTo.value =
     null
-
 }
-
 
 /* =========================================================
    REACTIONS
@@ -2635,36 +2277,28 @@ function toggleReaction(
   message,
   type
 ) {
-
   if (!message) {
     return
   }
-
 
   if (message.isDeleted) {
     return
   }
 
-
   if (
     message.messageId == null
   ) {
-
     return
-
   }
-
 
   const current =
     getUserReaction(
       message
     )
 
-
   if (
     current === type
   ) {
-
     sendSocket({
       type:
         'chat_message_reaction_remove',
@@ -2672,11 +2306,8 @@ function toggleReaction(
       message_id:
         message.messageId,
     })
-
   } else {
-
     sendSocket({
-
       type:
         'chat_message_reaction',
 
@@ -2685,22 +2316,16 @@ function toggleReaction(
 
       reaction:
         type,
-
     })
-
   }
-
 }
-
 
 function getUserReaction(
   message
 ) {
-
   if (!message) {
     return null
   }
-
 
   const reaction =
     (
@@ -2716,30 +2341,23 @@ function getUserReaction(
         )
     )
 
-
   return reaction
     ? reaction.reaction
     : null
-
 }
-
 
 function getReactionSummary(
   message
 ) {
-
   if (!message) {
     return []
   }
 
-
   const result = []
-
 
   for (
     const type of reactionTypes
   ) {
-
     const items =
       (
         message.reactions ||
@@ -2750,14 +2368,11 @@ function getReactionSummary(
           type
       )
 
-
     if (!items.length) {
       continue
     }
 
-
     result.push({
-
       type,
 
       count:
@@ -2773,40 +2388,29 @@ function getReactionSummary(
               localUserId
             )
         ),
-
     })
-
   }
 
-
   return result
-
 }
-
 
 function getReactionEmoji(
   type
 ) {
-
   return (
     reactionEmojis[type] ||
     '🙂'
   )
-
 }
-
 
 function getReactionLabel(
   type
 ) {
-
   return (
     reactionLabels[type] ||
     'واکنش'
   )
-
 }
-
 
 /* =========================================================
    CONTEXT MENU
@@ -2816,40 +2420,32 @@ function openMessageMenu(
   event,
   message
 ) {
-
   openMessageMenuAt(
     event.clientX,
     event.clientY,
     message
   )
-
 }
-
 
 function openMessageMenuFromButton(
   event,
   message
 ) {
-
   openMessageMenuAt(
     event.clientX,
     event.clientY,
     message
   )
-
 }
-
 
 function openMessageMenuAt(
   x,
   y,
   message
 ) {
-
   if (!message) {
     return
   }
-
 
   const width =
     225
@@ -2859,39 +2455,31 @@ function openMessageMenuAt(
       ? 255
       : 175
 
-
   let finalX =
     x
 
   let finalY =
     y
 
-
   if (
     finalX + width >
     window.innerWidth - 10
   ) {
-
     finalX =
       window.innerWidth -
       width -
       10
-
   }
-
 
   if (
     finalY + height >
     window.innerHeight - 10
   ) {
-
     finalY =
       window.innerHeight -
       height -
       10
-
   }
-
 
   finalX =
     Math.max(
@@ -2899,16 +2487,13 @@ function openMessageMenuAt(
       finalX
     )
 
-
   finalY =
     Math.max(
       10,
       finalY
     )
 
-
   contextMenu.value = {
-
     visible:
       true,
 
@@ -2922,58 +2507,42 @@ function openMessageMenuAt(
 
     showReactions:
       false,
-
   }
 
-
   contextMenuStyle.value = {
-
     left:
       `${finalX}px`,
 
     top:
       `${finalY}px`,
-
   }
-
 }
 
-
 function toggleReactionMenu() {
-
   contextMenu.value.showReactions =
     !contextMenu.value
       .showReactions
-
 }
-
 
 function selectReactionFromMenu(
   type
 ) {
-
   const message =
     contextMenu.value.message
 
-
   closeContextMenu()
-
 
   if (!message) {
     return
   }
 
-
   toggleReaction(
     message,
     type
   )
-
 }
 
-
 function closeContextMenu() {
-
   contextMenu.value.visible =
     false
 
@@ -2982,9 +2551,7 @@ function closeContextMenu() {
 
   contextMenu.value.showReactions =
     false
-
 }
-
 
 /* =========================================================
    CLICK OUTSIDE
@@ -2993,23 +2560,17 @@ function closeContextMenu() {
 function handleRoomClick(
   event
 ) {
-
   if (
     contextMenuEl.value &&
     contextMenuEl.value.contains(
       event.target
     )
   ) {
-
     return
-
   }
 
-
   closeContextMenu()
-
 }
-
 
 /* =========================================================
    LONG PRESS
@@ -3019,53 +2580,40 @@ function startLongPress(
   event,
   message
 ) {
-
   cancelLongPress()
-
 
   longPressTimer =
     window.setTimeout(
       () => {
-
         const touch =
           event.touches?.[0]
-
 
         if (!touch) {
           return
         }
-
 
         openMessageMenuAt(
           touch.clientX,
           touch.clientY,
           message
         )
-
       },
       550
     )
-
 }
 
-
 function cancelLongPress() {
-
   if (
     longPressTimer
   ) {
-
     window.clearTimeout(
       longPressTimer
     )
 
     longPressTimer =
       null
-
   }
-
 }
-
 
 /* =========================================================
    SCROLL TO MESSAGE
@@ -3074,56 +2622,42 @@ function cancelLongPress() {
 function scrollToMessage(
   messageId
 ) {
-
   if (
     messageId == null
   ) {
-
     return
-
   }
-
 
   const target =
     messagesEl.value?.querySelector(
       `[data-message-id="${messageId}"]`
     )
 
-
   if (!target) {
     return
   }
 
-
   target.scrollIntoView({
-
     behavior:
       'smooth',
 
     block:
       'center',
-
   })
-
 
   target.classList.add(
     'message-highlight'
   )
 
-
   window.setTimeout(
     () => {
-
       target.classList.remove(
         'message-highlight'
       )
-
     },
     1000
   )
-
 }
-
 
 /* =========================================================
    SOCKET SEND
@@ -3132,20 +2666,15 @@ function scrollToMessage(
 function sendSocket(
   data
 ) {
-
   if (
     !socket ||
     socket.readyState !==
       WebSocket.OPEN
   ) {
-
     return false
-
   }
 
-
   try {
-
     socket.send(
       JSON.stringify(
         data
@@ -3153,73 +2682,55 @@ function sendSocket(
     )
 
     return true
-
   } catch (error) {
-
     console.error(
       'ROOM CHAT SOCKET SEND ERROR:',
       error
     )
 
     return false
-
   }
-
 }
-
 
 /* =========================================================
    SCROLL
    ========================================================= */
 
 function scrollToBottom() {
-
   nextTick(() => {
-
     const element =
       messagesEl.value
-
 
     if (!element) {
       return
     }
 
-
     element.scrollTop =
       element.scrollHeight
-
   })
-
 }
-
 
 /* =========================================================
    AUTO RESIZE
    ========================================================= */
 
 function autoResize() {
-
   const input =
     inputEl.value
-
 
   if (!input) {
     return
   }
 
-
   input.style.height =
     'auto'
-
 
   input.style.height =
     `${Math.min(
       input.scrollHeight,
       120
     )}px`
-
 }
-
 
 /* =========================================================
    INITIAL
@@ -3228,24 +2739,19 @@ function autoResize() {
 function getInitial(
   username
 ) {
-
   const value =
     String(
       username || ''
     ).trim()
 
-
   if (!value) {
     return '?'
   }
 
-
   return value
     .charAt(0)
     .toUpperCase()
-
 }
-
 
 /* =========================================================
    TIME
@@ -3254,145 +2760,105 @@ function getInitial(
 function formatTime(
   value
 ) {
-
   const date =
     new Date(
       value
     )
-
 
   if (
     Number.isNaN(
       date.getTime()
     )
   ) {
-
     return ''
-
   }
-
 
   return date.toLocaleTimeString(
     'fa-IR',
     {
-
       hour:
         '2-digit',
 
       minute:
         '2-digit',
-
     }
   )
-
 }
-
 
 /* =========================================================
    MOUNTED
    ========================================================= */
 
 onMounted(() => {
-
   const storedUserId =
     localStorage.getItem(
       'user_id'
     )
 
-
   if (
     storedUserId
   ) {
-
     localUserId =
       storedUserId
-
   }
-
 
   localUsername =
     localStorage.getItem(
       'username'
     ) || ''
 
-
   observeTheme()
-
 
   connect()
 
-
   nextTick(() => {
-
     autoResize()
-
   })
-
 })
-
 
 /* =========================================================
    UNMOUNTED
    ========================================================= */
 
 onBeforeUnmount(() => {
-
   destroyed =
     true
 
-
   cancelLongPress()
-
 
   if (
     reconnectTimer
   ) {
-
     window.clearTimeout(
       reconnectTimer
     )
-
   }
-
 
   reconnectTimer =
     null
 
-
   themeObserver?.disconnect()
 
-
   try {
-
     socket?.close()
-
   } catch {
-
     // ignore
-
   }
-
 
   socket =
     null
 
-
   socketConnected.value =
     false
-
 })
-
 </script>
 
-
 <style scoped>
-
 /* =========================================================
    ROOM CHAT
    ========================================================= */
 
 .room-chat {
-
   --chat-bg:
     var(
       --app-card,
@@ -3437,6 +2903,28 @@ onBeforeUnmount(() => {
       .06
     );
 
+  --admin-gold:
+    #d6a83d;
+
+  --admin-gold-light:
+    #f7d774;
+
+  --admin-gold-soft:
+    rgba(
+      214,
+      168,
+      61,
+      .10
+    );
+
+  --admin-gold-border:
+    rgba(
+      214,
+      168,
+      61,
+      .34
+    );
+
   width:
     100%;
 
@@ -3473,16 +2961,13 @@ onBeforeUnmount(() => {
 
   color:
     var(--chat-text);
-
 }
-
 
 /* =========================================================
    DARK
    ========================================================= */
 
 .room-chat.is-dark {
-
   --chat-bg:
     #111827;
 
@@ -3510,15 +2995,34 @@ onBeforeUnmount(() => {
       .18
     );
 
-}
+  --admin-gold:
+    #e7bd58;
 
+  --admin-gold-light:
+    #ffe59a;
+
+  --admin-gold-soft:
+    rgba(
+      231,
+      189,
+      88,
+      .10
+    );
+
+  --admin-gold-border:
+    rgba(
+      231,
+      189,
+      88,
+      .38
+    );
+}
 
 /* =========================================================
    HEADER
    ========================================================= */
 
 .chat-header {
-
   width:
     100%;
 
@@ -3542,16 +3046,13 @@ onBeforeUnmount(() => {
 
   margin:
     0 0 16px;
-
 }
 
-
 /* =========================================================
-   ORIGINAL STATUS BADGE
+   STATUS BADGE
    ========================================================= */
 
 .room-chat-badge {
-
   display:
     inline-flex;
 
@@ -3585,12 +3086,9 @@ onBeforeUnmount(() => {
 
   white-space:
     nowrap;
-
 }
 
-
 .room-chat-badge.offline {
-
   color:
     #64748b;
 
@@ -3599,13 +3097,10 @@ onBeforeUnmount(() => {
 
   border-color:
     #e2e8f0;
-
 }
-
 
 .room-chat-badge-dot,
 .room-chat-badge-dot::after {
-
   width:
     7px;
 
@@ -3614,32 +3109,23 @@ onBeforeUnmount(() => {
 
   border-radius:
     50%;
-
 }
 
-
 .room-chat-badge-dot {
-
   position:
     relative;
 
   background:
     #10b981;
-
 }
-
 
 .room-chat-badge.offline
 .room-chat-badge-dot {
-
   background:
     #94a3b8;
-
 }
 
-
 .room-chat-badge-dot::after {
-
   content:
     "";
 
@@ -3657,76 +3143,38 @@ onBeforeUnmount(() => {
     1.8s
     infinite
     ease-out;
-
 }
-
 
 .room-chat-badge.offline
 .room-chat-badge-dot::after {
-
   display:
     none;
-
 }
 
-
 @keyframes roomChatPulse {
-
   0% {
-
     transform:
       scale(1);
 
     opacity:
       .45;
-
   }
 
   70%,
   100% {
-
     transform:
       scale(2.5);
 
     opacity:
       0;
-
   }
-
 }
-
-
-.study-room-page.is-dark
-.room-chat-badge {
-
-  color:
-    #6ee7b7;
-
-  background:
-    rgba(
-      16,
-      185,
-      129,
-      .10
-    );
-
-  border-color:
-    rgba(
-      16,
-      185,
-      129,
-      .18
-    );
-
-}
-
 
 /* =========================================================
    CHAT BODY
    ========================================================= */
 
 .chat-body {
-
   width:
     100%;
 
@@ -3741,16 +3189,13 @@ onBeforeUnmount(() => {
 
   min-height:
     0;
-
 }
-
 
 /* =========================================================
    MESSAGES
    ========================================================= */
 
 .messages {
-
   width:
     100%;
 
@@ -3768,16 +3213,13 @@ onBeforeUnmount(() => {
 
   scroll-behavior:
     smooth;
-
 }
-
 
 /* =========================================================
    MESSAGE ROW
    ========================================================= */
 
 .message-row {
-
   display:
     flex;
 
@@ -3795,27 +3237,30 @@ onBeforeUnmount(() => {
 
   touch-action:
     pan-y;
-
 }
 
-
 .message-row.mine {
-
   margin-right:
     auto;
 
   flex-direction:
     row-reverse;
-
 }
 
+/* =========================================================
+   ADMIN MESSAGE ROW
+   ========================================================= */
+
+.message-row.admin {
+  position:
+    relative;
+}
 
 /* =========================================================
    AVATAR
    ========================================================= */
 
 .message-avatar {
-
   width:
     36px;
 
@@ -3845,12 +3290,17 @@ onBeforeUnmount(() => {
 
   font-weight:
     850;
-
 }
 
+.message-avatar svg {
+  width:
+    19px;
+
+  height:
+    19px;
+}
 
 .message-avatar.mine {
-
   color:
     #fff;
 
@@ -3865,37 +3315,291 @@ onBeforeUnmount(() => {
         #0f172a
       )
     );
-
 }
 
+/* =========================================================
+   ADMIN AVATAR
+   ========================================================= */
+
+.message-avatar.admin {
+  color:
+    #fff8df;
+
+  background:
+    linear-gradient(
+      145deg,
+      #b88722,
+      #e6bd55 50%,
+      #9c6c13
+    );
+
+  box-shadow:
+    0 5px 16px
+    rgba(
+      214,
+      168,
+      61,
+      .20
+    );
+
+  border:
+    1px solid
+    rgba(
+      255,
+      225,
+      143,
+      .55
+    );
+}
 
 /* =========================================================
    MESSAGE CONTENT
    ========================================================= */
 
 .message-content {
-
   min-width:
     0;
-
 }
-
 
 .message-row.mine
 .message-content {
-
   text-align:
     right;
-
 }
 
+/* =========================================================
+   ADMIN MESSAGE CONTENT
+   ========================================================= */
+
+.message-row.admin
+.message-content {
+  position:
+    relative;
+
+  isolation:
+    isolate;
+
+  padding:
+    9px 10px 10px;
+
+  border-radius:
+    17px;
+
+  background:
+    var(--chat-bg);
+
+  box-shadow:
+    0 8px 25px
+    rgba(
+      214,
+      168,
+      61,
+      .07
+    );
+}
+
+/*
+ * این pseudo-element فقط خود حاشیه را نمایش می‌دهد.
+ * هیچ گرادیان چرخانی پشت پیام دیده نمی‌شود.
+ */
+
+.message-row.admin
+.message-content::before {
+  content:
+    "";
+
+  position:
+    absolute;
+
+  inset:
+    0;
+
+  padding:
+    1.4px;
+
+  border-radius:
+    inherit;
+
+  background:
+    conic-gradient(
+      from var(--admin-angle),
+      transparent 0deg,
+      transparent 245deg,
+      rgba(
+        214,
+        168,
+        61,
+        .18
+      ) 275deg,
+      var(--admin-gold-light) 305deg,
+      var(--admin-gold) 325deg,
+      rgba(
+        214,
+        168,
+        61,
+        .20
+      ) 345deg,
+      transparent 360deg
+    );
+
+  -webkit-mask:
+    linear-gradient(
+      #000 0 0
+    ) content-box,
+    linear-gradient(
+      #000 0 0
+    );
+
+  -webkit-mask-composite:
+    xor;
+
+  mask:
+    linear-gradient(
+      #000 0 0
+    ) content-box,
+    linear-gradient(
+      #000 0 0
+    );
+
+  mask-composite:
+    exclude;
+
+  pointer-events:
+    none;
+
+  z-index:
+    -1;
+
+  animation:
+    adminBorderLight
+    4.5s
+    linear
+    infinite;
+}
+
+@property --admin-angle {
+  syntax:
+    "<angle>";
+
+  inherits:
+    false;
+
+  initial-value:
+    0deg;
+}
+
+@keyframes adminBorderLight {
+  from {
+    --admin-angle:
+      0deg;
+  }
+
+  to {
+    --admin-angle:
+      360deg;
+  }
+}
+
+/* =========================================================
+   ADMIN BADGE
+   ========================================================= */
+
+.admin-badge {
+  position:
+    absolute;
+
+  top:
+    -10px;
+
+  right:
+    12px;
+
+  z-index:
+    5;
+
+  display:
+    inline-flex;
+
+  align-items:
+    center;
+
+  gap:
+    5px;
+
+  min-height:
+    20px;
+
+  padding:
+    3px 8px;
+
+  box-sizing:
+    border-box;
+
+  border:
+    1px solid
+    rgba(
+      214,
+      168,
+      61,
+      .38
+    );
+
+  border-radius:
+    999px;
+
+  background:
+    var(--chat-bg);
+
+  color:
+    var(--admin-gold);
+
+  font-size:
+    8px;
+
+  font-weight:
+    900;
+
+  line-height:
+    1;
+
+  white-space:
+    nowrap;
+
+  box-shadow:
+    0 3px 10px
+    rgba(
+      0,
+      0,
+      0,
+      .06
+    );
+}
+
+.admin-badge svg {
+  width:
+    11px;
+
+  height:
+    11px;
+
+  flex:
+    0 0 11px;
+
+  color:
+    var(--admin-gold);
+}
+
+.message-row.admin
+.message-meta.has-admin-badge {
+  padding-top:
+    7px;
+}
 
 /* =========================================================
    META
    ========================================================= */
 
 .message-meta {
-
   display:
     flex;
 
@@ -3910,11 +3614,14 @@ onBeforeUnmount(() => {
 
   padding:
     0 3px;
-
 }
 
-
 .message-meta strong {
+  max-width:
+    220px;
+
+  overflow:
+    hidden;
 
   font-size:
     10px;
@@ -3922,26 +3629,39 @@ onBeforeUnmount(() => {
   font-weight:
     800;
 
+  white-space:
+    nowrap;
+
+  text-overflow:
+    ellipsis;
 }
 
-
 .message-meta time {
-
   color:
     var(--chat-muted);
 
   font-size:
     8px;
-
 }
 
+/* =========================================================
+   ADMIN USERNAME
+   ========================================================= */
+
+.message-row.admin
+.message-meta strong {
+  color:
+    var(--admin-gold);
+
+  font-weight:
+    900;
+}
 
 /* =========================================================
    REPLY PREVIEW
    ========================================================= */
 
 .message-reply-preview {
-
   display:
     flex;
 
@@ -3975,23 +3695,25 @@ onBeforeUnmount(() => {
 
   text-align:
     right;
-
 }
 
-
 .message-reply-preview:hover {
-
   border-color:
     rgba(
       var(--primary-rgb),
       .25
     );
-
 }
 
+.message-reply-preview.reply-from-admin {
+  border-color:
+    var(--admin-gold-border);
+
+  background:
+    var(--admin-gold-soft);
+}
 
 .reply-preview-line {
-
   width:
     3px;
 
@@ -4006,12 +3728,15 @@ onBeforeUnmount(() => {
 
   background:
     var(--primary);
-
 }
 
+.reply-from-admin
+.reply-preview-line {
+  background:
+    var(--admin-gold);
+}
 
 .reply-preview-content {
-
   min-width:
     0;
 
@@ -4023,11 +3748,28 @@ onBeforeUnmount(() => {
 
   overflow:
     hidden;
-
 }
 
+.reply-preview-author {
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  gap:
+    5px;
+
+  min-width:
+    0;
+}
 
 .reply-preview-content strong {
+  max-width:
+    180px;
+
+  overflow:
+    hidden;
 
   color:
     var(--primary);
@@ -4038,11 +3780,44 @@ onBeforeUnmount(() => {
   font-weight:
     850;
 
+  white-space:
+    nowrap;
+
+  text-overflow:
+    ellipsis;
 }
 
+.reply-from-admin
+.reply-preview-content strong {
+  color:
+    var(--admin-gold);
+}
 
-.reply-preview-content span {
+.reply-admin-badge {
+  flex:
+    0 0 auto;
 
+  padding:
+    2px 5px;
+
+  border:
+    1px solid
+    var(--admin-gold-border);
+
+  border-radius:
+    999px;
+
+  color:
+    var(--admin-gold);
+
+  font-size:
+    7px;
+
+  font-weight:
+    900;
+}
+
+.reply-preview-content > span {
   overflow:
     hidden;
 
@@ -4057,16 +3832,13 @@ onBeforeUnmount(() => {
 
   text-overflow:
     ellipsis;
-
 }
-
 
 /* =========================================================
    BUBBLE WRAP
    ========================================================= */
 
 .message-bubble-wrap {
-
   display:
     flex;
 
@@ -4075,25 +3847,19 @@ onBeforeUnmount(() => {
 
   gap:
     3px;
-
 }
-
 
 .message-row.mine
 .message-bubble-wrap {
-
   flex-direction:
     row-reverse;
-
 }
-
 
 /* =========================================================
    BUBBLE
    ========================================================= */
 
 .message-bubble {
-
   padding:
     10px 13px;
 
@@ -4121,13 +3887,10 @@ onBeforeUnmount(() => {
 
   overflow-wrap:
     anywhere;
-
 }
-
 
 .message-row.mine
 .message-bubble {
-
   border-color:
     transparent;
 
@@ -4148,12 +3911,47 @@ onBeforeUnmount(() => {
         #0f172a
       )
     );
-
 }
 
+/* =========================================================
+   ADMIN BUBBLE
+   ========================================================= */
+
+.message-row.admin
+.message-bubble {
+  border-color:
+    rgba(
+      214,
+      168,
+      61,
+      .18
+    );
+
+  background:
+    var(--admin-gold-soft);
+
+  color:
+    var(--chat-text);
+}
+
+.message-row.admin.mine
+.message-bubble {
+  border-color:
+    rgba(
+      214,
+      168,
+      61,
+      .22
+    );
+
+  background:
+    var(--admin-gold-soft);
+
+  color:
+    var(--chat-text);
+}
 
 .message-bubble.deleted {
-
   color:
     var(--chat-muted);
 
@@ -4162,12 +3960,9 @@ onBeforeUnmount(() => {
 
   border-style:
     dashed;
-
 }
 
-
 .deleted-message {
-
   display:
     inline-flex;
 
@@ -4182,27 +3977,21 @@ onBeforeUnmount(() => {
 
   font-style:
     italic;
-
 }
 
-
 .deleted-message svg {
-
   width:
     14px;
 
   height:
     14px;
-
 }
-
 
 /* =========================================================
    EDITED
    ========================================================= */
 
 .edited-label {
-
   display:
     inline-block;
 
@@ -4219,25 +4008,25 @@ onBeforeUnmount(() => {
 
   font-size:
     8px;
-
 }
-
 
 .message-row:not(.mine)
 .edited-label {
-
   color:
     var(--chat-muted);
-
 }
 
+.message-row.admin
+.edited-label {
+  color:
+    var(--chat-muted);
+}
 
 /* =========================================================
    MORE BUTTON
    ========================================================= */
 
 .message-more {
-
   width:
     24px;
 
@@ -4284,48 +4073,34 @@ onBeforeUnmount(() => {
     opacity .15s ease,
     background .15s ease,
     color .15s ease;
-
 }
-
 
 .message-row:hover
 .message-more {
-
   opacity:
     1;
-
 }
 
-
 .message-more:hover {
-
   color:
     var(--chat-text);
 
   background:
     var(--chat-soft);
-
 }
-
 
 @media (hover: none) {
-
   .message-more {
-
     opacity:
       .75;
-
   }
-
 }
-
 
 /* =========================================================
    REACTIONS
    ========================================================= */
 
 .message-reactions {
-
   display:
     flex;
 
@@ -4340,21 +4115,15 @@ onBeforeUnmount(() => {
 
   margin-top:
     4px;
-
 }
-
 
 .message-row.mine
 .message-reactions {
-
   justify-content:
     flex-end;
-
 }
 
-
 .reaction-chip {
-
   display:
     inline-flex;
 
@@ -4393,12 +4162,9 @@ onBeforeUnmount(() => {
     border-color .15s ease,
     background .15s ease,
     transform .15s ease;
-
 }
 
-
 .reaction-chip:hover {
-
   transform:
     translateY(-1px);
 
@@ -4407,46 +4173,34 @@ onBeforeUnmount(() => {
       var(--primary-rgb),
       .35
     );
-
 }
 
-
 .reaction-chip.selected {
-
   border-color:
     var(--primary);
 
   background:
     var(--chat-soft);
-
 }
-
 
 .reaction-chip span {
-
   font-size:
     12px;
-
 }
 
-
 .reaction-chip small {
-
   font-size:
     9px;
 
   font-weight:
     800;
-
 }
-
 
 /* =========================================================
    ACTION BAR
    ========================================================= */
 
 .chat-action-bar {
-
   display:
     flex;
 
@@ -4477,12 +4231,9 @@ onBeforeUnmount(() => {
 
   background:
     var(--chat-soft);
-
 }
 
-
 .chat-action-bar-icon {
-
   width:
     31px;
 
@@ -4509,23 +4260,17 @@ onBeforeUnmount(() => {
       var(--primary-rgb),
       .08
     );
-
 }
 
-
 .chat-action-bar-icon svg {
-
   width:
     16px;
 
   height:
     16px;
-
 }
 
-
 .chat-action-bar-content {
-
   min-width:
     0;
 
@@ -4537,12 +4282,9 @@ onBeforeUnmount(() => {
 
   flex-direction:
     column;
-
 }
 
-
 .chat-action-bar-content strong {
-
   color:
     var(--primary);
 
@@ -4551,12 +4293,9 @@ onBeforeUnmount(() => {
 
   font-weight:
     850;
-
 }
 
-
 .chat-action-bar-content span {
-
   overflow:
     hidden;
 
@@ -4571,12 +4310,9 @@ onBeforeUnmount(() => {
 
   text-overflow:
     ellipsis;
-
 }
 
-
 .chat-action-bar-close {
-
   width:
     28px;
 
@@ -4609,49 +4345,37 @@ onBeforeUnmount(() => {
 
   cursor:
     pointer;
-
 }
 
-
 .chat-action-bar-close:hover {
-
   color:
     var(--chat-text);
 
   background:
     var(--chat-bg);
-
 }
-
 
 .chat-action-bar-enter-active,
 .chat-action-bar-leave-active {
-
   transition:
     opacity .15s ease,
     transform .15s ease;
-
 }
-
 
 .chat-action-bar-enter-from,
 .chat-action-bar-leave-to {
-
   opacity:
     0;
 
   transform:
     translateY(5px);
-
 }
-
 
 /* =========================================================
    CONTEXT MENU
    ========================================================= */
 
 .message-context-menu {
-
   position:
     fixed;
 
@@ -4688,12 +4412,27 @@ onBeforeUnmount(() => {
 
   direction:
     rtl;
-
 }
 
+/* =========================================================
+   ADMIN CONTEXT MENU
+   ========================================================= */
+
+.message-context-menu.admin-context-menu {
+  border-color:
+    var(--admin-gold-border);
+
+  box-shadow:
+    0 18px 45px
+    rgba(
+      214,
+      168,
+      61,
+      .12
+    );
+}
 
 .context-menu-user {
-
   display:
     flex;
 
@@ -4705,12 +4444,9 @@ onBeforeUnmount(() => {
 
   padding:
     6px 6px 8px;
-
 }
 
-
 .context-menu-avatar {
-
   width:
     32px;
 
@@ -4740,12 +4476,30 @@ onBeforeUnmount(() => {
 
   font-weight:
     850;
-
 }
 
+.context-menu-avatar svg {
+  width:
+    17px;
+
+  height:
+    17px;
+}
+
+.context-menu-avatar.admin {
+  color:
+    #fff8df;
+
+  background:
+    linear-gradient(
+      145deg,
+      #b88722,
+      #e6bd55,
+      #9c6c13
+    );
+}
 
 .context-menu-user > div:last-child {
-
   min-width:
     0;
 
@@ -4754,11 +4508,25 @@ onBeforeUnmount(() => {
 
   flex-direction:
     column;
-
 }
 
+.context-menu-name-row {
+  min-width:
+    0;
+
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  gap:
+    5px;
+}
 
 .context-menu-user strong {
+  max-width:
+    160px;
 
   overflow:
     hidden;
@@ -4774,23 +4542,41 @@ onBeforeUnmount(() => {
 
   text-overflow:
     ellipsis;
-
 }
 
-
 .context-menu-user span {
-
   color:
     var(--chat-muted);
 
   font-size:
     8px;
-
 }
 
+.context-admin-label {
+  flex:
+    0 0 auto;
+
+  padding:
+    2px 5px;
+
+  border:
+    1px solid
+    var(--admin-gold-border);
+
+  border-radius:
+    999px;
+
+  color:
+    var(--admin-gold) !important;
+
+  font-size:
+    7px !important;
+
+  font-weight:
+    900;
+}
 
 .context-menu-divider {
-
   height:
     1px;
 
@@ -4799,12 +4585,9 @@ onBeforeUnmount(() => {
 
   background:
     var(--chat-border);
-
 }
 
-
 .context-menu-item {
-
   width:
     100%;
 
@@ -4850,28 +4633,19 @@ onBeforeUnmount(() => {
   transition:
     background .15s ease,
     color .15s ease;
-
 }
-
 
 .context-menu-item:hover {
-
   background:
     var(--chat-soft);
-
 }
-
 
 .context-menu-item.danger {
-
   color:
     #ef4444;
-
 }
 
-
 .context-menu-item.danger:hover {
-
   background:
     rgba(
       239,
@@ -4879,12 +4653,9 @@ onBeforeUnmount(() => {
       68,
       .08
     );
-
 }
 
-
 .context-menu-item-icon {
-
   width:
     28px;
 
@@ -4905,31 +4676,22 @@ onBeforeUnmount(() => {
 
   background:
     var(--chat-soft);
-
 }
 
-
 .context-menu-item-icon svg {
-
   width:
     15px;
 
   height:
     15px;
-
 }
-
 
 .reaction-face {
-
   font-size:
     14px;
-
 }
 
-
 .context-menu-arrow {
-
   margin-right:
     auto;
 
@@ -4938,16 +4700,13 @@ onBeforeUnmount(() => {
 
   font-size:
     17px;
-
 }
-
 
 /* =========================================================
    REACTION PICKER
    ========================================================= */
 
 .reaction-picker {
-
   display:
     flex;
 
@@ -4975,12 +4734,9 @@ onBeforeUnmount(() => {
 
   background:
     var(--chat-soft);
-
 }
 
-
 .reaction-picker-button {
-
   width:
     34px;
 
@@ -5014,32 +4770,24 @@ onBeforeUnmount(() => {
   transition:
     transform .15s ease,
     background .15s ease;
-
 }
 
-
 .reaction-picker-button:hover {
-
   transform:
     scale(1.12);
 
   background:
     var(--chat-bg);
-
 }
 
-
 .reaction-picker-button.selected {
-
   background:
     var(--chat-bg);
 
   box-shadow:
     inset 0 0 0 1px
     var(--primary);
-
 }
-
 
 /* =========================================================
    MENU ANIMATION
@@ -5047,33 +4795,26 @@ onBeforeUnmount(() => {
 
 .message-menu-enter-active,
 .message-menu-leave-active {
-
   transition:
     opacity .12s ease,
     transform .12s ease;
-
 }
-
 
 .message-menu-enter-from,
 .message-menu-leave-to {
-
   opacity:
     0;
 
   transform:
     scale(.95)
     translateY(-4px);
-
 }
-
 
 /* =========================================================
    COMPOSER
    ========================================================= */
 
 .chat-composer {
-
   z-index:
     50;
 
@@ -5110,12 +4851,9 @@ onBeforeUnmount(() => {
 
   background:
     var(--chat-soft);
-
 }
 
-
 .chat-input {
-
   display:
     block;
 
@@ -5166,35 +4904,26 @@ onBeforeUnmount(() => {
 
   padding:
     9px 10px;
-
 }
 
-
 .chat-input:disabled {
-
   opacity:
     .65;
 
   cursor:
     not-allowed;
-
 }
-
 
 .chat-input::placeholder {
-
   color:
     var(--chat-muted);
-
 }
-
 
 /* =========================================================
    SEND BUTTON
    ========================================================= */
 
 .send-button {
-
   width:
     42px;
 
@@ -5239,12 +4968,9 @@ onBeforeUnmount(() => {
       var(--primary-rgb),
       .20
     );
-
 }
 
-
 .send-button:hover:not(:disabled) {
-
   transform:
     translateY(-1px);
 
@@ -5254,12 +4980,9 @@ onBeforeUnmount(() => {
       var(--primary-rgb),
       .28
     );
-
 }
 
-
 .send-button:disabled {
-
   opacity:
     .45;
 
@@ -5268,20 +4991,15 @@ onBeforeUnmount(() => {
 
   box-shadow:
     none;
-
 }
 
-
 .send-button svg {
-
   width:
     19px;
 
   height:
     19px;
-
 }
-
 
 /* =========================================================
    EMPTY / LOADING
@@ -5289,7 +5007,6 @@ onBeforeUnmount(() => {
 
 .chat-state,
 .empty-chat {
-
   width:
     100%;
 
@@ -5322,12 +5039,9 @@ onBeforeUnmount(() => {
 
   font-size:
     12px;
-
 }
 
-
 .empty-chat-icon {
-
   width:
     58px;
 
@@ -5348,23 +5062,17 @@ onBeforeUnmount(() => {
 
   color:
     var(--primary);
-
 }
 
-
 .empty-chat-icon svg {
-
   width:
     28px;
 
   height:
     28px;
-
 }
 
-
 .empty-chat h3 {
-
   margin:
     0;
 
@@ -5376,12 +5084,9 @@ onBeforeUnmount(() => {
 
   font-weight:
     800;
-
 }
 
-
 .empty-chat p {
-
   margin:
     0;
 
@@ -5390,9 +5095,7 @@ onBeforeUnmount(() => {
 
   font-size:
     11px;
-
 }
-
 
 /* =========================================================
    LOADERS
@@ -5400,19 +5103,15 @@ onBeforeUnmount(() => {
 
 .mini-loader,
 .send-loader {
-
   border-radius:
     50%;
 
   animation:
     chat-spin .7s
     linear infinite;
-
 }
 
-
 .mini-loader {
-
   width:
     19px;
 
@@ -5428,12 +5127,9 @@ onBeforeUnmount(() => {
 
   border-top-color:
     var(--primary);
-
 }
 
-
 .send-loader {
-
   width:
     15px;
 
@@ -5451,21 +5147,14 @@ onBeforeUnmount(() => {
 
   border-top-color:
     #fff;
-
 }
-
 
 @keyframes chat-spin {
-
   to {
-
     transform:
       rotate(360deg);
-
   }
-
 }
-
 
 /* =========================================================
    MESSAGE HIGHLIGHT
@@ -5473,38 +5162,47 @@ onBeforeUnmount(() => {
 
 .message-highlight
 .message-bubble {
-
   animation:
     messageHighlight
     1s
     ease;
-
 }
 
-
 @keyframes messageHighlight {
-
   0%,
   100% {
-
     box-shadow:
       none;
-
   }
 
   50% {
-
     box-shadow:
       0 0 0 4px
       rgba(
         var(--primary-rgb),
         .20
       );
-
   }
-
 }
 
+/* =========================================================
+   ADMIN REDUCED MOTION
+   ========================================================= */
+
+@media (
+  prefers-reduced-motion: reduce
+) {
+  .message-row.admin
+  .message-content::before {
+    animation:
+      none;
+  }
+
+  .room-chat-badge-dot::after {
+    animation:
+      none;
+  }
+}
 
 /* =========================================================
    MOBILE
@@ -5513,28 +5211,20 @@ onBeforeUnmount(() => {
 @media (
   max-width: 760px
 ) {
-
   .room-chat {
-
     padding:
       16px;
 
     border-radius:
       20px;
-
   }
-
 
   .message-row {
-
     max-width:
       94%;
-
   }
 
-
   .message-context-menu {
-
     width:
       min(
         225px,
@@ -5542,11 +5232,8 @@ onBeforeUnmount(() => {
           100vw - 20px
         )
       );
-
   }
-
 }
-
 
 /* =========================================================
    SMALL MOBILE
@@ -5555,25 +5242,17 @@ onBeforeUnmount(() => {
 @media (
   max-width: 480px
 ) {
-
   .room-chat {
-
     padding:
       14px;
-
   }
-
 
   .message-row {
-
     max-width:
       96%;
-
   }
 
-
   .message-avatar {
-
     width:
       32px;
 
@@ -5585,28 +5264,44 @@ onBeforeUnmount(() => {
 
     border-radius:
       10px;
-
   }
 
+  .message-avatar svg {
+    width:
+      17px;
+
+    height:
+      17px;
+  }
 
   .message-bubble {
-
     font-size:
       11px;
 
     padding:
       9px 11px;
-
   }
 
-
   .message-meta strong {
+    max-width:
+      150px;
 
     font-size:
       9px;
-
   }
 
-}
+  .admin-badge {
+    right:
+      9px;
 
+    top:
+      -9px;
+  }
+
+  .message-row.admin
+  .message-content {
+    padding:
+      8px 8px 9px;
+  }
+}
 </style>
