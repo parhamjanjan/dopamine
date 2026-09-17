@@ -461,6 +461,7 @@ def build_exam_result(*, attempt, request=None):
             "end_at": exam.end_at,
             "duration_minutes": exam.duration_minutes,
             "total_questions": exam.total_questions,
+            "question_pdf_url":exam.questions_pdf_url,
         },
 
         "user": {

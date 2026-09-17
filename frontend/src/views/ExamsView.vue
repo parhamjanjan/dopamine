@@ -970,6 +970,42 @@ function getAccessToken() {
   )
 
 }
+
+
+function getApiBaseUrl() {
+
+  return (
+    import.meta.env.VITE_API_URL ||
+    'http://127.0.0.1:8000/api'
+  )
+
+}
+
+
+function createApi() {
+
+  const token = getAccessToken()
+
+  return api.create({
+
+    baseURL: getApiBaseUrl(),
+
+    headers: {
+      'Content-Type': 'application/json',
+
+      ...(token
+        ? {
+            Authorization:
+              `Bearer ${token}`,
+          }
+        : {}),
+    },
+
+  })
+
+}
+
+
 /* =========================================================
    LOAD
 ========================================================= */
@@ -984,6 +1020,8 @@ async function loadExams() {
   errorMessage.value = ''
 
   try {
+
+    const api = createApi()
 
     const response =
       await api.get('/exams/')
@@ -1694,6 +1732,9 @@ async function startExam(exam) {
   }
 
   try {
+
+    const api =
+      createApi()
 
     const response =
       await api.post(

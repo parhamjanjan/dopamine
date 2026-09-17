@@ -220,6 +220,7 @@ class ProfileSerializer(serializers.ModelSerializer):
             'theme',
             'primary_color',
             'profile_image',
+            'is_staff'
         ]
 
         read_only_fields = [

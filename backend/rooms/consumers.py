@@ -1683,6 +1683,9 @@ class StudyRoomConsumer(
             'username':
                 message.user.username,
 
+            'is_staff':
+                message.user.is_staff,
+
             'message':
                 message.message,
 

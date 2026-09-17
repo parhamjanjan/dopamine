@@ -67,6 +67,20 @@
 
       <section class="hero-card">
 
+      <button
+          type="button"
+          class="back-button"
+          @click="goBack"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+          >
+            <path d="m15 18-6-6 6-6" />
+          </svg>
+        </button>
+
         <div class="hero-glow glow-one"></div>
         <div class="hero-glow glow-two"></div>
 
@@ -1332,108 +1346,183 @@
         class="tab-content"
       >
 
-        <div class="review-header">
+        <div class="review-hero">
 
-          <div>
-
-            <span>
+          <div class="review-hero-copy">
+            <span class="review-kicker">
               مرور شخصی‌سازی‌شده
             </span>
 
             <h2>
-              سؤال‌ها را دوباره بررسی کن
+              اشتباهاتت را به نقطه قوت تبدیل کن
             </h2>
 
             <p>
-              پاسخ انتخابی شما و پاسخ صحیح هر سؤال را کنار هم ببین و اشتباهاتت را مرور کن.
+              صفحه هر سؤال را از دفترچه اصلی ببین، پاسخ خودت را با پاسخ صحیح مقایسه کن و مرور هدفمند داشته باش.
             </p>
 
+            <div class="review-progress-row">
+              <div class="review-progress-track">
+                <div
+                  class="review-progress-fill"
+                  :style="{ width: reviewProgress + '%' }"
+                ></div>
+              </div>
+
+              <strong>
+                {{ formatPercent(reviewProgress) }}٪ مرور انجام شد
+              </strong>
+            </div>
           </div>
 
+          <div class="review-donut">
+            <div
+              class="review-donut-ring"
+              :style="{
+                '--review-progress': `${reviewProgress}%`
+              }"
+            >
+              <div class="review-donut-center">
+                <strong>
+                  {{ toPersianNumber(reviewCounts.correct) }}
+                </strong>
+                <span>درست</span>
+              </div>
+            </div>
+          </div>
 
-          <div class="review-summary">
+        </div>
 
-            <div class="review-mini correct">
+
+        <div class="review-dashboard">
+
+          <div class="review-stat-card total">
+            <div class="review-stat-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <rect x="4" y="3" width="16" height="18" rx="2"/>
+                <path d="M8 8h8"/>
+                <path d="M8 12h5"/>
+              </svg>
+            </div>
+
+            <div>
+              <span>کل سؤال‌ها</span>
+              <strong>
+                {{ toPersianNumber(result.personalized_review?.length || 0) }}
+              </strong>
+            </div>
+          </div>
+
+          <div class="review-stat-card correct">
+            <div class="review-stat-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="m5 12 4 4L19 6"/>
+              </svg>
+            </div>
+
+            <div>
+              <span>پاسخ درست</span>
               <strong>
                 {{ toPersianNumber(reviewCounts.correct) }}
               </strong>
-              <span>درست</span>
+            </div>
+          </div>
+
+          <div class="review-stat-card wrong">
+            <div class="review-stat-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="m7 7 10 10"/>
+                <path d="m17 7-10 10"/>
+              </svg>
             </div>
 
-            <div class="review-mini wrong">
+            <div>
+              <span>نیازمند مرور</span>
               <strong>
-                {{ toPersianNumber(reviewCounts.wrong) }}
+                {{ toPersianNumber(reviewCounts.wrong + reviewCounts.unanswered) }}
               </strong>
-              <span>غلط</span>
+            </div>
+          </div>
+
+          <div class="review-stat-card unanswered">
+            <div class="review-stat-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <circle cx="12" cy="12" r="9"/>
+                <path d="M8 12h8"/>
+              </svg>
             </div>
 
-            <div class="review-mini unanswered">
+            <div>
+              <span>نزده</span>
               <strong>
                 {{ toPersianNumber(reviewCounts.unanswered) }}
               </strong>
-              <span>نزده</span>
             </div>
-
           </div>
 
         </div>
 
 
-        <!-- Review filters -->
+        <div class="review-toolbar">
 
-        <div class="review-filters">
+          <div class="review-toolbar-copy">
+            <span>فیلتر مرور</span>
+            <strong>
+              {{ toPersianNumber(filteredReview.length) }}
+              سؤال نمایش داده می‌شود
+            </strong>
+          </div>
 
-          <button
-            type="button"
-            :class="{ active: reviewFilter === 'all' }"
-            @click="reviewFilter = 'all'"
-          >
-            همه
-            <span>
-              {{ toPersianNumber(result.personalized_review?.length || 0) }}
-            </span>
-          </button>
+          <div class="review-filters">
 
+            <button
+              type="button"
+              :class="{ active: reviewFilter === 'all' }"
+              @click="reviewFilter = 'all'"
+            >
+              همه
+              <span>
+                {{ toPersianNumber(result.personalized_review?.length || 0) }}
+              </span>
+            </button>
 
-          <button
-            type="button"
-            :class="{ active: reviewFilter === 'wrong' }"
-            @click="reviewFilter = 'wrong'"
-          >
-            غلط
-            <span>
-              {{ toPersianNumber(reviewCounts.wrong) }}
-            </span>
-          </button>
+            <button
+              type="button"
+              :class="{ active: reviewFilter === 'wrong' }"
+              @click="reviewFilter = 'wrong'"
+            >
+              غلط
+              <span>
+                {{ toPersianNumber(reviewCounts.wrong) }}
+              </span>
+            </button>
 
+            <button
+              type="button"
+              :class="{ active: reviewFilter === 'correct' }"
+              @click="reviewFilter = 'correct'"
+            >
+              درست
+              <span>
+                {{ toPersianNumber(reviewCounts.correct) }}
+              </span>
+            </button>
 
-          <button
-            type="button"
-            :class="{ active: reviewFilter === 'correct' }"
-            @click="reviewFilter = 'correct'"
-          >
-            درست
-            <span>
-              {{ toPersianNumber(reviewCounts.correct) }}
-            </span>
-          </button>
+            <button
+              type="button"
+              :class="{ active: reviewFilter === 'unanswered' }"
+              @click="reviewFilter = 'unanswered'"
+            >
+              نزده
+              <span>
+                {{ toPersianNumber(reviewCounts.unanswered) }}
+              </span>
+            </button>
 
-
-          <button
-            type="button"
-            :class="{ active: reviewFilter === 'unanswered' }"
-            @click="reviewFilter = 'unanswered'"
-          >
-            نزده
-            <span>
-              {{ toPersianNumber(reviewCounts.unanswered) }}
-            </span>
-          </button>
+          </div>
 
         </div>
 
-
-        <!-- Review list -->
 
         <div class="review-list">
 
@@ -1447,18 +1536,13 @@
             <div class="question-top">
 
               <div class="question-number">
-
                 <span>سؤال</span>
-
                 <strong>
                   {{ toPersianNumber(question.question_number) }}
                 </strong>
-
               </div>
 
-
               <div class="question-context">
-
                 <strong>
                   {{ question.booklet_title || 'دفترچه' }}
                 </strong>
@@ -1466,15 +1550,12 @@
                 <span>
                   {{ question.subject || '—' }}
                 </span>
-
               </div>
-
 
               <div
                 class="question-status"
                 :class="question.status"
               >
-
                 <span class="status-dot"></span>
 
                 {{
@@ -1484,73 +1565,144 @@
                       ? 'غلط'
                       : 'نزده'
                 }}
+              </div>
+
+            </div>
+
+
+            <div class="question-paper">
+
+              <div class="question-paper-heading">
+                <div>
+                  <span>صورت سؤال</span>
+                  <strong>
+                    صفحه {{ toPersianNumber(question.question_number) }}
+                  </strong>
+                </div>
+
+                <a
+                  class="paper-open-link"
+                  :href="questionPdfUrl(question.question_number)"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  مشاهده PDF
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M14 5h5v5"/>
+                    <path d="M19 5 10 14"/>
+                    <path d="M19 13v5a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h5"/>
+                  </svg>
+                </a>
+              </div>
+
+              <div class="question-pdf-frame">
+
+                <div
+                  v-if="questionPdfLoading && !renderedQuestionPages.has(Number(question.question_number))"
+                  class="question-pdf-state"
+                >
+                  <span class="pdf-loader"></span>
+                  <span>در حال آماده‌سازی صفحه سؤال...</span>
+                </div>
+
+                <div
+                  v-if="questionPdfError"
+                  class="question-pdf-state error"
+                >
+                  <strong>نمایش PDF ممکن نیست</strong>
+                  <span>{{ questionPdfError }}</span>
+                </div>
+
+                <canvas
+                  :ref="el => setQuestionCanvasRef(question.question_number, el)"
+                  class="question-pdf-canvas"
+                  :aria-label="`صفحه ${question.question_number} از PDF آزمون`"
+                ></canvas>
 
               </div>
 
             </div>
 
 
-            <div class="options-grid">
+            <div class="answer-comparison">
 
-              <div
-                v-for="option in question.options"
-                :key="option.value"
-                class="option-card"
-                :class="{
-                  selected: option.selected,
-                  correct: option.correct,
-                  'selected-wrong':
-                    option.selected && !option.correct
-                }"
-              >
-
-                <div class="option-number">
-                  {{ toPersianNumber(option.value) }}
+              <div class="answer-comparison-heading">
+                <div>
+                  <span>تحلیل پاسخ</span>
+                  <strong>انتخاب شما در برابر پاسخ صحیح</strong>
                 </div>
 
-                <div class="option-content">
-
-                  <span>
-                    گزینه {{ toPersianNumber(option.value) }}
-                  </span>
-
-
-                  <small v-if="option.selected">
-                    پاسخ شما
-                  </small>
-
-
-                  <small
-                    v-if="option.correct"
-                    class="correct-label"
-                  >
-                    پاسخ صحیح
-                  </small>
-
+                <div
+                  class="answer-result-pill"
+                  :class="question.status"
+                >
+                  {{
+                    question.status === 'correct'
+                      ? 'پاسخ صحیح'
+                      : question.status === 'wrong'
+                        ? 'نیازمند مرور'
+                        : 'بدون پاسخ'
+                  }}
                 </div>
+              </div>
 
+              <div class="options-grid">
 
-                <div class="option-mark">
+                <div
+                  v-for="option in question.options"
+                  :key="option.value"
+                  class="option-card"
+                  :class="{
+                    selected: option.selected,
+                    correct: option.correct,
+                    'selected-wrong':
+                      option.selected && !option.correct
+                  }"
+                >
 
-                  <svg
-                    v-if="option.correct"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                  >
-                    <path d="m5 12 4 4L19 6"/>
-                  </svg>
+                  <div class="option-number">
+                    {{ toPersianNumber(option.value) }}
+                  </div>
 
+                  <div class="option-content">
+                    <span>
+                      گزینه {{ toPersianNumber(option.value) }}
+                    </span>
 
-                  <svg
-                    v-else-if="option.selected"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                  >
-                    <path d="m7 7 10 10"/>
-                    <path d="m17 7-10 10"/>
-                  </svg>
+                    <small v-if="option.selected">
+                      پاسخ شما
+                    </small>
+
+                    <small
+                      v-if="option.correct"
+                      class="correct-label"
+                    >
+                      پاسخ صحیح
+                    </small>
+                  </div>
+
+                  <div class="option-mark">
+
+                    <svg
+                      v-if="option.correct"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                    >
+                      <path d="m5 12 4 4L19 6"/>
+                    </svg>
+
+                    <svg
+                      v-else-if="option.selected"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                    >
+                      <path d="m7 7 10 10"/>
+                      <path d="m17 7-10 10"/>
+                    </svg>
+
+                  </div>
 
                 </div>
 
@@ -1562,12 +1714,12 @@
             <div class="question-answer-summary">
 
               <div>
-
                 <span>پاسخ شما</span>
 
                 <strong
                   :class="{
-                    empty: question.user_answer === null ||
+                    empty:
+                      question.user_answer === null ||
                       question.user_answer === undefined
                   }"
                 >
@@ -1577,12 +1729,9 @@
                       : 'نزده'
                   }}
                 </strong>
-
               </div>
 
-
               <div>
-
                 <span>پاسخ صحیح</span>
 
                 <strong>
@@ -1592,7 +1741,6 @@
                       : 'نامشخص'
                   }}
                 </strong>
-
               </div>
 
             </div>
@@ -1606,14 +1754,12 @@
           >
 
             <div class="empty-review-icon">
-
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                 <path d="M4 4h16v16H4z"/>
                 <path d="M8 8h8"/>
                 <path d="M8 12h8"/>
                 <path d="M8 16h5"/>
               </svg>
-
             </div>
 
             <h3>
@@ -1673,9 +1819,12 @@
 
 import {
   computed,
+  nextTick,
   onBeforeUnmount,
   onMounted,
   ref,
+  shallowRef,
+  watch,
 } from 'vue'
 
 import {
@@ -1684,6 +1833,11 @@ import {
 } from 'vue-router'
 
 import api from '../services/api'
+
+import * as pdfjsLib from 'pdfjs-dist'
+import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker
 
 
 /* =========================================================
@@ -1711,6 +1865,22 @@ const reviewFilter = ref('all')
 const isDark = ref(false)
 
 let themeObserver = null
+
+
+/* =========================================================
+   QUESTION PDF
+========================================================= */
+
+
+const questionPdfDocument = shallowRef(null)
+const questionPdfLoading = ref(false)
+const questionPdfError = ref('')
+
+const questionCanvasRefs = new Map()
+const questionRenderTasks = new Map()
+const renderedQuestionPages = new Set()
+
+let questionPdfLoadPromise = null
 
 
 /* =========================================================
@@ -1805,7 +1975,6 @@ async function loadResult() {
 
     result.value =
       response.data
-
   } catch (error) {
 
     console.error(
@@ -2257,6 +2426,228 @@ const filteredReview =
 
 
 /* =========================================================
+   REVIEW VISUALS
+========================================================= */
+
+const reviewProgress =
+  computed(() => {
+
+    const total =
+      Number(
+        result.value?.personalized_review?.length || 0
+      )
+
+    if (!total) {
+      return 0
+    }
+
+    return Math.round(
+      (
+        reviewCounts.value.correct /
+        total
+      ) * 100
+    )
+
+  })
+
+
+function questionPdfUrl(questionNumber) {
+
+  const number = Number(questionNumber)
+
+  if (!Number.isInteger(number) || number < 1) {
+    return result.value.exam.question_pdf_url
+  }
+
+  return `${result.value.exam.question_pdf_url}#page=${number}`
+
+}
+
+
+function setQuestionCanvasRef(questionNumber, element) {
+
+  const number = Number(questionNumber)
+
+  if (!Number.isInteger(number) || number < 1) {
+    return
+  }
+
+  if (element) {
+    questionCanvasRefs.set(number, element)
+  } else {
+    questionCanvasRefs.delete(number)
+  }
+
+}
+
+
+async function loadQuestionPdf() {
+
+  if (questionPdfDocument.value) {
+    return questionPdfDocument.value
+  }
+
+  if (questionPdfLoadPromise) {
+    return questionPdfLoadPromise
+  }
+
+  questionPdfLoading.value = true
+  questionPdfError.value = ''
+
+  questionPdfLoadPromise = pdfjsLib
+    .getDocument({
+      url: result.value.exam.question_pdf_url,
+      withCredentials: false,
+    })
+    .promise
+    .then(pdf => {
+      questionPdfDocument.value = pdf
+      return pdf
+    })
+    .catch(error => {
+      console.error(
+        'QUESTION PDF LOAD ERROR:',
+        error
+      )
+
+      questionPdfError.value =
+        'فایل PDF آزمون بارگذاری نشد. آدرس PDF یا تنظیمات CORS سرور را بررسی کنید.'
+
+      throw error
+    })
+    .finally(() => {
+      questionPdfLoading.value = false
+      questionPdfLoadPromise = null
+    })
+
+  return questionPdfLoadPromise
+
+}
+
+
+async function renderQuestionPage(questionNumber, force = false) {
+
+  const number = Number(questionNumber)
+  const canvas = questionCanvasRefs.get(number)
+
+  if (!Number.isInteger(number) || number < 1 || !canvas) {
+    return
+  }
+
+  if (!force && renderedQuestionPages.has(number)) {
+    return
+  }
+
+  const previousTask = questionRenderTasks.get(number)
+
+  if (previousTask) {
+    try {
+      previousTask.cancel()
+    } catch {
+      // Ignore an already completed task.
+    }
+  }
+
+  try {
+    const pdf = await loadQuestionPdf()
+
+    if (number > pdf.numPages) {
+      throw new Error(
+        `PDF فقط ${pdf.numPages} صفحه دارد؛ صفحه ${number} وجود ندارد.`
+      )
+    }
+
+    const page = await pdf.getPage(number)
+    const container = canvas.parentElement
+
+    if (!container) {
+      return
+    }
+
+    const baseViewport = page.getViewport({ scale: 1 })
+    const availableWidth = Math.max(280, container.clientWidth - 2)
+    const scale = Math.min(1.75, availableWidth / baseViewport.width)
+    const viewport = page.getViewport({ scale })
+    const outputScale = Math.min(window.devicePixelRatio || 1, 2)
+
+    canvas.width = Math.floor(viewport.width * outputScale)
+    canvas.height = Math.floor(viewport.height * outputScale)
+    canvas.style.width = `${Math.floor(viewport.width)}px`
+    canvas.style.height = `${Math.floor(viewport.height)}px`
+
+    const context = canvas.getContext('2d', { alpha: false })
+
+    if (!context) {
+      throw new Error('Canvas 2D context is unavailable.')
+    }
+
+    context.setTransform(
+      outputScale,
+      0,
+      0,
+      outputScale,
+      0,
+      0
+    )
+
+    context.fillStyle = '#ffffff'
+    context.fillRect(0, 0, viewport.width, viewport.height)
+
+    const renderTask = page.render({
+      canvasContext: context,
+      viewport,
+    })
+
+    questionRenderTasks.set(number, renderTask)
+
+    await renderTask.promise
+
+    renderedQuestionPages.add(number)
+  } catch (error) {
+    if (error?.name === 'RenderingCancelledException') {
+      return
+    }
+
+    console.error(
+      `QUESTION PDF PAGE ${number} RENDER ERROR:`,
+      error
+    )
+
+    questionPdfError.value =
+      'نمایش صفحه این سؤال با خطا مواجه شد.'
+  } finally {
+    questionRenderTasks.delete(number)
+  }
+
+}
+
+
+async function renderFilteredQuestionPages() {
+
+  if (activeTab.value !== 'review') {
+    return
+  }
+
+  await nextTick()
+
+  if (!filteredReview.value.length) {
+    return
+  }
+
+  try {
+    await loadQuestionPdf()
+  } catch {
+    return
+  }
+
+  for (const question of filteredReview.value) {
+    await renderQuestionPage(question.question_number)
+  }
+
+}
+
+
+/* =========================================================
    FORMATTERS
 ========================================================= */
 
@@ -2585,7 +2976,7 @@ async function goBack() {
   try {
 
     await router.push({
-      name: 'Exams',
+      name: 'exams',
     })
 
   } catch {
@@ -2598,34 +2989,73 @@ async function goBack() {
 
 
 /* =========================================================
+   QUESTION PDF WATCHERS
+========================================================= */
+
+watch(
+  () => activeTab.value,
+  value => {
+    if (value === 'review') {
+      renderFilteredQuestionPages()
+    }
+  }
+)
+
+watch(
+  () => filteredReview.value
+    .map(item => item.question_number)
+    .join(','),
+  () => {
+    if (activeTab.value === 'review') {
+      renderFilteredQuestionPages()
+    }
+  }
+)
+
+
+/* =========================================================
    MOUNT
 ========================================================= */
 
-onMounted(
-  async () => {
+onMounted(async () => {
 
-    observeTheme()
+  observeTheme()
+  await loadResult()
 
-    await loadResult()
-
+  if (activeTab.value === 'review') {
+    await renderFilteredQuestionPages()
   }
-)
+
+})
 
 
 /* =========================================================
    UNMOUNT
 ========================================================= */
 
-onBeforeUnmount(
-  () => {
+onBeforeUnmount(() => {
 
-    themeObserver?.disconnect()
+  themeObserver?.disconnect()
+  themeObserver = null
 
-    themeObserver =
-      null
-
+  for (const task of questionRenderTasks.values()) {
+    try {
+      task.cancel()
+    } catch {
+      // Ignore already-finished PDF.js tasks.
+    }
   }
-)
+
+  questionRenderTasks.clear()
+  questionCanvasRefs.clear()
+  renderedQuestionPages.clear()
+
+  if (questionPdfDocument.value) {
+    questionPdfDocument.value.destroy()
+    questionPdfDocument.value = null
+  }
+
+})
 
 </script>
 
@@ -3070,6 +3500,40 @@ onBeforeUnmount(
   gap:
     30px;
 
+}
+
+.back-button {
+
+  width: 42px;
+
+  height: 42px;
+
+  border:
+    1px solid var(--border);
+
+  border-radius: 12px;
+
+  background:
+    var(--surface);
+
+  color:
+    var(--text);
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  cursor: pointer;
+}
+
+
+.back-button svg {
+  transform: rotate(180deg);
+  width: 20px;
+
+  height: 20px;
 }
 
 .hero-user {
@@ -6559,6 +7023,983 @@ onBeforeUnmount(
 }
 
 
+
+/* =========================================================
+   REVIEW ENHANCED UI
+========================================================= */
+
+.review-hero {
+
+  position:
+    relative;
+
+  display:
+    grid;
+
+  grid-template-columns:
+    1fr auto;
+
+  gap:
+    28px;
+
+  align-items:
+    center;
+
+  margin-bottom:
+    16px;
+
+  padding:
+    28px;
+
+  overflow:
+    hidden;
+
+  border:
+    1px solid var(--border);
+
+  border-radius:
+    26px;
+
+  background:
+    linear-gradient(
+      135deg,
+      var(--surface),
+      var(--primary-soft)
+    );
+
+  box-shadow:
+    var(--shadow);
+
+}
+
+.review-hero::before {
+
+  content:
+    '';
+
+  position:
+    absolute;
+
+  width:
+    220px;
+
+  height:
+    220px;
+
+  left:
+    -90px;
+
+  top:
+    -120px;
+
+  border-radius:
+    50%;
+
+  background:
+    var(--primary-soft);
+
+  pointer-events:
+    none;
+
+}
+
+.review-hero-copy {
+
+  position:
+    relative;
+
+  z-index:
+    1;
+
+}
+
+.review-kicker {
+
+  display:
+    inline-flex;
+
+  align-items:
+    center;
+
+  gap:
+    7px;
+
+  color:
+    var(--primary);
+
+  font-size:
+    11px;
+
+  font-weight:
+    900;
+
+}
+
+.review-kicker::before {
+
+  content:
+    '';
+
+  width:
+    7px;
+
+  height:
+    7px;
+
+  border-radius:
+    50%;
+
+  background:
+    currentColor;
+
+  box-shadow:
+    0 0 0 5px var(--primary-soft);
+
+}
+
+.review-hero h2 {
+
+  margin:
+    8px 0 7px;
+
+  font-size:
+    clamp(22px, 3vw, 30px);
+
+  line-height:
+    1.35;
+
+}
+
+.review-hero p {
+
+  max-width:
+    700px;
+
+  margin:
+    0;
+
+  color:
+    var(--text-soft);
+
+  font-size:
+    12px;
+
+  line-height:
+    2;
+
+}
+
+.review-progress-row {
+
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  gap:
+    12px;
+
+  margin-top:
+    20px;
+
+}
+
+.review-progress-track {
+
+  width:
+    min(360px, 55vw);
+
+  height:
+    8px;
+
+  overflow:
+    hidden;
+
+  border-radius:
+    99px;
+
+  background:
+    var(--border);
+
+}
+
+.review-progress-fill {
+
+  height:
+    100%;
+
+  border-radius:
+    inherit;
+
+  background:
+    linear-gradient(
+      90deg,
+      var(--primary-dark),
+      var(--primary)
+    );
+
+  box-shadow:
+    0 0 14px rgba(91,92,240,.28);
+
+  transition:
+    width .5s ease;
+
+}
+
+.review-progress-row strong {
+
+  white-space:
+    nowrap;
+
+  color:
+    var(--text-soft);
+
+  font-size:
+    10px;
+
+}
+
+.review-donut {
+
+  position:
+    relative;
+
+  z-index:
+    1;
+
+  display:
+    grid;
+
+  place-items:
+    center;
+
+  width:
+    150px;
+
+  height:
+    150px;
+
+}
+
+.review-donut-ring {
+
+  position:
+    relative;
+
+  display:
+    grid;
+
+  place-items:
+    center;
+
+  width:
+    140px;
+
+  height:
+    140px;
+
+  border-radius:
+    50%;
+
+  background:
+    conic-gradient(
+      var(--primary) var(--review-progress),
+      var(--border) var(--review-progress)
+    );
+
+  box-shadow:
+    0 12px 35px rgba(91,92,240,.16);
+
+}
+
+.review-donut-ring::before {
+
+  content:
+    '';
+
+  position:
+    absolute;
+
+  inset:
+    10px;
+
+  border-radius:
+    50%;
+
+  background:
+    var(--surface);
+
+}
+
+.review-donut-center {
+
+  position:
+    relative;
+
+  z-index:
+    1;
+
+  display:
+    flex;
+
+  flex-direction:
+    column;
+
+  align-items:
+    center;
+
+  justify-content:
+    center;
+
+}
+
+.review-donut-center strong {
+
+  font-size:
+    27px;
+
+  font-weight:
+    950;
+
+}
+
+.review-donut-center span {
+
+  margin-top:
+    2px;
+
+  color:
+    var(--text-faint);
+
+  font-size:
+    10px;
+
+}
+
+.review-dashboard {
+
+  display:
+    grid;
+
+  grid-template-columns:
+    repeat(4, 1fr);
+
+  gap:
+    12px;
+
+  margin-bottom:
+    16px;
+
+}
+
+.review-stat-card {
+
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  gap:
+    12px;
+
+  min-width:
+    0;
+
+  padding:
+    16px;
+
+  border:
+    1px solid var(--border);
+
+  border-radius:
+    18px;
+
+  background:
+    var(--surface);
+
+  box-shadow:
+    var(--shadow);
+
+}
+
+.review-stat-icon {
+
+  width:
+    42px;
+
+  height:
+    42px;
+
+  flex:
+    0 0 42px;
+
+  display:
+    grid;
+
+  place-items:
+    center;
+
+  border-radius:
+    13px;
+
+  color:
+    var(--primary);
+
+  background:
+    var(--primary-soft);
+
+}
+
+.review-stat-card.correct .review-stat-icon {
+
+  color:
+    var(--success);
+
+  background:
+    var(--success-soft);
+
+}
+
+.review-stat-card.wrong .review-stat-icon {
+
+  color:
+    var(--danger);
+
+  background:
+    var(--danger-soft);
+
+}
+
+.review-stat-card.unanswered .review-stat-icon {
+
+  color:
+    var(--warning);
+
+  background:
+    var(--warning-soft);
+
+}
+
+.review-stat-icon svg {
+
+  width:
+    20px;
+
+  height:
+    20px;
+
+}
+
+.review-stat-card span {
+
+  display:
+    block;
+
+  color:
+    var(--text-faint);
+
+  font-size:
+    9px;
+
+}
+
+.review-stat-card strong {
+
+  display:
+    block;
+
+  margin-top:
+    3px;
+
+  font-size:
+    21px;
+
+  font-weight:
+    950;
+
+}
+
+.review-toolbar {
+
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  justify-content:
+    space-between;
+
+  gap:
+    18px;
+
+  margin-bottom:
+    15px;
+
+  padding:
+    12px;
+
+  border:
+    1px solid var(--border);
+
+  border-radius:
+    18px;
+
+  background:
+    var(--surface);
+
+  box-shadow:
+    var(--shadow);
+
+}
+
+.review-toolbar-copy {
+
+  padding:
+    0 7px;
+
+}
+
+.review-toolbar-copy span {
+
+  display:
+    block;
+
+  color:
+    var(--text-faint);
+
+  font-size:
+    9px;
+
+}
+
+.review-toolbar-copy strong {
+
+  display:
+    block;
+
+  margin-top:
+    3px;
+
+  font-size:
+    12px;
+
+}
+
+.question-paper {
+
+  margin-top:
+    18px;
+
+  padding:
+    14px;
+
+  border:
+    1px solid var(--border);
+
+  border-radius:
+    19px;
+
+  background:
+    var(--surface-soft);
+
+}
+
+.question-paper-heading {
+
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  justify-content:
+    space-between;
+
+  gap:
+    12px;
+
+  margin-bottom:
+    11px;
+
+}
+
+.question-paper-heading > div:first-child span {
+
+  display:
+    block;
+
+  color:
+    var(--text-faint);
+
+  font-size:
+    9px;
+
+}
+
+.question-paper-heading > div:first-child strong {
+
+  display:
+    block;
+
+  margin-top:
+    3px;
+
+  font-size:
+    12px;
+
+}
+
+.paper-open-link {
+
+  display:
+    inline-flex;
+
+  align-items:
+    center;
+
+  gap:
+    6px;
+
+  padding:
+    8px 10px;
+
+  border:
+    1px solid var(--border);
+
+  border-radius:
+    10px;
+
+  color:
+    var(--primary);
+
+  background:
+    var(--surface);
+
+  font-size:
+    9px;
+
+  font-weight:
+    800;
+
+  text-decoration:
+    none;
+
+  transition:
+    .2s ease;
+
+}
+
+.paper-open-link:hover {
+
+  transform:
+    translateY(-1px);
+
+  border-color:
+    var(--primary);
+
+  box-shadow:
+    0 8px 20px rgba(91,92,240,.12);
+
+}
+
+.paper-open-link svg {
+
+  width:
+    14px;
+
+  height:
+    14px;
+
+}
+
+.question-pdf-frame {
+
+  position:
+    relative;
+
+  width:
+    100%;
+
+  
+  overflow:
+    hidden;
+
+  border:
+    1px solid var(--border);
+
+  border-radius:
+    14px;
+
+  background:
+    #fff;
+
+}
+
+.question-pdf-canvas {
+
+  display:
+    block;
+
+  max-width:
+    100%;
+
+  height:
+    auto;
+
+  margin:
+    0 auto;
+
+  background:
+    #fff;
+
+  box-shadow:
+    0 10px 30px rgba(15, 23, 42, .10);
+
+}
+
+.question-pdf-state {
+
+  position:
+    absolute;
+
+  inset:
+    0;
+
+  z-index:
+    2;
+
+  display:
+    flex;
+
+  flex-direction:
+    column;
+
+  align-items:
+    center;
+
+  justify-content:
+    center;
+
+  gap:
+    10px;
+
+  min-height:
+    260px;
+
+  padding:
+    24px;
+
+  text-align:
+    center;
+
+  color:
+    var(--text-soft);
+
+  background:
+    rgba(248, 250, 252, .94);
+
+  backdrop-filter:
+    blur(4px);
+
+  font-size:
+    11px;
+
+}
+
+.exam-result-page.is-dark .question-pdf-state {
+
+  background:
+    rgba(16, 22, 32, .94);
+
+}
+
+.question-pdf-state.error {
+
+  color:
+    var(--danger);
+
+}
+
+.question-pdf-state.error strong {
+
+  font-size:
+    12px;
+
+}
+
+.pdf-loader {
+
+  width:
+    28px;
+
+  height:
+    28px;
+
+  border:
+    3px solid var(--border);
+
+  border-top-color:
+    var(--primary);
+
+  border-radius:
+    50%;
+
+  animation:
+    pdfSpin .75s linear infinite;
+
+}
+
+@keyframes pdfSpin {
+
+  to {
+    transform:
+      rotate(360deg);
+  }
+
+}
+
+.answer-comparison {
+
+  margin-top:
+    16px;
+
+  padding:
+    15px;
+
+  border:
+    1px solid var(--border);
+
+  border-radius:
+    19px;
+
+  background:
+    var(--surface-soft);
+
+}
+
+.answer-comparison-heading {
+
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  justify-content:
+    space-between;
+
+  gap:
+    12px;
+
+}
+
+.answer-comparison-heading span {
+
+  display:
+    block;
+
+  color:
+    var(--text-faint);
+
+  font-size:
+    9px;
+
+}
+
+.answer-comparison-heading strong {
+
+  display:
+    block;
+
+  margin-top:
+    3px;
+
+  font-size:
+    13px;
+
+}
+
+.answer-result-pill {
+
+  padding:
+    7px 10px;
+
+  border-radius:
+    10px;
+
+  font-size:
+    9px;
+
+  font-weight:
+    900;
+
+}
+
+.answer-result-pill.correct {
+
+  color:
+    var(--success);
+
+  background:
+    var(--success-soft);
+
+}
+
+.answer-result-pill.wrong {
+
+  color:
+    var(--danger);
+
+  background:
+    var(--danger-soft);
+
+}
+
+.answer-result-pill.unanswered {
+
+  color:
+    var(--warning);
+
+  background:
+    var(--warning-soft);
+
+}
+
+.answer-comparison .options-grid {
+
+  margin-top:
+    13px;
+
+}
+
+.question-card {
+
+  transition:
+    transform .2s ease,
+    box-shadow .2s ease;
+
+}
+
+.question-card:hover {
+
+  transform:
+    translateY(-2px);
+
+  box-shadow:
+    0 20px 55px rgba(31,41,55,.10);
+
+}
+
+.is-dark .question-card:hover {
+
+  box-shadow:
+    0 20px 55px rgba(0,0,0,.28);
+
+}
+
 /* =========================================================
    FOOTER
 ========================================================= */
@@ -6678,6 +8119,29 @@ onBeforeUnmount(
 
 @media (max-width: 800px) {
 
+  .review-hero {
+    grid-template-columns: 1fr;
+    padding: 22px;
+  }
+
+  .review-donut {
+    justify-self: center;
+  }
+
+  .review-dashboard {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .review-toolbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+}
+
+
+@media (max-width: 800px) {
+
   .exam-result-page {
 
     padding:
@@ -6766,6 +8230,38 @@ onBeforeUnmount(
     align-items:
       flex-start;
 
+  }
+
+}
+
+
+@media (max-width: 600px) {
+
+  .review-dashboard {
+    grid-template-columns: 1fr;
+  }
+
+  .review-progress-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .review-progress-track {
+    width: 100%;
+  }
+
+  .question-paper {
+    padding: 10px;
+  }
+
+  .question-paper-heading,
+  .answer-comparison-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .question-pdf-canvas {
+    max-width: 100%;
   }
 
 }
