@@ -972,7 +972,6 @@ function getAccessToken() {
 }
 
 
-
 /* =========================================================
    LOAD
 ========================================================= */
@@ -987,7 +986,6 @@ async function loadExams() {
   errorMessage.value = ''
 
   try {
-
 
     const response =
       await api.get('/exams/')
@@ -1699,7 +1697,6 @@ async function startExam(exam) {
 
   try {
 
-    
     const response =
       await api.post(
         `/exams/${exam.id}/start/`

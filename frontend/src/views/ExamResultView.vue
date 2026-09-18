@@ -3,223 +3,114 @@
     class="exam-result-page"
     :class="{ 'is-dark': isDark }"
     dir="rtl"
+    @mousemove="handleMouseMove"
+    :style="mouseStyle"
   >
-    <!-- =====================================================
-         LOADING
-    ====================================================== -->
-
-    <div v-if="loading" class="page-state">
-      <div class="loading-orb">
-        <span></span>
-        <span></span>
-        <span></span>
-      </div>
-
-      <h2>در حال آماده‌سازی کارنامه</h2>
-      <p>
-        نتایج و تحلیل عملکرد شما در حال دریافت است...
-      </p>
+    <!-- Background grid only -->
+    <div class="bg-layer" aria-hidden="true">
+      <div class="bg-grid"></div>
+      <div class="bg-glow"></div>
     </div>
 
+    <!-- LOADING -->
+    <div v-if="loading" class="page-state">
+      <div class="loading-orb">
+        <span></span><span></span><span></span>
+      </div>
+      <h2>در حال آماده‌سازی کارنامه</h2>
+      <p>نتایج و تحلیل عملکرد شما در حال دریافت است...</p>
+    </div>
 
-    <!-- =====================================================
-         ERROR
-    ====================================================== -->
-
-    <div
-      v-else-if="errorMessage"
-      class="page-state error-state"
-    >
+    <!-- ERROR -->
+    <div v-else-if="errorMessage" class="page-state error-state">
       <div class="state-icon error">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
           <path d="M12 3 2.8 19a2 2 0 0 0 1.7 3h15a2 2 0 0 0 1.7-3L12 3Z"/>
-          <path d="M12 9v4"/>
-          <path d="M12 17h.01"/>
+          <path d="M12 9v4"/><path d="M12 17h.01"/>
         </svg>
       </div>
-
       <h2>دریافت کارنامه ناموفق بود</h2>
-
       <p>{{ errorMessage }}</p>
-
-      <button
-        type="button"
-        class="retry-button"
-        @click="loadResult"
-      >
-        تلاش دوباره
-      </button>
+      <button type="button" class="retry-button" @click="loadResult">تلاش دوباره</button>
     </div>
 
+    <!-- MAIN -->
+    <main v-else-if="result" class="result-container">
 
-    <!-- =====================================================
-         MAIN
-    ====================================================== -->
-
-    <main
-      v-else-if="result"
-      class="result-container"
-    >
-
-      <!-- ===================================================
-           HERO
-      ==================================================== -->
-
+      <!-- HERO -->
       <section class="hero-card">
-
-      <button
-          type="button"
-          class="back-button"
-          @click="goBack"
-        >
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-          >
+        <button type="button" class="back-button" @click="goBack">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
             <path d="m15 18-6-6 6-6" />
           </svg>
         </button>
 
-        <div class="hero-glow glow-one"></div>
-        <div class="hero-glow glow-two"></div>
+        <div class="hero-aurora"></div>
+        <div class="hero-grid"></div>
 
         <div class="hero-content">
-
           <div class="hero-user">
-
             <div class="avatar-wrap">
-
               <img
                 v-if="result.user?.profile_image"
                 :src="result.user.profile_image"
                 alt="تصویر کاربر"
                 class="avatar-image"
               />
-
-              <div
-                v-else
-                class="avatar-fallback"
-              >
-                {{ userInitials }}
-              </div>
-
+              <div v-else class="avatar-fallback">{{ userInitials }}</div>
               <div class="avatar-status"></div>
-
             </div>
-
 
             <div class="hero-user-info">
-
-              <span class="hero-eyebrow">
-                کارنامه آزمون
-              </span>
-
-              <h1>
-                {{ result.exam?.title || 'آزمون' }}
-              </h1>
-
-              <p>
-                {{ result.user?.full_name || result.user?.username || 'دانش‌آموز' }}
-              </p>
-
+              <span class="hero-eyebrow">کارنامه آزمون</span>
+              <h1>{{ result.exam?.title || 'آزمون' }}</h1>
+              <p>{{ result.user?.full_name || result.user?.username || 'دانش‌آموز' }}</p>
             </div>
-
           </div>
 
-
           <div class="hero-score">
-
             <div class="score-ring">
-
-              <svg
-                viewBox="0 0 120 120"
-                class="score-svg"
-              >
+              <svg viewBox="0 0 120 120" class="score-svg">
+                <defs>
+                  <linearGradient id="scoreGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#ffffff" />
+                    <stop offset="100%" stop-color="#b8b9ff" />
+                  </linearGradient>
+                </defs>
+                <circle cx="60" cy="60" r="50" class="score-track" />
                 <circle
-                  cx="60"
-                  cy="60"
-                  r="50"
-                  class="score-track"
-                />
-
-                <circle
-                  cx="60"
-                  cy="60"
-                  r="50"
+                  cx="60" cy="60" r="50"
                   class="score-progress"
                   :stroke-dasharray="scoreDash"
                   stroke-dashoffset="0"
                 />
               </svg>
-
               <div class="score-center">
-
-                <strong>
-                  {{ formatPercent(result.summary?.percentage) }}
-                </strong>
-
-                <span>
-                  درصد
-                </span>
-
+                <strong>{{ formatPercent(result.summary?.percentage) }}</strong>
+                <span>درصد</span>
               </div>
-
             </div>
-
-            <div class="score-caption">
-              درصد با نمره منفی
-            </div>
-
+            <div class="score-caption">درصد با نمره منفی</div>
           </div>
-
         </div>
-
 
         <div class="hero-bottom">
-
           <div class="hero-meta">
-
             <span class="hero-meta-dot"></span>
-
-            <span>
-              {{
-                result.is_final
-                  ? 'کارنامه نهایی'
-                  : 'کارنامه اولیه'
-              }}
-            </span>
-
+            <span>{{ result.is_final ? 'کارنامه نهایی' : 'کارنامه اولیه' }}</span>
           </div>
-
           <div class="hero-meta">
-
-            <span>
-              {{ formatDate(result.exam?.start_at) }}
-            </span>
-
+            <span>{{ formatDate(result.exam?.start_at) }}</span>
             <span class="meta-separator">•</span>
-
-            <span>
-              {{ formatTime(result.exam?.start_at) }}
-            </span>
-
+            <span>{{ formatTime(result.exam?.start_at) }}</span>
           </div>
-
         </div>
-
       </section>
 
-
-      <!-- ===================================================
-           TABS
-      ==================================================== -->
-
+      <!-- TABS -->
       <nav class="result-tabs">
-
         <button
-          type="button"
-          class="result-tab"
+          type="button" class="result-tab"
           :class="{ active: activeTab === 'overview' }"
           @click="activeTab = 'overview'"
         >
@@ -231,222 +122,229 @@
               <rect x="14" y="14" width="7" height="7" rx="1"/>
             </svg>
           </span>
-
           <span>خلاصه کارنامه</span>
         </button>
 
-
         <button
-          type="button"
-          class="result-tab"
+          type="button" class="result-tab"
           :class="{ active: activeTab === 'booklets' }"
           @click="activeTab = 'booklets'"
         >
           <span class="tab-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
               <path d="M5 4.5A2.5 2.5 0 0 1 7.5 2H20v17H7.5A2.5 2.5 0 0 0 5 21.5v-17Z"/>
-              <path d="M5 4.5V21.5"/>
-              <path d="M9 7h7"/>
-              <path d="M9 11h7"/>
-              <path d="M9 15h4"/>
+              <path d="M5 4.5V21.5"/><path d="M9 7h7"/>
+              <path d="M9 11h7"/><path d="M9 15h4"/>
             </svg>
           </span>
-
           <span>دفترچه‌ها</span>
-
-          <small>
-            {{ toPersianNumber(result.booklets?.length || 0) }}
-          </small>
+          <small>{{ toPersianNumber(result.booklets?.length || 0) }}</small>
         </button>
 
-
         <button
-          type="button"
-          class="result-tab"
+          type="button" class="result-tab"
           :class="{ active: activeTab === 'analytics' }"
           @click="activeTab = 'analytics'"
         >
           <span class="tab-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path d="M4 19V5"/>
-              <path d="M4 19h16"/>
+              <path d="M4 19V5"/><path d="M4 19h16"/>
               <path d="m7 15 3-4 3 2 5-7"/>
             </svg>
           </span>
-
           <span>تحلیل و نمودارها</span>
         </button>
 
-
         <button
-          type="button"
-          class="result-tab review-tab"
+          type="button" class="result-tab review-tab"
           :class="{ active: activeTab === 'review' }"
           @click="activeTab = 'review'"
         >
           <span class="tab-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path d="M4 4h16v16H4z"/>
-              <path d="M8 8h8"/>
-              <path d="M8 12h8"/>
-              <path d="M8 16h5"/>
+              <path d="M4 4h16v16H4z"/><path d="M8 8h8"/>
+              <path d="M8 12h8"/><path d="M8 16h5"/>
             </svg>
           </span>
-
           <span>مرور شخصی‌سازی‌شده</span>
-
-          <small>
-            {{ toPersianNumber(result.personalized_review?.length || 0) }}
-          </small>
+          <small>{{ toPersianNumber(result.personalized_review?.length || 0) }}</small>
         </button>
-
       </nav>
 
+      <!-- TAB: OVERVIEW -->
+      <section v-if="activeTab === 'overview'" class="tab-content">
 
-      <!-- ===================================================
-           TAB: OVERVIEW
-      ==================================================== -->
-
-      <section
-        v-if="activeTab === 'overview'"
-        class="tab-content"
-      >
-
-        <!-- Summary stats -->
-
-        <div class="summary-grid">
-
-          <div class="metric-card score-metric">
-
-            <div class="metric-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path d="M12 3v18"/>
-                <path d="M5 8h14"/>
-                <path d="M5 16h14"/>
-              </svg>
-            </div>
-
-            <div class="metric-content">
-
-              <span>درصد نهایی</span>
-
-              <strong>
-                {{ formatPercent(result.summary?.percentage) }}٪
-              </strong>
-
-              <small>
-                با نمره منفی
-              </small>
-
-            </div>
-
+        <!-- Performance Signal -->
+        <section class="signal-panel" :class="`signal-${performanceSignal.key}`">
+          <div class="signal-radar">
+            <span class="radar-ring r1"></span>
+            <span class="radar-ring r2"></span>
+            <span class="radar-ring r3"></span>
+            <span class="radar-sweep"></span>
+            <span class="radar-dot"></span>
           </div>
 
+          <div class="signal-content">
+            <span class="signal-label">سیگنال عملکرد</span>
+            <h3 class="signal-title">{{ performanceSignal.title }}</h3>
+            <p class="signal-desc">{{ performanceSignal.description }}</p>
+
+            <div class="signal-bars">
+              <span
+                v-for="(bar, i) in 5"
+                :key="i"
+                class="signal-bar"
+                :class="{ active: i < performanceSignal.strength }"
+              ></span>
+            </div>
+          </div>
+
+          <div class="signal-meta">
+            <div class="signal-percent">
+              <strong>{{ formatPercent(result.summary?.percentage) }}٪</strong>
+              <span>درصد</span>
+            </div>
+            <div class="signal-rank">
+              <strong>{{ formatRank(result.ranking?.national_rank) }}</strong>
+              <span>رتبه</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Summary stats -->
+        <div class="summary-grid">
+          <div class="metric-card score-metric">
+            <div class="metric-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M12 3v18"/><path d="M5 8h14"/><path d="M5 16h14"/>
+              </svg>
+            </div>
+            <div class="metric-content">
+              <span>درصد نهایی</span>
+              <strong>{{ formatPercent(result.summary?.percentage) }}٪</strong>
+              <small>با نمره منفی</small>
+            </div>
+          </div>
 
           <div class="metric-card">
-
             <div class="metric-icon correct">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                 <path d="m5 12 4 4L19 6"/>
               </svg>
             </div>
-
             <div class="metric-content">
-
               <span>پاسخ درست</span>
-
-              <strong>
-                {{ toPersianNumber(result.summary?.correct_count || 0) }}
-              </strong>
-
-              <small>
-                سؤال
-              </small>
-
+              <strong>{{ toPersianNumber(result.summary?.correct_count || 0) }}</strong>
+              <small>سؤال</small>
             </div>
-
           </div>
 
-
           <div class="metric-card">
-
             <div class="metric-icon wrong">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path d="m7 7 10 10"/>
-                <path d="m17 7-10 10"/>
+                <path d="m7 7 10 10"/><path d="m17 7-10 10"/>
               </svg>
             </div>
-
             <div class="metric-content">
-
               <span>پاسخ غلط</span>
-
-              <strong>
-                {{ toPersianNumber(result.summary?.wrong_count || 0) }}
-              </strong>
-
-              <small>
-                سؤال
-              </small>
-
+              <strong>{{ toPersianNumber(result.summary?.wrong_count || 0) }}</strong>
+              <small>سؤال</small>
             </div>
-
           </div>
-
 
           <div class="metric-card">
-
             <div class="metric-icon unanswered">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <circle cx="12" cy="12" r="9"/>
-                <path d="M8 12h8"/>
+                <circle cx="12" cy="12" r="9"/><path d="M8 12h8"/>
               </svg>
             </div>
-
             <div class="metric-content">
-
               <span>نزده</span>
-
-              <strong>
-                {{ toPersianNumber(result.summary?.unanswered_count || 0) }}
-              </strong>
-
-              <small>
-                سؤال
-              </small>
-
+              <strong>{{ toPersianNumber(result.summary?.unanswered_count || 0) }}</strong>
+              <small>سؤال</small>
             </div>
-
           </div>
-
         </div>
 
+        <!-- Performance Peak -->
+        <section class="panel peak-panel">
+          <div class="panel-heading">
+            <div>
+              <span>قله عملکرد</span>
+              <h2>جایگاه شما در رقابت</h2>
+            </div>
+            <div class="peak-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="m3 20 5-9 4 5 5-11 4 15"/>
+                <path d="M3 20h18"/>
+              </svg>
+            </div>
+          </div>
+
+          <div class="peak-chart">
+            <div class="peak-top-label">
+              <span class="peak-badge">🏆 بالاترین</span>
+              <span class="peak-badge-label">۱۰۰٪</span>
+            </div>
+
+            <div class="peak-track-wrap">
+              <div class="peak-track"></div>
+              <div class="peak-fill" :style="{ width: peakPosition + '%' }"></div>
+
+              <div class="peak-marker" :style="{ right: peakPosition + '%' }">
+                <div class="peak-marker-pulse"></div>
+                <div class="peak-marker-dot">
+                  <span>{{ formatPercent(result.summary?.percentage) }}٪</span>
+                </div>
+                <div class="peak-marker-arrow"></div>
+              </div>
+
+              <div class="peak-tick" style="right: 0%"><span>۰</span></div>
+              <div class="peak-tick" style="right: 25%"><span>۲۵</span></div>
+              <div class="peak-tick" style="right: 50%"><span>۵۰</span></div>
+              <div class="peak-tick" style="right: 75%"><span>۷۵</span></div>
+              <div class="peak-tick" style="right: 100%"><span>۱۰۰</span></div>
+            </div>
+
+            <div class="peak-bottom">
+              <div class="peak-stat">
+                <span>میانگین کشور</span>
+                <strong>{{ formatPercent(nationalAverage) }}٪</strong>
+                <div class="peak-stat-bar">
+                  <div class="peak-stat-fill" :style="{ width: clampPercent(nationalAverage) + '%' }"></div>
+                </div>
+              </div>
+              <div class="peak-stat">
+                <span>بهترین دفترچه</span>
+                <strong>{{ bestBooklet?.title || '—' }}</strong>
+                <small v-if="bestBooklet">{{ formatPercent(bestBooklet.percentage) }}٪</small>
+              </div>
+              <div class="peak-stat">
+                <span>ضعیف‌ترین دفترچه</span>
+                <strong>{{ weakestBooklet?.title || '—' }}</strong>
+                <small v-if="weakestBooklet">{{ formatPercent(weakestBooklet.percentage) }}٪</small>
+              </div>
+            </div>
+          </div>
+        </section>
 
         <!-- Ranking -->
-
         <section class="panel ranking-panel">
-
           <div class="panel-heading">
-
             <div>
               <span>جایگاه شما</span>
               <h2>رتبه‌بندی</h2>
             </div>
-
             <div class="ranking-crown">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                 <path d="m3 6 4 4 5-7 5 7 4-4-2 13H5L3 6Z"/>
                 <path d="M5 19h14"/>
               </svg>
             </div>
-
           </div>
 
-
           <div class="ranking-grid">
-
             <div class="rank-card national">
-
               <div class="rank-card-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                   <circle cx="12" cy="12" r="9"/>
@@ -455,1131 +353,570 @@
                   <path d="M12 3c-2.5 2.5-2.5 15.5 0 18"/>
                 </svg>
               </div>
-
               <div class="rank-card-copy">
-
                 <span>رتبه کشوری</span>
-
-                <strong>
-                  {{ formatRank(result.ranking?.national_rank) }}
-                </strong>
-
-                <small>
-                  از
-                  {{ toPersianNumber(result.ranking?.national_participants || 0) }}
-                  شرکت‌کننده
-                </small>
-
+                <strong>{{ formatRank(result.ranking?.national_rank) }}</strong>
+                <small>از {{ toPersianNumber(result.ranking?.national_participants || 0) }} شرکت‌کننده</small>
               </div>
-
             </div>
 
-
             <div class="rank-card province">
-
               <div class="rank-card-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                   <path d="M12 21s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12Z"/>
                   <circle cx="12" cy="9" r="2.5"/>
                 </svg>
               </div>
-
               <div class="rank-card-copy">
-
                 <span>
                   رتبه استانی
-                  <template v-if="result.ranking?.province">
-                    — {{ result.ranking.province }}
-                  </template>
+                  <template v-if="result.ranking?.province">— {{ result.ranking.province }}</template>
                 </span>
-
-                <strong>
-                  {{ formatRank(result.ranking?.provincial_rank) }}
-                </strong>
-
-                <small>
-                  از
-                  {{ toPersianNumber(result.ranking?.provincial_participants || 0) }}
-                  شرکت‌کننده
-                </small>
-
+                <strong>{{ formatRank(result.ranking?.provincial_rank) }}</strong>
+                <small>از {{ toPersianNumber(result.ranking?.provincial_participants || 0) }} شرکت‌کننده</small>
               </div>
-
             </div>
-
           </div>
-
         </section>
 
+        <!-- League -->
+        <section class="league-panel" :class="`league-${performanceLeague.key}`">
+          <div class="league-bg-grid"></div>
+          <div class="league-particles">
+            <span v-for="n in 12" :key="n" :class="`particle particle-${n}`"></span>
+          </div>
+
+          <div class="league-head">
+            <div>
+              <span class="league-kicker">مسیر پیشرفت</span>
+              <h2>لیگ عملکرد شما</h2>
+              <p>جایگاهت بر اساس رتبه این آزمون در یک لیگ رقابتی نمایش داده می‌شود.</p>
+            </div>
+            <div class="league-season">
+              <span class="season-dot"></span>
+              <span>فصل جاری</span>
+            </div>
+          </div>
+
+          <div class="league-main">
+            <div class="league-emblem">
+              <div class="emblem-aura"></div>
+              <div class="emblem-ring ring-outer"></div>
+              <div class="emblem-ring ring-mid"></div>
+              <div class="emblem-ring ring-inner"></div>
+              <div class="emblem-core">
+                <svg
+                  viewBox="0 0 64 64"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.7"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  v-html="performanceLeague.svgPath"
+                ></svg>
+              </div>
+              <div class="emblem-shine"></div>
+            </div>
+
+            <div class="league-copy">
+              <div class="league-title-row">
+                <div>
+                  <span class="league-label">لیگ فعلی</span>
+                  <h3>{{ performanceLeague.title }}</h3>
+                </div>
+                <div class="league-rank-chip">
+                  <span>رتبه</span>
+                  <strong>{{ formatRank(result.ranking?.national_rank) }}</strong>
+                </div>
+              </div>
+
+              <div class="league-progress-wrap">
+                <div class="league-progress-labels">
+                  <span>{{ performanceLeague.fromText }}</span>
+                  <strong>{{ toPersianNumber(performanceLeague.progress) }}٪</strong>
+                  <span>{{ performanceLeague.toText }}</span>
+                </div>
+                <div class="league-progress">
+                  <div class="league-progress-fill" :style="{ width: performanceLeague.progress + '%' }"></div>
+                  <i :style="{ right: `calc(${performanceLeague.progress}% - 7px)` }"></i>
+                </div>
+              </div>
+
+              <!-- Distance to next league -->
+              <div class="league-distance" v-if="performanceLeague.ranksToNext > 0">
+                <div class="distance-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M12 19V5"/>
+                    <path d="m5 12 7-7 7 7"/>
+                  </svg>
+                </div>
+                <div class="distance-copy">
+                  <span>تا لیگ بعدی</span>
+                  <strong>
+                    {{ toPersianNumber(performanceLeague.ranksToNext) }}
+                    رتبه فاصله داری
+                  </strong>
+                </div>
+                <div class="distance-target">{{ performanceLeague.nextTitle }}</div>
+              </div>
+
+              <div class="league-distance complete" v-else>
+                <div class="distance-icon crown">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="m3 6 4 4 5-7 5 7 4-4-2 13H5L3 6Z"/>
+                    <path d="M5 19h14"/>
+                  </svg>
+                </div>
+                <div class="distance-copy">
+                  <span>وضعیت</span>
+                  <strong>به بالاترین لیگ رسیده‌ای 🎉</strong>
+                </div>
+              </div>
+
+              <div class="league-foot">
+                <div class="league-stat">
+                  <span>شرکت‌کنندگان</span>
+                  <strong>{{ toPersianNumber(result.ranking?.national_participants || 0) }}</strong>
+                </div>
+                <div class="league-stat">
+                  <span>سطح لیگ</span>
+                  <strong>{{ toPersianNumber(performanceLeague.level) }} / ۶</strong>
+                </div>
+                <div class="league-stat highlight">
+                  <span>وضعیت</span>
+                  <strong>{{ performanceLeague.caption }}</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="league-track">
+            <div
+              v-for="tier in leagueTiers"
+              :key="tier.key"
+              class="tier"
+              :class="{ active: tier.key === performanceLeague.key, passed: isTierPassed(tier.key) }"
+            >
+              <span class="tier-badge">
+                <svg
+                  viewBox="0 0 64 64"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.7"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  v-html="tier.svgPath"
+                ></svg>
+              </span>
+              <span class="tier-name">{{ tier.title }}</span>
+            </div>
+          </div>
+        </section>
 
         <!-- Raw score -->
-
         <section class="panel raw-score-panel">
-
           <div class="panel-heading">
-
             <div>
               <span>دو نگاه به عملکرد</span>
               <h2>درصد خام و درصد با نمره منفی</h2>
             </div>
-
           </div>
-
 
           <div class="raw-comparison">
-
             <div class="raw-item">
-
               <div class="raw-label">
                 <span>درصد با نمره منفی</span>
-
-                <strong>
-                  {{ formatPercent(result.summary?.percentage) }}٪
-                </strong>
+                <strong>{{ formatPercent(result.summary?.percentage) }}٪</strong>
               </div>
-
               <div class="progress-track">
-
                 <div
                   class="progress-fill negative"
-                  :style="{
-                    width: clampPercent(result.summary?.percentage) + '%'
-                  }"
+                  :style="{ width: clampPercent(result.summary?.percentage) + '%' }"
                 ></div>
-
               </div>
-
-              <small>
-                معیار اصلی رتبه‌بندی
-              </small>
-
+              <small>معیار اصلی رتبه‌بندی</small>
             </div>
-
 
             <div class="raw-item">
-
               <div class="raw-label">
                 <span>درصد خام</span>
-
-                <strong>
-                  {{ formatPercent(result.summary?.raw_percentage) }}٪
-                </strong>
+                <strong>{{ formatPercent(result.summary?.raw_percentage) }}٪</strong>
               </div>
-
               <div class="progress-track">
-
                 <div
                   class="progress-fill raw"
-                  :style="{
-                    width: clampPercent(result.summary?.raw_percentage) + '%'
-                  }"
+                  :style="{ width: clampPercent(result.summary?.raw_percentage) + '%' }"
                 ></div>
-
               </div>
-
-              <small>
-                بدون اعمال نمره منفی
-              </small>
-
+              <small>بدون اعمال نمره منفی</small>
             </div>
-
           </div>
-
         </section>
 
-
         <!-- Previous attempt -->
-
-        <section
-          v-if="result.previous_attempt"
-          class="panel previous-panel"
-        >
-
+        <section v-if="result.previous_attempt" class="panel previous-panel">
           <div class="panel-heading">
-
             <div>
               <span>مقایسه با آزمون قبلی</span>
-              <h2>
-                {{ result.previous_attempt.exam_title }}
-              </h2>
+              <h2>{{ result.previous_attempt.exam_title }}</h2>
             </div>
-
-            <div
-              class="change-badge"
-              :class="changeClass(result.previous_attempt.score_change)"
-            >
+            <div class="change-badge" :class="changeClass(result.previous_attempt.score_change)">
               {{ signedPercent(result.previous_attempt.score_change) }}
             </div>
-
           </div>
-
 
           <div class="previous-content">
-
             <div class="previous-score">
-
               <span>آزمون قبلی</span>
-
-              <strong>
-                {{ formatPercent(result.previous_attempt.score) }}٪
-              </strong>
-
+              <strong>{{ formatPercent(result.previous_attempt.score) }}٪</strong>
             </div>
-
-
             <div class="change-arrow">
-
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path d="M5 12h14"/>
-                <path d="m13 6 6 6-6 6"/>
+                <path d="M5 12h14"/><path d="m13 6 6 6-6 6"/>
               </svg>
-
             </div>
-
-
             <div class="previous-score current">
-
               <span>این آزمون</span>
-
-              <strong>
-                {{ formatPercent(result.summary?.percentage) }}٪
-              </strong>
-
+              <strong>{{ formatPercent(result.summary?.percentage) }}٪</strong>
             </div>
-
           </div>
 
-
           <div class="previous-details">
-
             <div>
               <span>تغییر درصد</span>
-              <strong
-                :class="changeTextClass(result.previous_attempt.score_change)"
-              >
+              <strong :class="changeTextClass(result.previous_attempt.score_change)">
                 {{ signedPercent(result.previous_attempt.score_change) }}٪
               </strong>
             </div>
-
             <div>
               <span>تغییر درصد خام</span>
-              <strong
-                :class="changeTextClass(result.previous_attempt.raw_score_change)"
-              >
+              <strong :class="changeTextClass(result.previous_attempt.raw_score_change)">
                 {{ signedPercent(result.previous_attempt.raw_score_change) }}٪
               </strong>
             </div>
-
             <div>
               <span>درست قبلی</span>
-              <strong>
-                {{ toPersianNumber(result.previous_attempt.correct || 0) }}
-              </strong>
+              <strong>{{ toPersianNumber(result.previous_attempt.correct || 0) }}</strong>
             </div>
-
             <div>
               <span>غلط قبلی</span>
-              <strong>
-                {{ toPersianNumber(result.previous_attempt.wrong || 0) }}
-              </strong>
+              <strong>{{ toPersianNumber(result.previous_attempt.wrong || 0) }}</strong>
             </div>
-
           </div>
-
         </section>
-
       </section>
 
-
-      <!-- ===================================================
-           TAB: BOOKLETS
-      ==================================================== -->
-
-      <section
-        v-if="activeTab === 'booklets'"
-        class="tab-content"
-      >
-
+      <!-- TAB: BOOKLETS -->
+      <section v-if="activeTab === 'booklets'" class="tab-content">
         <div class="section-intro">
-
           <div>
             <span>تحلیل تفکیکی</span>
             <h2>عملکرد در دفترچه‌ها</h2>
-            <p>
-              عملکرد هر دفترچه را جداگانه بررسی کن و نقاط قوت و ضعف خودت را پیدا کن.
-            </p>
+            <p>عملکرد هر دفترچه را جداگانه بررسی کن و نقاط قوت و ضعف خودت را پیدا کن.</p>
           </div>
-
           <div class="booklet-total">
-
-            <strong>
-              {{ toPersianNumber(result.booklets?.length || 0) }}
-            </strong>
-
-            <span>
-              دفترچه
-            </span>
-
+            <strong>{{ toPersianNumber(result.booklets?.length || 0) }}</strong>
+            <span>دفترچه</span>
           </div>
-
         </div>
-
 
         <div class="booklet-cards">
-
-          <article
-            v-for="booklet in sortedBooklets"
-            :key="booklet.id"
-            class="booklet-card"
-          >
-
+          <article v-for="booklet in sortedBooklets" :key="booklet.id" class="booklet-card">
             <div class="booklet-card-top">
-
-              <div class="booklet-number">
-                {{ toPersianNumber(booklet.order) }}
-              </div>
-
+              <div class="booklet-number">{{ toPersianNumber(booklet.order) }}</div>
               <div class="booklet-title-wrap">
-
-                <span>
-                  {{ booklet.subject || 'درس' }}
-                </span>
-
-                <h3>
-                  {{ booklet.title }}
-                </h3>
-
+                <span>{{ booklet.subject || 'درس' }}</span>
+                <h3>{{ booklet.title }}</h3>
               </div>
-
               <div class="decile-badge">
                 <span>دهک</span>
-                <strong>
-                  {{ toPersianNumber(booklet.decile || 0) }}
-                </strong>
+                <strong>{{ toPersianNumber(booklet.decile || 0) }}</strong>
               </div>
-
             </div>
-
 
             <div class="booklet-score-row">
-
               <div class="booklet-score">
-
-                <strong>
-                  {{ formatPercent(booklet.percentage) }}٪
-                </strong>
-
-                <span>
-                  درصد با نمره منفی
-                </span>
-
+                <strong>{{ formatPercent(booklet.percentage) }}٪</strong>
+                <span>درصد با نمره منفی</span>
               </div>
-
               <div class="booklet-raw">
-
                 <span>خام</span>
-
-                <strong>
-                  {{ formatPercent(booklet.raw_percentage) }}٪
-                </strong>
-
+                <strong>{{ formatPercent(booklet.raw_percentage) }}٪</strong>
               </div>
-
             </div>
-
 
             <div class="booklet-bar">
-
-              <div
-                class="booklet-bar-fill"
-                :style="{
-                  width: positivePercent(booklet.percentage) + '%'
-                }"
-              ></div>
-
+              <div class="booklet-bar-fill" :style="{ width: positivePercent(booklet.percentage) + '%' }"></div>
             </div>
-
 
             <div class="answer-breakdown">
-
               <div class="answer-stat correct">
-
                 <span class="answer-dot"></span>
-
                 <span>درست</span>
-
-                <strong>
-                  {{ toPersianNumber(booklet.correct) }}
-                </strong>
-
+                <strong>{{ toPersianNumber(booklet.correct) }}</strong>
               </div>
-
-
               <div class="answer-stat wrong">
-
                 <span class="answer-dot"></span>
-
                 <span>غلط</span>
-
-                <strong>
-                  {{ toPersianNumber(booklet.wrong) }}
-                </strong>
-
+                <strong>{{ toPersianNumber(booklet.wrong) }}</strong>
               </div>
-
-
               <div class="answer-stat unanswered">
-
                 <span class="answer-dot"></span>
-
                 <span>نزده</span>
-
-                <strong>
-                  {{ toPersianNumber(booklet.unanswered) }}
-                </strong>
-
+                <strong>{{ toPersianNumber(booklet.unanswered) }}</strong>
               </div>
-
             </div>
-
 
             <div class="booklet-ranks">
-
               <div>
-
                 <span>رتبه کشوری</span>
-
-                <strong>
-                  {{ formatRank(booklet.national_rank) }}
-                </strong>
-
-                <small>
-                  از {{ toPersianNumber(booklet.national_participants) }}
-                </small>
-
+                <strong>{{ formatRank(booklet.national_rank) }}</strong>
+                <small>از {{ toPersianNumber(booklet.national_participants) }}</small>
               </div>
-
-
               <div>
-
                 <span>رتبه استانی</span>
-
-                <strong>
-                  {{ formatRank(booklet.provincial_rank) }}
-                </strong>
-
-                <small>
-                  از {{ toPersianNumber(booklet.provincial_participants) }}
-                </small>
-
+                <strong>{{ formatRank(booklet.provincial_rank) }}</strong>
+                <small>از {{ toPersianNumber(booklet.provincial_participants) }}</small>
               </div>
-
             </div>
-
 
             <div class="booklet-average">
-
               <div class="average-line">
-
-                <span>
-                  میانگین کشور
-                </span>
-
-                <strong>
-                  {{ formatPercent(booklet.country_average) }}٪
-                </strong>
-
+                <span>میانگین کشور</span>
+                <strong>{{ formatPercent(booklet.country_average) }}٪</strong>
               </div>
-
               <div class="average-track">
-
-                <div
-                  class="average-user-marker"
-                  :style="{
-                    right: markerPosition(booklet.percentage)
-                  }"
-                ></div>
-
-                <div
-                  class="average-country-marker"
-                  :style="{
-                    right: markerPosition(booklet.country_average)
-                  }"
-                ></div>
-
+                <div class="average-user-marker" :style="{ right: markerPosition(booklet.percentage) }"></div>
+                <div class="average-country-marker" :style="{ right: markerPosition(booklet.country_average) }"></div>
               </div>
-
               <div class="average-line province-line">
-
-                <span>
-                  میانگین استان
-                </span>
-
-                <strong>
-                  {{ formatPercent(booklet.province_average) }}٪
-                </strong>
-
+                <span>میانگین استان</span>
+                <strong>{{ formatPercent(booklet.province_average) }}٪</strong>
               </div>
-
             </div>
-
 
             <div class="performance-message">
-
               <div class="performance-icon">
-
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <path d="M12 3v18"/>
-                  <path d="M5 8h14"/>
-                  <path d="M5 16h14"/>
+                  <path d="M12 3v18"/><path d="M5 8h14"/><path d="M5 16h14"/>
                 </svg>
-
               </div>
-
               <div>
-
-                <strong>
-                  {{ booklet.performance_title }}
-                </strong>
-
-                <p>
-                  {{ booklet.performance_message }}
-                </p>
-
+                <strong>{{ booklet.performance_title }}</strong>
+                <p>{{ booklet.performance_message }}</p>
               </div>
-
             </div>
-
 
             <div class="booklet-range">
-
-              <span>
-                سؤالات
-                {{ toPersianNumber(booklet.start_question) }}
-                تا
-                {{ toPersianNumber(booklet.end_question) }}
-              </span>
-
-              <span>
-                {{ toPersianNumber(booklet.question_count) }}
-                سؤال
-              </span>
-
+              <span>سؤالات {{ toPersianNumber(booklet.start_question) }} تا {{ toPersianNumber(booklet.end_question) }}</span>
+              <span>{{ toPersianNumber(booklet.question_count) }} سؤال</span>
             </div>
-
           </article>
-
         </div>
-
       </section>
 
-
-      <!-- ===================================================
-           TAB: ANALYTICS
-      ==================================================== -->
-
-      <section
-        v-if="activeTab === 'analytics'"
-        class="tab-content"
-      >
-
-        <div class="section-intro">
-
+      <!-- TAB: ANALYTICS -->
+      <section v-if="activeTab === 'analytics'" class="tab-content">
+        <div class="section-intro analytics-intro">
           <div>
-            <span>داشبورد تحلیلی</span>
-            <h2>تصویر کامل عملکرد</h2>
-            <p>
-              عملکردت را هم بین دفترچه‌ها و هم در طول آزمون‌های مختلف بررسی کن.
-            </p>
+            <span>اتاق کنترل عملکرد</span>
+            <h2>نمودارها، بدون شلوغی اضافه</h2>
+            <p>دو نمای واضح برای تحلیل نتیجه: مقایسه با میانگین‌ها و مسیر عملکرد.</p>
           </div>
-
+          <div class="analytics-badge">
+            <span class="analytics-live-dot"></span>
+            تحلیل زنده
+          </div>
         </div>
 
-
-        <!-- Booklet comparison -->
-
-        <section class="panel chart-panel">
-
+        <section class="panel chart-panel chartjs-panel">
           <div class="panel-heading">
-
             <div>
-              <span>مقایسه دفترچه‌ها</span>
-              <h2>درصد شما در برابر میانگین‌ها</h2>
+              <span>مقایسه هوشمند</span>
+              <h2>تو در برابر میانگین‌ها</h2>
             </div>
-
-            <div class="chart-legend">
-
-              <span>
-                <i class="legend-user"></i>
-                شما
-              </span>
-
-              <span>
-                <i class="legend-country"></i>
-                کشور
-              </span>
-
-              <span>
-                <i class="legend-province"></i>
-                استان
-              </span>
-
-            </div>
-
+            <div class="chart-mini-note">بر اساس درصد با نمره منفی</div>
           </div>
-
-
-          <div class="comparison-chart">
-
-            <div
-              v-for="item in bookletComparison"
-              :key="item.booklet_id"
-              class="comparison-column"
-            >
-
-              <div class="comparison-values">
-
-                <span class="value-user">
-                  {{ formatPercent(item.user_percentage) }}
-                </span>
-
-                <span class="value-country">
-                  {{ formatPercent(item.country_average) }}
-                </span>
-
-              </div>
-
-
-              <div class="bars">
-
-                <div
-                  class="chart-bar country"
-                  :style="{
-                    height: chartHeight(item.country_average)
-                  }"
-                ></div>
-
-                <div
-                  class="chart-bar province"
-                  :style="{
-                    height: chartHeight(item.province_average)
-                  }"
-                ></div>
-
-                <div
-                  class="chart-bar user"
-                  :style="{
-                    height: chartHeight(item.user_percentage)
-                  }"
-                ></div>
-
-              </div>
-
-
-              <div class="column-label">
-
-                <strong>
-                  {{ item.booklet_title }}
-                </strong>
-
-              </div>
-
-            </div>
-
+          <div v-if="bookletComparison.length" class="chartjs-wrap comparison-chartjs-wrap">
+            <canvas ref="comparisonChartCanvas"></canvas>
           </div>
-
+          <div v-else class="empty-chart">اطلاعات کافی برای نمایش نمودار وجود ندارد.</div>
         </section>
 
-
-        <!-- Progress -->
-
-        <section class="panel chart-panel progress-panel">
-
+        <section class="panel chart-panel chartjs-panel">
           <div class="panel-heading">
-
             <div>
-              <span>روند عملکرد</span>
-              <h2>پیشرفت شما در آزمون‌ها</h2>
+              <span>مسیر رشد</span>
+              <h2>روند عملکردت در آزمون‌ها</h2>
             </div>
-
-            <div
-              v-if="previousChange !== null"
-              class="trend-chip"
-              :class="changeClass(previousChange)"
-            >
+            <div v-if="previousChange !== null" class="trend-chip" :class="changeClass(previousChange)">
               {{ signedPercent(previousChange) }}٪
             </div>
-
           </div>
-
-
-          <div
-            v-if="progressData.length"
-            class="line-chart"
-          >
-
-            <div class="line-chart-y">
-
-              <span>۱۰۰</span>
-              <span>۷۵</span>
-              <span>۵۰</span>
-              <span>۲۵</span>
-              <span>۰</span>
-
-            </div>
-
-
-            <div class="line-chart-main">
-
-              <div class="grid-lines">
-
-                <span></span>
-                <span></span>
-                <span></span>
-                <span></span>
-                <span></span>
-
-              </div>
-
-
-              <svg
-                class="progress-svg"
-                viewBox="0 0 800 300"
-                preserveAspectRatio="none"
-              >
-
-                <defs>
-
-                  <linearGradient
-                    id="progressGradient"
-                    x1="0"
-                    x2="0"
-                    y1="0"
-                    y2="1"
-                  >
-                    <stop
-                      offset="0%"
-                      stop-opacity=".28"
-                    />
-
-                    <stop
-                      offset="100%"
-                      stop-opacity="0"
-                    />
-                  </linearGradient>
-
-                </defs>
-
-
-                <path
-                  v-if="progressAreaPath"
-                  :d="progressAreaPath"
-                  class="progress-area"
-                />
-
-                <path
-                  v-if="progressLinePath"
-                  :d="progressLinePath"
-                  class="progress-line"
-                />
-
-
-                <circle
-                  v-for="point in progressPoints"
-                  :key="point.index"
-                  :cx="point.x"
-                  :cy="point.y"
-                  r="6"
-                  class="progress-point"
-                />
-
-              </svg>
-
-
-              <div class="progress-labels">
-
-                <div
-                  v-for="point in progressPoints"
-                  :key="'label-' + point.index"
-                  class="progress-label"
-                  :style="{
-                    left: point.left
-                  }"
-                >
-                  {{ truncate(point.title, 18) }}
-                </div>
-
-              </div>
-
-            </div>
-
+          <div v-if="progressData.length" class="chartjs-wrap progress-chartjs-wrap">
+            <canvas ref="progressChartCanvas"></canvas>
           </div>
-
-
-          <div
-            v-else
-            class="empty-chart"
-          >
-            <span>هنوز اطلاعات کافی برای نمایش روند وجود ندارد.</span>
-          </div>
-
+          <div v-else class="empty-chart">هنوز اطلاعات کافی برای نمایش روند وجود ندارد.</div>
 
           <div class="progress-summary">
-
             <div>
-
               <span>اولین عملکرد</span>
-
-              <strong>
-                {{ formatPercent(firstProgressScore) }}٪
-              </strong>
-
+              <strong>{{ formatPercent(firstProgressScore) }}٪</strong>
             </div>
-
-
             <div>
-
               <span>آخرین عملکرد</span>
-
-              <strong>
-                {{ formatPercent(lastProgressScore) }}٪
-              </strong>
-
+              <strong>{{ formatPercent(lastProgressScore) }}٪</strong>
             </div>
-
-
             <div>
-
               <span>تعداد آزمون‌ها</span>
-
-              <strong>
-                {{ toPersianNumber(progressData.length) }}
-              </strong>
-
+              <strong>{{ toPersianNumber(progressData.length) }}</strong>
             </div>
-
           </div>
-
         </section>
-
-
-        <!-- Quick insights -->
 
         <section class="insights-grid">
-
           <div class="insight-card">
-
-            <div class="insight-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path d="m5 12 4 4L19 6"/>
-              </svg>
-            </div>
-
+            <div class="insight-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="m5 12 4 4L19 6"/></svg></div>
             <span>بهترین دفترچه</span>
-
-            <strong>
-              {{ bestBooklet?.title || '—' }}
-            </strong>
-
-            <small v-if="bestBooklet">
-              {{ formatPercent(bestBooklet.percentage) }}٪
-            </small>
-
+            <strong>{{ bestBooklet?.title || '—' }}</strong>
+            <small v-if="bestBooklet">{{ formatPercent(bestBooklet.percentage) }}٪</small>
           </div>
-
-
           <div class="insight-card">
-
-            <div class="insight-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path d="M12 3v18"/>
-                <path d="M5 8h14"/>
-                <path d="M5 16h14"/>
-              </svg>
-            </div>
-
+            <div class="insight-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3v18"/><path d="M5 8h14"/><path d="M5 16h14"/></svg></div>
             <span>نیازمند توجه</span>
-
-            <strong>
-              {{ weakestBooklet?.title || '—' }}
-            </strong>
-
-            <small v-if="weakestBooklet">
-              {{ formatPercent(weakestBooklet.percentage) }}٪
-            </small>
-
+            <strong>{{ weakestBooklet?.title || '—' }}</strong>
+            <small v-if="weakestBooklet">{{ formatPercent(weakestBooklet.percentage) }}٪</small>
           </div>
-
-
           <div class="insight-card">
-
-            <div class="insight-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <circle cx="12" cy="12" r="9"/>
-                <path d="M8 12h8"/>
-              </svg>
-            </div>
-
+            <div class="insight-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="9"/><path d="M8 12h8"/></svg></div>
             <span>مجموع نزده‌ها</span>
-
-            <strong>
-              {{ toPersianNumber(result.summary?.unanswered_count || 0) }}
-            </strong>
-
-            <small>
-              سؤال
-            </small>
-
+            <strong>{{ toPersianNumber(result.summary?.unanswered_count || 0) }}</strong>
+            <small>سؤال</small>
           </div>
-
         </section>
-
       </section>
 
-
-      <!-- ===================================================
-           TAB: PERSONALIZED REVIEW
-      ==================================================== -->
-
-      <section
-        v-if="activeTab === 'review'"
-        class="tab-content"
-      >
-
+      <!-- TAB: REVIEW -->
+      <section v-if="activeTab === 'review'" class="tab-content">
         <div class="review-hero">
-
           <div class="review-hero-copy">
-            <span class="review-kicker">
-              مرور شخصی‌سازی‌شده
-            </span>
-
-            <h2>
-              اشتباهاتت را به نقطه قوت تبدیل کن
-            </h2>
-
-            <p>
-              صفحه هر سؤال را از دفترچه اصلی ببین، پاسخ خودت را با پاسخ صحیح مقایسه کن و مرور هدفمند داشته باش.
-            </p>
+            <span class="review-kicker">مرور شخصی‌سازی‌شده</span>
+            <h2>اشتباهاتت را به نقطه قوت تبدیل کن</h2>
+            <p>صفحه هر سؤال را از دفترچه اصلی ببین، پاسخ خودت را با پاسخ صحیح مقایسه کن و مرور هدفمند داشته باش.</p>
 
             <div class="review-progress-row">
               <div class="review-progress-track">
-                <div
-                  class="review-progress-fill"
-                  :style="{ width: reviewProgress + '%' }"
-                ></div>
+                <div class="review-progress-fill" :style="{ width: reviewProgress + '%' }"></div>
               </div>
-
-              <strong>
-                {{ formatPercent(reviewProgress) }}٪ مرور انجام شد
-              </strong>
+              <strong>{{ formatPercent(reviewProgress) }}٪ مرور انجام شد</strong>
             </div>
           </div>
 
           <div class="review-donut">
-            <div
-              class="review-donut-ring"
-              :style="{
-                '--review-progress': `${reviewProgress}%`
-              }"
-            >
+            <div class="review-donut-ring" :style="{ '--review-progress': `${reviewProgress}%` }">
               <div class="review-donut-center">
-                <strong>
-                  {{ toPersianNumber(reviewCounts.correct) }}
-                </strong>
+                <strong>{{ toPersianNumber(reviewCounts.correct) }}</strong>
                 <span>درست</span>
               </div>
             </div>
           </div>
-
         </div>
 
-
         <div class="review-dashboard">
-
           <div class="review-stat-card total">
             <div class="review-stat-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                 <rect x="4" y="3" width="16" height="18" rx="2"/>
-                <path d="M8 8h8"/>
-                <path d="M8 12h5"/>
+                <path d="M8 8h8"/><path d="M8 12h5"/>
               </svg>
             </div>
-
             <div>
               <span>کل سؤال‌ها</span>
-              <strong>
-                {{ toPersianNumber(result.personalized_review?.length || 0) }}
-              </strong>
+              <strong>{{ toPersianNumber(result.personalized_review?.length || 0) }}</strong>
             </div>
           </div>
-
           <div class="review-stat-card correct">
             <div class="review-stat-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path d="m5 12 4 4L19 6"/>
-              </svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="m5 12 4 4L19 6"/></svg>
             </div>
-
             <div>
               <span>پاسخ درست</span>
-              <strong>
-                {{ toPersianNumber(reviewCounts.correct) }}
-              </strong>
+              <strong>{{ toPersianNumber(reviewCounts.correct) }}</strong>
             </div>
           </div>
-
           <div class="review-stat-card wrong">
             <div class="review-stat-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path d="m7 7 10 10"/>
-                <path d="m17 7-10 10"/>
+                <path d="m7 7 10 10"/><path d="m17 7-10 10"/>
               </svg>
             </div>
-
             <div>
               <span>نیازمند مرور</span>
-              <strong>
-                {{ toPersianNumber(reviewCounts.wrong + reviewCounts.unanswered) }}
-              </strong>
+              <strong>{{ toPersianNumber(reviewCounts.wrong + reviewCounts.unanswered) }}</strong>
             </div>
           </div>
-
           <div class="review-stat-card unanswered">
             <div class="review-stat-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <circle cx="12" cy="12" r="9"/>
-                <path d="M8 12h8"/>
+                <circle cx="12" cy="12" r="9"/><path d="M8 12h8"/>
               </svg>
             </div>
-
             <div>
               <span>نزده</span>
-              <strong>
-                {{ toPersianNumber(reviewCounts.unanswered) }}
-              </strong>
+              <strong>{{ toPersianNumber(reviewCounts.unanswered) }}</strong>
             </div>
           </div>
-
         </div>
-
 
         <div class="review-toolbar">
-
           <div class="review-toolbar-copy">
             <span>فیلتر مرور</span>
-            <strong>
-              {{ toPersianNumber(filteredReview.length) }}
-              سؤال نمایش داده می‌شود
-            </strong>
+            <strong>{{ toPersianNumber(filteredReview.length) }} سؤال نمایش داده می‌شود</strong>
           </div>
-
           <div class="review-filters">
-
-            <button
-              type="button"
-              :class="{ active: reviewFilter === 'all' }"
-              @click="reviewFilter = 'all'"
-            >
-              همه
-              <span>
-                {{ toPersianNumber(result.personalized_review?.length || 0) }}
-              </span>
+            <button type="button" :class="{ active: reviewFilter === 'all' }" @click="setReviewFilter('all')">
+              همه <span>{{ toPersianNumber(result.personalized_review?.length || 0) }}</span>
             </button>
-
-            <button
-              type="button"
-              :class="{ active: reviewFilter === 'wrong' }"
-              @click="reviewFilter = 'wrong'"
-            >
-              غلط
-              <span>
-                {{ toPersianNumber(reviewCounts.wrong) }}
-              </span>
+            <button type="button" :class="{ active: reviewFilter === 'wrong' }" @click="setReviewFilter('wrong')">
+              غلط <span>{{ toPersianNumber(reviewCounts.wrong) }}</span>
             </button>
-
-            <button
-              type="button"
-              :class="{ active: reviewFilter === 'correct' }"
-              @click="reviewFilter = 'correct'"
-            >
-              درست
-              <span>
-                {{ toPersianNumber(reviewCounts.correct) }}
-              </span>
+            <button type="button" :class="{ active: reviewFilter === 'correct' }" @click="setReviewFilter('correct')">
+              درست <span>{{ toPersianNumber(reviewCounts.correct) }}</span>
             </button>
-
-            <button
-              type="button"
-              :class="{ active: reviewFilter === 'unanswered' }"
-              @click="reviewFilter = 'unanswered'"
-            >
-              نزده
-              <span>
-                {{ toPersianNumber(reviewCounts.unanswered) }}
-              </span>
+            <button type="button" :class="{ active: reviewFilter === 'unanswered' }" @click="setReviewFilter('unanswered')">
+              نزده <span>{{ toPersianNumber(reviewCounts.unanswered) }}</span>
             </button>
-
           </div>
-
         </div>
 
-
         <div class="review-list">
-
           <article
             v-for="question in filteredReview"
             :key="question.question_number"
             class="question-card"
             :class="question.status"
           >
-
             <div class="question-top">
-
               <div class="question-number">
                 <span>سؤال</span>
-                <strong>
-                  {{ toPersianNumber(question.question_number) }}
-                </strong>
+                <strong>{{ toPersianNumber(question.question_number) }}</strong>
               </div>
-
               <div class="question-context">
-                <strong>
-                  {{ question.booklet_title || 'دفترچه' }}
-                </strong>
-
-                <span>
-                  {{ question.subject || '—' }}
-                </span>
+                <strong>{{ question.booklet_title || 'دفترچه' }}</strong>
+                <span>{{ question.subject || '—' }}</span>
               </div>
-
-              <div
-                class="question-status"
-                :class="question.status"
-              >
+              <div class="question-status" :class="question.status">
                 <span class="status-dot"></span>
-
-                {{
-                  question.status === 'correct'
-                    ? 'درست'
-                    : question.status === 'wrong'
-                      ? 'غلط'
-                      : 'نزده'
-                }}
+                {{ question.status === 'correct' ? 'درست' : question.status === 'wrong' ? 'غلط' : 'نزده' }}
               </div>
-
             </div>
 
-
             <div class="question-paper">
-
               <div class="question-paper-heading">
                 <div>
                   <span>صورت سؤال</span>
-                  <strong>
-                    صفحه {{ toPersianNumber(question.question_number) }}
-                  </strong>
+                  <strong>صفحه {{ toPersianNumber(question.question_number) }}</strong>
                 </div>
-
                 <a
                   class="paper-open-link"
                   :href="questionPdfUrl(question.question_number)"
@@ -1588,66 +925,42 @@
                 >
                   مشاهده PDF
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <path d="M14 5h5v5"/>
-                    <path d="M19 5 10 14"/>
+                    <path d="M14 5h5v5"/><path d="M19 5 10 14"/>
                     <path d="M19 13v5a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h5"/>
                   </svg>
                 </a>
               </div>
 
               <div class="question-pdf-frame">
-
-                <div
-                  v-if="questionPdfLoading && !renderedQuestionPages.has(Number(question.question_number))"
-                  class="question-pdf-state"
-                >
+                <div v-if="questionPdfLoading && !renderedQuestionPages.has(Number(question.question_number))" class="question-pdf-state">
                   <span class="pdf-loader"></span>
                   <span>در حال آماده‌سازی صفحه سؤال...</span>
                 </div>
-
-                <div
-                  v-if="questionPdfError"
-                  class="question-pdf-state error"
-                >
+                <div v-if="questionPdfError" class="question-pdf-state error">
                   <strong>نمایش PDF ممکن نیست</strong>
                   <span>{{ questionPdfError }}</span>
                 </div>
-
                 <canvas
                   :ref="el => setQuestionCanvasRef(question.question_number, el)"
                   class="question-pdf-canvas"
+                  :data-question="question.question_number"
                   :aria-label="`صفحه ${question.question_number} از PDF آزمون`"
                 ></canvas>
-
               </div>
-
             </div>
 
-
             <div class="answer-comparison">
-
               <div class="answer-comparison-heading">
                 <div>
                   <span>تحلیل پاسخ</span>
                   <strong>انتخاب شما در برابر پاسخ صحیح</strong>
                 </div>
-
-                <div
-                  class="answer-result-pill"
-                  :class="question.status"
-                >
-                  {{
-                    question.status === 'correct'
-                      ? 'پاسخ صحیح'
-                      : question.status === 'wrong'
-                        ? 'نیازمند مرور'
-                        : 'بدون پاسخ'
-                  }}
+                <div class="answer-result-pill" :class="question.status">
+                  {{ question.status === 'correct' ? 'پاسخ صحیح' : question.status === 'wrong' ? 'نیازمند مرور' : 'بدون پاسخ' }}
                 </div>
               </div>
 
               <div class="options-grid">
-
                 <div
                   v-for="option in question.options"
                   :key="option.value"
@@ -1655,168 +968,73 @@
                   :class="{
                     selected: option.selected,
                     correct: option.correct,
-                    'selected-wrong':
-                      option.selected && !option.correct
+                    'selected-wrong': option.selected && !option.correct
                   }"
                 >
-
-                  <div class="option-number">
-                    {{ toPersianNumber(option.value) }}
-                  </div>
-
+                  <div class="option-number">{{ toPersianNumber(option.value) }}</div>
                   <div class="option-content">
-                    <span>
-                      گزینه {{ toPersianNumber(option.value) }}
-                    </span>
-
-                    <small v-if="option.selected">
-                      پاسخ شما
-                    </small>
-
-                    <small
-                      v-if="option.correct"
-                      class="correct-label"
-                    >
-                      پاسخ صحیح
-                    </small>
+                    <span>گزینه {{ toPersianNumber(option.value) }}</span>
+                    <small v-if="option.selected">پاسخ شما</small>
+                    <small v-if="option.correct" class="correct-label">پاسخ صحیح</small>
                   </div>
-
                   <div class="option-mark">
-
-                    <svg
-                      v-if="option.correct"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                    >
+                    <svg v-if="option.correct" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                       <path d="m5 12 4 4L19 6"/>
                     </svg>
-
-                    <svg
-                      v-else-if="option.selected"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                    >
-                      <path d="m7 7 10 10"/>
-                      <path d="m17 7-10 10"/>
+                    <svg v-else-if="option.selected" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                      <path d="m7 7 10 10"/><path d="m17 7-10 10"/>
                     </svg>
-
                   </div>
-
                 </div>
-
               </div>
-
             </div>
-
 
             <div class="question-answer-summary">
-
               <div>
                 <span>پاسخ شما</span>
-
-                <strong
-                  :class="{
-                    empty:
-                      question.user_answer === null ||
-                      question.user_answer === undefined
-                  }"
-                >
-                  {{
-                    question.user_answer
-                      ? `گزینه ${toPersianNumber(question.user_answer)}`
-                      : 'نزده'
-                  }}
+                <strong :class="{ empty: question.user_answer === null || question.user_answer === undefined }">
+                  {{ question.user_answer ? `گزینه ${toPersianNumber(question.user_answer)}` : 'نزده' }}
                 </strong>
               </div>
-
               <div>
                 <span>پاسخ صحیح</span>
-
                 <strong>
-                  {{
-                    question.correct_answer
-                      ? `گزینه ${toPersianNumber(question.correct_answer)}`
-                      : 'نامشخص'
-                  }}
+                  {{ question.correct_answer ? `گزینه ${toPersianNumber(question.correct_answer)}` : 'نامشخص' }}
                 </strong>
               </div>
-
             </div>
-
           </article>
 
-
-          <div
-            v-if="filteredReview.length === 0"
-            class="empty-review"
-          >
-
+          <div v-if="filteredReview.length === 0" class="empty-review">
             <div class="empty-review-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path d="M4 4h16v16H4z"/>
-                <path d="M8 8h8"/>
-                <path d="M8 12h8"/>
-                <path d="M8 16h5"/>
+                <path d="M4 4h16v16H4z"/><path d="M8 8h8"/>
+                <path d="M8 12h8"/><path d="M8 16h5"/>
               </svg>
             </div>
-
-            <h3>
-              سؤالی در این دسته وجود ندارد
-            </h3>
-
-            <p>
-              فیلتر دیگری را امتحان کن.
-            </p>
-
+            <h3>سؤالی در این دسته وجود ندارد</h3>
+            <p>فیلتر دیگری را امتحان کن.</p>
           </div>
-
         </div>
-
       </section>
 
-
-      <!-- ===================================================
-           FOOTER
-      ==================================================== -->
-
       <footer class="result-footer">
-
         <div>
-
-          <strong>
-            کارنامه دوپامین
-          </strong>
-
-          <span>
-            تحلیل کن، یاد بگیر، بهتر شو.
-          </span>
-
+          <strong>کارنامه دوپامین</strong>
+          <span>تحلیل کن، یاد بگیر، بهتر شو.</span>
         </div>
-
-
-        <button
-          type="button"
-          @click="goBack"
-        >
+        <button type="button" @click="goBack">
           بازگشت به آزمون‌ها
-
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
             <path d="m9 18 6-6-6-6"/>
           </svg>
-
         </button>
-
       </footer>
-
     </main>
   </div>
 </template>
 
-
 <script setup>
-
 import {
   computed,
   nextTick,
@@ -1827,51 +1045,230 @@ import {
   watch,
 } from 'vue'
 
-import {
-  useRoute,
-  useRouter,
-} from 'vue-router'
-
+import { useRoute, useRouter } from 'vue-router'
 import api from '../services/api'
+import Chart from 'chart.js/auto'
 
 import * as pdfjsLib from 'pdfjs-dist'
 import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker
 
-
 /* =========================================================
    ROUTER
 ========================================================= */
-
 const route = useRoute()
 const router = useRouter()
-
 
 /* =========================================================
    STATE
 ========================================================= */
-
 const result = ref(null)
-
 const loading = ref(false)
-
 const errorMessage = ref('')
-
 const activeTab = ref('overview')
-
 const reviewFilter = ref('all')
-
 const isDark = ref(false)
 
 let themeObserver = null
 
+/* =========================================================
+   MOUSE
+========================================================= */
+const mx = ref(0)
+const my = ref(0)
+
+const mouseStyle = computed(() => ({
+  '--mx': mx.value + 'px',
+  '--my': my.value + 'px',
+}))
+
+function handleMouseMove(e) {
+  mx.value = e.clientX
+  my.value = e.clientY
+}
+
+/* =========================================================
+   CHART.JS
+========================================================= */
+const comparisonChartCanvas = ref(null)
+const progressChartCanvas = ref(null)
+let comparisonChart = null
+let progressChart = null
+
+function destroyCharts() {
+  comparisonChart?.destroy()
+  progressChart?.destroy()
+  comparisonChart = null
+  progressChart = null
+}
+
+function chartPalette() {
+  return {
+    text: isDark.value ? '#aab4c6' : '#667085',
+    grid: isDark.value ? 'rgba(145,151,255,.10)' : 'rgba(91,92,240,.08)',
+    user: isDark.value ? '#9294ff' : '#5b5de6',
+    country: isDark.value ? '#35cdb0' : '#18a88b',
+    province: isDark.value ? '#f0bb54' : '#e3a62f',
+    surface: isDark.value ? '#121824' : '#ffffff',
+  }
+}
+
+async function initCharts() {
+  if (activeTab.value !== 'analytics') return
+  await nextTick()
+  destroyCharts()
+
+  const palette = chartPalette()
+  const font = { family: 'Vazirmatn, IRANSans, Tahoma, sans-serif' }
+
+  if (comparisonChartCanvas.value && bookletComparison.value.length) {
+    comparisonChart = new Chart(comparisonChartCanvas.value, {
+      type: 'bar',
+      data: {
+        labels: bookletComparison.value.map(item => truncate(item.booklet_title || 'دفترچه', 16)),
+        datasets: [
+          {
+            label: 'شما',
+            data: bookletComparison.value.map(item => Number(item.user_percentage || 0)),
+            backgroundColor: palette.user,
+            borderRadius: 8,
+            borderSkipped: false,
+            maxBarThickness: 24,
+          },
+          {
+            label: 'میانگین کشور',
+            data: bookletComparison.value.map(item => Number(item.country_average || 0)),
+            backgroundColor: palette.country,
+            borderRadius: 8,
+            borderSkipped: false,
+            maxBarThickness: 24,
+          },
+          {
+            label: 'میانگین استان',
+            data: bookletComparison.value.map(item => Number(item.province_average || 0)),
+            backgroundColor: palette.province,
+            borderRadius: 8,
+            borderSkipped: false,
+            maxBarThickness: 24,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: { duration: 900, easing: 'easeOutQuart' },
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: {
+            position: 'top',
+            rtl: true,
+            labels: {
+              color: palette.text,
+              font: { ...font, size: 11 },
+              usePointStyle: true,
+              pointStyle: 'circle',
+              padding: 18,
+            },
+          },
+          tooltip: {
+            rtl: true,
+            titleFont: { ...font, weight: '700' },
+            bodyFont: { ...font },
+            callbacks: {
+              label: ctx => ` ${ctx.dataset.label}: ${formatPercent(ctx.raw)}٪`,
+            },
+          },
+        },
+        scales: {
+          x: {
+            ticks: { color: palette.text, font: { ...font, size: 10 } },
+            grid: { display: false },
+            border: { display: false },
+          },
+          y: {
+            beginAtZero: true,
+            max: 100,
+            ticks: {
+              color: palette.text,
+              font: { ...font, size: 9 },
+              callback: value => `${value}٪`,
+            },
+            grid: { color: palette.grid },
+            border: { display: false },
+          },
+        },
+      },
+    })
+  }
+
+  if (progressChartCanvas.value && progressData.value.length) {
+    const gradient = progressChartCanvas.value.getContext('2d')?.createLinearGradient(0, 0, 0, 320)
+    if (gradient) {
+      gradient.addColorStop(0, isDark.value ? 'rgba(133,135,255,.28)' : 'rgba(101,103,241,.22)')
+      gradient.addColorStop(1, 'rgba(101,103,241,0)')
+    }
+
+    progressChart = new Chart(progressChartCanvas.value, {
+      type: 'line',
+      data: {
+        labels: progressData.value.map((item, index) => truncate(item.exam_title || `آزمون ${index + 1}`, 14)),
+        datasets: [{
+          label: 'درصد عملکرد',
+          data: progressData.value.map(item => Number(item.percentage || 0)),
+          borderColor: palette.user,
+          backgroundColor: gradient || 'rgba(101,103,241,.12)',
+          fill: true,
+          tension: 0.38,
+          borderWidth: 3,
+          pointRadius: 4,
+          pointHoverRadius: 7,
+          pointBackgroundColor: palette.surface,
+          pointBorderColor: palette.user,
+          pointBorderWidth: 2,
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: { duration: 1100, easing: 'easeOutQuart' },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            rtl: true,
+            titleFont: { ...font, weight: '700' },
+            bodyFont: { ...font },
+            callbacks: {
+              label: ctx => ` درصد: ${formatPercent(ctx.raw)}٪`,
+            },
+          },
+        },
+        scales: {
+          x: {
+            ticks: { color: palette.text, font: { ...font, size: 10 }, maxRotation: 0 },
+            grid: { display: false },
+            border: { display: false },
+          },
+          y: {
+            beginAtZero: true,
+            max: 100,
+            ticks: {
+              color: palette.text,
+              font: { ...font, size: 9 },
+              callback: value => `${value}٪`,
+            },
+            grid: { color: palette.grid },
+            border: { display: false },
+          },
+        },
+      },
+    })
+  }
+}
 
 /* =========================================================
    QUESTION PDF
 ========================================================= */
-
-
 const questionPdfDocument = shallowRef(null)
 const questionPdfLoading = ref(false)
 const questionPdfError = ref('')
@@ -1882,19 +1279,13 @@ const renderedQuestionPages = new Set()
 
 let questionPdfLoadPromise = null
 
-
 /* =========================================================
    THEME
 ========================================================= */
-
 function detectDark() {
-
   const root = document.documentElement
   const body = document.body
-
-  const dataTheme =
-    root.getAttribute('data-theme') ||
-    body?.getAttribute('data-theme')
+  const dataTheme = root.getAttribute('data-theme') || body?.getAttribute('data-theme')
 
   return (
     dataTheme === 'dark' ||
@@ -1905,591 +1296,416 @@ function detectDark() {
   )
 }
 
-
 function observeTheme() {
-
   isDark.value = detectDark()
-
-  themeObserver =
-    new MutationObserver(() => {
-      isDark.value = detectDark()
-    })
-
-  themeObserver.observe(
-    document.documentElement,
-    {
-      attributes: true,
-      attributeFilter: [
-        'class',
-        'data-theme',
-        'style',
-      ],
-    }
-  )
-
+  themeObserver = new MutationObserver(() => {
+    isDark.value = detectDark()
+  })
+  themeObserver.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ['class', 'data-theme', 'style'],
+  })
   if (document.body) {
-
-    themeObserver.observe(
-      document.body,
-      {
-        attributes: true,
-        attributeFilter: [
-          'class',
-          'data-theme',
-          'style',
-        ],
-      }
-    )
-
+    themeObserver.observe(document.body, {
+      attributes: true,
+      attributeFilter: ['class', 'data-theme', 'style'],
+    })
   }
-
 }
-
 
 /* =========================================================
    LOAD RESULT
 ========================================================= */
-
 async function loadResult() {
-
   loading.value = true
   errorMessage.value = ''
 
   try {
+    const attemptId = route.params.id
+    if (!attemptId) throw new Error('شناسه کارنامه پیدا نشد.')
 
-    const attemptId =
-      route.params.id
-
-    if (!attemptId) {
-
-      throw new Error(
-        'شناسه کارنامه پیدا نشد.'
-      )
-
-    }
-
-    const response =
-      await api.get(
-        `/exams/attempts/${attemptId}/result/`
-      )
-
-    result.value =
-      response.data
+    const response = await api.get(`/exams/attempts/${attemptId}/result/`)
+    result.value = response.data
   } catch (error) {
+    console.error('EXAM RESULT LOAD ERROR:', error)
 
-    console.error(
-      'EXAM RESULT LOAD ERROR:',
-      error
-    )
-
-    if (
-      error?.response?.status === 401
-    ) {
-
-      errorMessage.value =
-        'نشست شما منقضی شده است. دوباره وارد حساب کاربری شوید.'
-
+    if (error?.response?.status === 401) {
+      errorMessage.value = 'نشست شما منقضی شده است. دوباره وارد حساب کاربری شوید.'
     } else {
-
       errorMessage.value =
         error?.response?.data?.detail ||
         error?.response?.data?.message ||
         error?.message ||
         'دریافت کارنامه با مشکل مواجه شد.'
-
     }
-
   } finally {
-
     loading.value = false
-
   }
-
 }
-
 
 /* =========================================================
    USER
 ========================================================= */
+const userInitials = computed(() => {
+  const user = result.value?.user
+  if (!user) return 'د'
 
-const userInitials =
-  computed(() => {
+  const first = user.first_name?.trim()?.charAt(0)
+  const last = user.last_name?.trim()?.charAt(0)
 
-    const user =
-      result.value?.user
+  if (first || last) return `${first || ''}${last || ''}`
+  return user.username?.charAt(0) || 'د'
+})
 
-    if (!user) {
-      return 'د'
+/* =========================================================
+   PERFORMANCE SIGNAL — سیگنال عملکرد
+========================================================= */
+const performanceSignal = computed(() => {
+  const percentage = Number(result.value?.summary?.percentage || 0)
+  const rank = Number(result.value?.ranking?.national_rank || 0)
+  const total = Number(result.value?.ranking?.national_participants || 0)
+
+  // محاسبه percentile (هر چه بالاتر بهتر)
+  let percentile = 50
+  if (rank && total) {
+    percentile = ((total - rank + 1) / total) * 100
+  }
+
+  // ترکیب درصد و percentile
+  const combinedScore = (percentage * 0.5) + (percentile * 0.5)
+
+  // تعیین سطح
+  if (combinedScore >= 90) {
+    return {
+      key: 'very-high',
+      title: 'بسیار قوی',
+      emoji: '📡',
+      description: 'عملکردت در سطح نخبه‌های آزمون قرار داره؛ همین مسیر رو ادامه بده.',
+      strength: 5,
     }
-
-    const first =
-      user.first_name?.trim()?.charAt(0)
-
-    const last =
-      user.last_name?.trim()?.charAt(0)
-
-    if (first || last) {
-      return `${first || ''}${last || ''}`
+  }
+  if (combinedScore >= 75) {
+    return {
+      key: 'rising',
+      title: 'رو به رشد',
+      emoji: '🔵',
+      description: 'عملکردت بالاتر از میانگینه و مسیر خوبی رو داری طی می‌کنی.',
+      strength: 4,
     }
+  }
+  if (combinedScore >= 55) {
+    return {
+      key: 'strong',
+      title: 'قوی',
+      emoji: '🟢',
+      description: 'عملکردت متعادل و قابل قبوله؛ با کمی تلاش می‌تونی بالاتر بری.',
+      strength: 3,
+    }
+  }
+  if (combinedScore >= 35) {
+    return {
+      key: 'stable',
+      title: 'پایدار',
+      emoji: '🟡',
+      description: 'عملکردت در محدوده متوسطه؛ روی نقاط ضعفت تمرکز کن.',
+      strength: 2,
+    }
+  }
+  if (combinedScore >= 20) {
+    return {
+      key: 'challenging',
+      title: 'چالش‌برانگیز',
+      emoji: '🟠',
+      description: 'این آزمون سخت بوده برات؛ با مرور هدفمند می‌تونی بهتر بشی.',
+      strength: 1,
+    }
+  }
+  return {
+    key: 'critical',
+    title: 'نیاز به توجه',
+    emoji: '🔴',
+    description: 'نیاز به برنامه‌ریزی جدی داری؛ از همین امروز شروع کن.',
+    strength: 1,
+  }
+})
 
-    return (
-      user.username?.charAt(0) ||
-      'د'
-    )
+/* =========================================================
+   PEAK POSITION — موقعیت روی قله
+========================================================= */
+const peakPosition = computed(() => {
+  return clampPercent(result.value?.summary?.percentage)
+})
 
-  })
+const nationalAverage = computed(() => {
+  if (!sortedBooklets.value.length) return 0
+  const sum = sortedBooklets.value.reduce(
+    (acc, b) => acc + Number(b.country_average || 0),
+    0
+  )
+  return sum / sortedBooklets.value.length
+})
 
+/* =========================================================
+   LEAGUE TIERS — آیکون‌های کامل 64x64
+========================================================= */
+const leagueTiers = [
+  {
+    key: 'bronze',
+    title: 'برنز',
+    // مدال برنز
+    svgPath: `
+      <circle cx="32" cy="26" r="16" />
+      <circle cx="32" cy="26" r="10" />
+      <path d="M22 44v8M42 44v8M22 56h20" />
+      <path d="m32 22 2 4h4l-3 3 1 4-4-2-4 2 1-4-3-3h4l2-4Z" fill="currentColor" opacity="0.4"/>
+    `,
+  },
+  {
+    key: 'silver',
+    title: 'نقره‌ای',
+    // سپر با ستاره
+    svgPath: `
+      <path d="M32 4 54 14v18c0 14-10 24-22 28C20 56 10 46 10 32V14L32 4Z" />
+      <path d="M32 4 54 14v18c0 14-10 24-22 28V4Z" opacity="0.35" fill="currentColor"/>
+      <path d="m32 18 3 7h7l-6 5 2 8-6-4-6 4 2-8-6-5h7l3-7Z" fill="currentColor" opacity="0.5"/>
+    `,
+  },
+  {
+    key: 'gold',
+    title: 'طلایی',
+    // جام قهرمانی
+    svgPath: `
+      <path d="M18 12h28v12c0 12-6 20-14 24-8-4-14-12-14-24V12Z" />
+      <path d="M18 18H8c0 12 5 18 12 18M46 18h10c0 12-5 18-12 18" />
+      <path d="M32 48v8M20 60h24" />
+      <path d="m32 22 2.5 5h5.5l-4.5 3.5 1.5 5.5-5-3-5 3 1.5-5.5L24 27h5.5L32 22Z" fill="currentColor" opacity="0.55"/>
+    `,
+  },
+  {
+    key: 'platinum',
+    title: 'پلاتینیوم',
+    // کریستال شش‌ضلعی
+    svgPath: `
+      <path d="M32 4 54 18v28L32 60 10 46V18L32 4Z" />
+      <path d="M32 4v56M10 18l44 28M54 18 10 46" opacity="0.4"/>
+      <circle cx="32" cy="32" r="9" />
+      <circle cx="32" cy="32" r="4" fill="currentColor"/>
+      <path d="M32 4 54 18 32 32 10 18 32 4Z" fill="currentColor" opacity="0.2"/>
+    `,
+  },
+  {
+    key: 'diamond',
+    title: 'الماس',
+    // الماس تراش‌خورده
+    svgPath: `
+      <path d="M32 2 60 22 32 62 4 22 32 2Z" />
+      <path d="M4 22h56M32 62V22M18 22 32 2l14 20" opacity="0.5"/>
+      <path d="M22 32 32 26l10 6-10 12-10-12Z" fill="currentColor" opacity="0.55"/>
+      <path d="M22 32h20M32 26v18" opacity="0.4"/>
+    `,
+  },
+  {
+    key: 'elite',
+    title: 'نخبه',
+    // تاج نخبه
+    svgPath: `
+      <path d="M8 22 18 32 32 8l14 24 10-10-4 30H12L8 22Z" />
+      <path d="M12 52h40" stroke-width="2.5"/>
+      <path d="M20 52v6M44 52v6" stroke-width="2"/>
+      <circle cx="32" cy="40" r="4" fill="currentColor"/>
+      <circle cx="32" cy="40" r="7" opacity="0.4"/>
+      <path d="M32 30v-4M24 36l-3-3M40 36l3-3" opacity="0.7"/>
+    `,
+  },
+]
+
+const leagueOrder = ['bronze', 'silver', 'gold', 'platinum', 'diamond', 'elite']
+
+const performanceLeague = computed(() => {
+  const rank = Math.max(0, Number(result.value?.ranking?.national_rank || 0))
+  const total = Math.max(rank, Number(result.value?.ranking?.national_participants || 0))
+
+  if (!rank || !total) {
+    return {
+      key: 'bronze',
+      title: 'لیگ برنز',
+      level: 1,
+      progress: 0,
+      fromText: 'شروع',
+      toText: 'رتبه‌های بالاتر',
+      caption: 'در حال ثبت',
+      svgPath: leagueTiers[0].svgPath,
+      ranksToNext: 0,
+      nextTitle: '',
+    }
+  }
+
+  const percentile = Math.max(0, Math.min(100, ((total - rank + 1) / total) * 100))
+  let tierIndex = 0
+  if (percentile >= 99) tierIndex = 5
+  else if (percentile >= 95) tierIndex = 4
+  else if (percentile >= 85) tierIndex = 3
+  else if (percentile >= 65) tierIndex = 2
+  else if (percentile >= 35) tierIndex = 1
+
+  const tier = leagueTiers[tierIndex]
+  const thresholds = [0, 35, 65, 85, 95, 99]
+  const start = thresholds[tierIndex]
+  const end = tierIndex === 5 ? 100 : thresholds[tierIndex + 1]
+  const progress = Math.round(Math.max(0, Math.min(100, ((percentile - start) / Math.max(1, end - start)) * 100)))
+
+  // محاسبه فاصله تا لیگ بعدی
+  let ranksToNext = 0
+  let nextTitle = ''
+  if (tierIndex < 5) {
+    const nextThreshold = thresholds[tierIndex + 1]
+    // rank لازم برای رسیدن به nextThreshold
+    const targetRank = Math.ceil(total * (1 - nextThreshold / 100))
+    ranksToNext = Math.max(0, rank - targetRank)
+    nextTitle = leagueTiers[tierIndex + 1].title
+  }
+
+  return {
+    key: tier.key,
+    title: `لیگ ${tier.title}`,
+    level: tierIndex + 1,
+    progress,
+    fromText: tierIndex === 0 ? 'آغاز مسیر' : `ورود به ${tier.title}`,
+    toText: tierIndex === 5 ? 'اوج جدول' : `لیگ ${leagueTiers[tierIndex + 1].title}`,
+    caption: percentile >= 99 ? 'نخبه جدول' : `جزو ${Math.max(1, Math.round(100 - percentile))}٪ برتر`,
+    svgPath: tier.svgPath,
+    ranksToNext,
+    nextTitle,
+  }
+})
+
+function isTierPassed(tierKey) {
+  const currentIdx = leagueOrder.indexOf(performanceLeague.value.key)
+  const tierIdx = leagueOrder.indexOf(tierKey)
+  return tierIdx < currentIdx
+}
 
 /* =========================================================
    BOOKLETS
 ========================================================= */
+const sortedBooklets = computed(() => {
+  const list = Array.isArray(result.value?.booklets) ? [...result.value.booklets] : []
+  return list.sort((a, b) => Number(a.order || 0) - Number(b.order || 0))
+})
 
-const sortedBooklets =
-  computed(() => {
+const bookletComparison = computed(() => {
+  const data = result.value?.charts?.booklet_comparison
+  if (Array.isArray(data)) return data
 
-    const list =
-      Array.isArray(result.value?.booklets)
-        ? [...result.value.booklets]
-        : []
+  return sortedBooklets.value.map(booklet => ({
+    booklet_id: booklet.id,
+    booklet_title: booklet.title,
+    user_percentage: booklet.percentage,
+    user_raw_percentage: booklet.raw_percentage,
+    country_average: booklet.country_average,
+    province_average: booklet.province_average,
+  }))
+})
 
-    return list.sort(
-      (a, b) =>
-        Number(a.order || 0) -
-        Number(b.order || 0)
-    )
+const bestBooklet = computed(() => {
+  if (!sortedBooklets.value.length) return null
+  return [...sortedBooklets.value].sort((a, b) => Number(b.percentage || 0) - Number(a.percentage || 0))[0]
+})
 
-  })
-
-
-const bookletComparison =
-  computed(() => {
-
-    const data =
-      result.value?.charts?.booklet_comparison
-
-    if (Array.isArray(data)) {
-      return data
-    }
-
-    return sortedBooklets.value.map(
-      booklet => ({
-        booklet_id: booklet.id,
-        booklet_title: booklet.title,
-        user_percentage: booklet.percentage,
-        user_raw_percentage: booklet.raw_percentage,
-        country_average:
-          booklet.country_average,
-        province_average:
-          booklet.province_average,
-      })
-    )
-
-  })
-
-
-/* =========================================================
-   BEST / WEAKEST
-========================================================= */
-
-const bestBooklet =
-  computed(() => {
-
-    if (!sortedBooklets.value.length) {
-      return null
-    }
-
-    return [...sortedBooklets.value]
-      .sort(
-        (a, b) =>
-          Number(b.percentage || 0) -
-          Number(a.percentage || 0)
-      )[0]
-
-  })
-
-
-const weakestBooklet =
-  computed(() => {
-
-    if (!sortedBooklets.value.length) {
-      return null
-    }
-
-    return [...sortedBooklets.value]
-      .sort(
-        (a, b) =>
-          Number(a.percentage || 0) -
-          Number(b.percentage || 0)
-      )[0]
-
-  })
-
+const weakestBooklet = computed(() => {
+  if (!sortedBooklets.value.length) return null
+  return [...sortedBooklets.value].sort((a, b) => Number(a.percentage || 0) - Number(b.percentage || 0))[0]
+})
 
 /* =========================================================
    PROGRESS
 ========================================================= */
+const progressData = computed(() => {
+  const data = result.value?.charts?.progress || result.value?.progress || []
+  if (!Array.isArray(data)) return []
+  return data
+})
 
-const progressData =
-  computed(() => {
+const firstProgressScore = computed(() => {
+  if (!progressData.value.length) return 0
+  return Number(progressData.value[0].percentage || 0)
+})
 
-    const data =
-      result.value?.charts?.progress ||
-      result.value?.progress ||
-      []
+const lastProgressScore = computed(() => {
+  if (!progressData.value.length) return 0
+  return Number(progressData.value[progressData.value.length - 1].percentage || 0)
+})
 
-    if (!Array.isArray(data)) {
-      return []
-    }
-
-    return data
-
-  })
-
-
-const firstProgressScore =
-  computed(() => {
-
-    if (!progressData.value.length) {
-      return 0
-    }
-
-    return Number(
-      progressData.value[0].percentage || 0
-    )
-
-  })
-
-
-const lastProgressScore =
-  computed(() => {
-
-    if (!progressData.value.length) {
-      return 0
-    }
-
-    return Number(
-      progressData.value[
-        progressData.value.length - 1
-      ].percentage || 0
-    )
-
-  })
-
-
-const previousChange =
-  computed(() => {
-
-    const value =
-      result.value?.previous_attempt?.score_change
-
-    if (
-      value === null ||
-      value === undefined
-    ) {
-      return null
-    }
-
-    return Number(value)
-
-  })
-
-
-/* =========================================================
-   PROGRESS SVG
-========================================================= */
-
-const progressPoints =
-  computed(() => {
-
-    const data =
-      progressData.value
-
-    if (!data.length) {
-      return []
-    }
-
-    const width = 800
-    const height = 300
-
-    const horizontalPadding = 15
-    const verticalPadding = 20
-
-    const usableWidth =
-      width -
-      horizontalPadding * 2
-
-    const usableHeight =
-      height -
-      verticalPadding * 2
-
-    const max =
-      Math.max(
-        100,
-        ...data.map(
-          item =>
-            Number(item.percentage || 0)
-        )
-      )
-
-    const min = 0
-
-    return data.map(
-      (item, index) => {
-
-        const value =
-          Number(item.percentage || 0)
-
-        const x =
-          data.length === 1
-            ? width / 2
-            : horizontalPadding +
-              (
-                index /
-                (data.length - 1)
-              ) *
-              usableWidth
-
-        const normalized =
-          (value - min) /
-          (max - min || 1)
-
-        const y =
-          height -
-          verticalPadding -
-          normalized *
-          usableHeight
-
-        const left =
-          `${(
-            x / width
-          ) * 100}%`
-
-        return {
-          index,
-          x,
-          y,
-          left,
-          value,
-          title:
-            item.exam_title ||
-            `آزمون ${index + 1}`,
-        }
-
-      }
-    )
-
-  })
-
-
-const progressLinePath =
-  computed(() => {
-
-    const points =
-      progressPoints.value
-
-    if (!points.length) {
-      return ''
-    }
-
-    return points
-      .map(
-        (point, index) =>
-          `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`
-      )
-      .join(' ')
-
-  })
-
-
-const progressAreaPath =
-  computed(() => {
-
-    const points =
-      progressPoints.value
-
-    if (!points.length) {
-      return ''
-    }
-
-    const baseY = 300 - 20
-
-    const first =
-      points[0]
-
-    const last =
-      points[points.length - 1]
-
-    const line =
-      points
-        .map(
-          (point, index) =>
-            `${index === 0 ? 'L' : 'L'} ${point.x} ${point.y}`
-        )
-        .join(' ')
-
-    return `
-      M ${first.x} ${baseY}
-      ${line}
-      L ${last.x} ${baseY}
-      Z
-    `
-
-  })
-
+const previousChange = computed(() => {
+  const value = result.value?.previous_attempt?.score_change
+  if (value === null || value === undefined) return null
+  return Number(value)
+})
 
 /* =========================================================
    SCORE RING
 ========================================================= */
-
-const scoreDash =
-  computed(() => {
-
-    const radius = 50
-
-    const circumference =
-      2 * Math.PI * radius
-
-    const percentage =
-      clampPercent(
-        result.value?.summary?.percentage
-      )
-
-    const visible =
-      circumference *
-      (percentage / 100)
-
-    return `${visible} ${circumference}`
-
-  })
-
+const scoreDash = computed(() => {
+  const radius = 50
+  const circumference = 2 * Math.PI * radius
+  const percentage = clampPercent(result.value?.summary?.percentage)
+  const visible = circumference * (percentage / 100)
+  return `${visible} ${circumference}`
+})
 
 /* =========================================================
    REVIEW
 ========================================================= */
+const reviewCounts = computed(() => {
+  const review = Array.isArray(result.value?.personalized_review) ? result.value.personalized_review : []
+  return {
+    correct: review.filter(item => item.status === 'correct').length,
+    wrong: review.filter(item => item.status === 'wrong').length,
+    unanswered: review.filter(item => item.status === 'unanswered').length,
+  }
+})
 
-const reviewCounts =
-  computed(() => {
+const filteredReview = computed(() => {
+  const review = Array.isArray(result.value?.personalized_review) ? result.value.personalized_review : []
+  if (reviewFilter.value === 'all') return review
+  return review.filter(item => item.status === reviewFilter.value)
+})
 
-    const review =
-      Array.isArray(
-        result.value?.personalized_review
-      )
-        ? result.value.personalized_review
-        : []
+function setReviewFilter(filter) {
+  reviewFilter.value = filter
+}
 
-    return {
-      correct:
-        review.filter(
-          item =>
-            item.status === 'correct'
-        ).length,
-
-      wrong:
-        review.filter(
-          item =>
-            item.status === 'wrong'
-        ).length,
-
-      unanswered:
-        review.filter(
-          item =>
-            item.status === 'unanswered'
-        ).length,
-    }
-
-  })
-
-
-const filteredReview =
-  computed(() => {
-
-    const review =
-      Array.isArray(
-        result.value?.personalized_review
-      )
-        ? result.value.personalized_review
-        : []
-
-    if (
-      reviewFilter.value === 'all'
-    ) {
-      return review
-    }
-
-    return review.filter(
-      item =>
-        item.status ===
-        reviewFilter.value
-    )
-
-  })
-
+const reviewProgress = computed(() => {
+  const total = Number(result.value?.personalized_review?.length || 0)
+  if (!total) return 0
+  return Math.round((reviewCounts.value.correct / total) * 100)
+})
 
 /* =========================================================
-   REVIEW VISUALS
+   PDF HELPERS
 ========================================================= */
-
-const reviewProgress =
-  computed(() => {
-
-    const total =
-      Number(
-        result.value?.personalized_review?.length || 0
-      )
-
-    if (!total) {
-      return 0
-    }
-
-    return Math.round(
-      (
-        reviewCounts.value.correct /
-        total
-      ) * 100
-    )
-
-  })
-
-
 function questionPdfUrl(questionNumber) {
-
   const number = Number(questionNumber)
-
   if (!Number.isInteger(number) || number < 1) {
     return result.value.exam.question_pdf_url
   }
-
   return `${result.value.exam.question_pdf_url}#page=${number}`
-
 }
 
-
 function setQuestionCanvasRef(questionNumber, element) {
-
   const number = Number(questionNumber)
-
-  if (!Number.isInteger(number) || number < 1) {
-    return
-  }
+  if (!Number.isInteger(number) || number < 1) return
 
   if (element) {
     questionCanvasRefs.set(number, element)
   } else {
     questionCanvasRefs.delete(number)
   }
-
 }
 
-
 async function loadQuestionPdf() {
-
-  if (questionPdfDocument.value) {
-    return questionPdfDocument.value
-  }
-
-  if (questionPdfLoadPromise) {
-    return questionPdfLoadPromise
-  }
+  if (questionPdfDocument.value) return questionPdfDocument.value
+  if (questionPdfLoadPromise) return questionPdfLoadPromise
 
   questionPdfLoading.value = true
   questionPdfError.value = ''
@@ -2505,14 +1721,8 @@ async function loadQuestionPdf() {
       return pdf
     })
     .catch(error => {
-      console.error(
-        'QUESTION PDF LOAD ERROR:',
-        error
-      )
-
-      questionPdfError.value =
-        'فایل PDF آزمون بارگذاری نشد. آدرس PDF یا تنظیمات CORS سرور را بررسی کنید.'
-
+      console.error('QUESTION PDF LOAD ERROR:', error)
+      questionPdfError.value = 'فایل PDF آزمون بارگذاری نشد. آدرس PDF یا تنظیمات CORS سرور را بررسی کنید.'
       throw error
     })
     .finally(() => {
@@ -2521,48 +1731,35 @@ async function loadQuestionPdf() {
     })
 
   return questionPdfLoadPromise
-
 }
 
-
 async function renderQuestionPage(questionNumber, force = false) {
-
   const number = Number(questionNumber)
   const canvas = questionCanvasRefs.get(number)
 
-  if (!Number.isInteger(number) || number < 1 || !canvas) {
-    return
-  }
+  if (!Number.isInteger(number) || number < 1 || !canvas) return
 
   if (!force && renderedQuestionPages.has(number)) {
-    return
+    const ctx = canvas.getContext('2d')
+    if (canvas.width > 0 && canvas.height > 0 && ctx) return
+    renderedQuestionPages.delete(number)
   }
 
   const previousTask = questionRenderTasks.get(number)
-
   if (previousTask) {
-    try {
-      previousTask.cancel()
-    } catch {
-      // Ignore an already completed task.
-    }
+    try { previousTask.cancel() } catch { /* ignore */ }
   }
 
   try {
     const pdf = await loadQuestionPdf()
 
     if (number > pdf.numPages) {
-      throw new Error(
-        `PDF فقط ${pdf.numPages} صفحه دارد؛ صفحه ${number} وجود ندارد.`
-      )
+      throw new Error(`PDF فقط ${pdf.numPages} صفحه دارد؛ صفحه ${number} وجود ندارد.`)
     }
 
     const page = await pdf.getPage(number)
     const container = canvas.parentElement
-
-    if (!container) {
-      return
-    }
+    if (!container) return
 
     const baseViewport = page.getViewport({ scale: 1 })
     const availableWidth = Math.max(280, container.clientWidth - 2)
@@ -2576,20 +1773,9 @@ async function renderQuestionPage(questionNumber, force = false) {
     canvas.style.height = `${Math.floor(viewport.height)}px`
 
     const context = canvas.getContext('2d', { alpha: false })
+    if (!context) throw new Error('Canvas 2D context is unavailable.')
 
-    if (!context) {
-      throw new Error('Canvas 2D context is unavailable.')
-    }
-
-    context.setTransform(
-      outputScale,
-      0,
-      0,
-      outputScale,
-      0,
-      0
-    )
-
+    context.setTransform(outputScale, 0, 0, outputScale, 0, 0)
     context.fillStyle = '#ffffff'
     context.fillRect(0, 0, viewport.width, viewport.height)
 
@@ -2599,40 +1785,30 @@ async function renderQuestionPage(questionNumber, force = false) {
     })
 
     questionRenderTasks.set(number, renderTask)
-
     await renderTask.promise
-
     renderedQuestionPages.add(number)
   } catch (error) {
-    if (error?.name === 'RenderingCancelledException') {
-      return
-    }
-
-    console.error(
-      `QUESTION PDF PAGE ${number} RENDER ERROR:`,
-      error
-    )
-
-    questionPdfError.value =
-      'نمایش صفحه این سؤال با خطا مواجه شد.'
+    if (error?.name === 'RenderingCancelledException') return
+    console.error(`QUESTION PDF PAGE ${number} RENDER ERROR:`, error)
+    questionPdfError.value = 'نمایش صفحه این سؤال با خطا مواجه شد.'
   } finally {
     questionRenderTasks.delete(number)
   }
-
 }
 
+function resetQuestionRendering() {
+  for (const task of questionRenderTasks.values()) {
+    try { task.cancel() } catch { /* already completed */ }
+  }
+  questionRenderTasks.clear()
+  renderedQuestionPages.clear()
+  questionPdfError.value = ''
+}
 
 async function renderFilteredQuestionPages() {
-
-  if (activeTab.value !== 'review') {
-    return
-  }
-
+  if (activeTab.value !== 'review') return
   await nextTick()
-
-  if (!filteredReview.value.length) {
-    return
-  }
+  if (!filteredReview.value.length) return
 
   try {
     await loadQuestionPdf()
@@ -2641,409 +1817,168 @@ async function renderFilteredQuestionPages() {
   }
 
   for (const question of filteredReview.value) {
-    await renderQuestionPage(question.question_number)
+    const number = Number(question.question_number)
+    const canvas = questionCanvasRefs.get(number)
+    if (canvas) {
+      canvas.width = 0
+      canvas.height = 0
+      renderedQuestionPages.delete(number)
+    }
   }
 
-}
+  await nextTick()
 
+  for (const question of filteredReview.value) {
+    await renderQuestionPage(question.question_number, true)
+  }
+}
 
 /* =========================================================
    FORMATTERS
 ========================================================= */
-
 function toPersianNumber(value) {
-
-  if (
-    value === null ||
-    value === undefined
-  ) {
-    return '۰'
-  }
-
-  return String(value)
-    .replace(
-      /\d/g,
-      digit =>
-        '۰۱۲۳۴۵۶۷۸۹'[
-          Number(digit)
-        ]
-    )
-
+  if (value === null || value === undefined) return '۰'
+  return String(value).replace(/\d/g, digit => '۰۱۲۳۴۵۶۷۸۹'[Number(digit)])
 }
-
 
 function formatPercent(value) {
-
-  const number =
-    Number(value)
-
-  if (
-    !Number.isFinite(number)
-  ) {
-    return '۰'
-  }
-
-  return number
-    .toFixed(1)
-    .replace(
-      /\.0$/,
-      ''
-    )
-    .replace(
-      /-/g,
-      '−'
-    )
-
+  const number = Number(value)
+  if (!Number.isFinite(number)) return '۰'
+  return number.toFixed(1).replace(/\.0$/, '').replace(/-/g, '−')
 }
-
 
 function clampPercent(value) {
-
-  const number =
-    Number(value)
-
-  if (
-    !Number.isFinite(number)
-  ) {
-    return 0
-  }
-
-  return Math.max(
-    0,
-    Math.min(
-      100,
-      number
-    )
-  )
-
+  const number = Number(value)
+  if (!Number.isFinite(number)) return 0
+  return Math.max(0, Math.min(100, number))
 }
-
 
 function positivePercent(value) {
-
-  const number =
-    Number(value)
-
-  if (
-    !Number.isFinite(number)
-  ) {
-    return 0
-  }
-
-  return Math.max(
-    0,
-    Math.min(
-      100,
-      number
-    )
-  )
-
+  const number = Number(value)
+  if (!Number.isFinite(number)) return 0
+  return Math.max(0, Math.min(100, number))
 }
-
 
 function signedPercent(value) {
-
-  const number =
-    Number(value)
-
-  if (
-    !Number.isFinite(number)
-  ) {
-    return '۰'
-  }
-
-  const absolute =
-    Math.abs(number)
-
-  const formatted =
-    formatPercent(absolute)
-
-  if (number > 0) {
-    return `+${formatted}`
-  }
-
-  if (number < 0) {
-    return `−${formatted}`
-  }
-
+  const number = Number(value)
+  if (!Number.isFinite(number)) return '۰'
+  const absolute = Math.abs(number)
+  const formatted = formatPercent(absolute)
+  if (number > 0) return `+${formatted}`
+  if (number < 0) return `−${formatted}`
   return '۰'
-
 }
-
 
 function formatRank(value) {
-
-  if (
-    value === null ||
-    value === undefined ||
-    value === ''
-  ) {
-    return '—'
-  }
-
+  if (value === null || value === undefined || value === '') return '—'
   return toPersianNumber(value)
-
 }
-
 
 function formatDate(value) {
-
-  if (!value) {
-    return '—'
-  }
-
-  const date =
-    new Date(value)
-
-  if (
-    Number.isNaN(
-      date.getTime()
-    )
-  ) {
-    return '—'
-  }
-
-  return date.toLocaleDateString(
-    'fa-IR-u-ca-persian',
-    {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    }
-  )
-
+  if (!value) return '—'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return '—'
+  return date.toLocaleDateString('fa-IR-u-ca-persian', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  })
 }
-
 
 function formatTime(value) {
-
-  if (!value) {
-    return '—'
-  }
-
-  const date =
-    new Date(value)
-
-  if (
-    Number.isNaN(
-      date.getTime()
-    )
-  ) {
-    return '—'
-  }
-
-  return date.toLocaleTimeString(
-    'fa-IR',
-    {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false,
-    }
-  )
-
+  if (!value) return '—'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return '—'
+  return date.toLocaleTimeString('fa-IR', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  })
 }
-
 
 function truncate(value, length) {
-
-  if (!value) {
-    return ''
-  }
-
-  const text =
-    String(value)
-
-  if (
-    text.length <= length
-  ) {
-    return text
-  }
-
-  return (
-    text.slice(0, length) +
-    '…'
-  )
-
+  if (!value) return ''
+  const text = String(value)
+  if (text.length <= length) return text
+  return text.slice(0, length) + '…'
 }
-
-
-/* =========================================================
-   CHART HELPERS
-========================================================= */
-
-function chartHeight(value) {
-
-  const number =
-    Number(value)
-
-  if (
-    !Number.isFinite(number)
-  ) {
-    return '0%'
-  }
-
-  return `${Math.max(
-    4,
-    Math.min(
-      100,
-      number
-    )
-  )}%`
-
-}
-
 
 function markerPosition(value) {
-
-  const number =
-    Number(value)
-
-  if (
-    !Number.isFinite(number)
-  ) {
-    return '0%'
-  }
-
-  return `${Math.max(
-    0,
-    Math.min(
-      100,
-      number
-    )
-  )}%`
-
+  const number = Number(value)
+  if (!Number.isFinite(number)) return '0%'
+  return `${Math.max(0, Math.min(100, number))}%`
 }
-
-
-/* =========================================================
-   CHANGE HELPERS
-========================================================= */
 
 function changeClass(value) {
-
-  const number =
-    Number(value)
-
-  if (
-    !Number.isFinite(number)
-  ) {
-    return 'neutral'
-  }
-
-  if (number > 0) {
-    return 'positive'
-  }
-
-  if (number < 0) {
-    return 'negative'
-  }
-
+  const number = Number(value)
+  if (!Number.isFinite(number)) return 'neutral'
+  if (number > 0) return 'positive'
+  if (number < 0) return 'negative'
   return 'neutral'
-
 }
-
 
 function changeTextClass(value) {
-
-  const number =
-    Number(value)
-
-  if (
-    !Number.isFinite(number)
-  ) {
-    return ''
-  }
-
-  if (number > 0) {
-    return 'text-positive'
-  }
-
-  if (number < 0) {
-    return 'text-negative'
-  }
-
+  const number = Number(value)
+  if (!Number.isFinite(number)) return ''
+  if (number > 0) return 'text-positive'
+  if (number < 0) return 'text-negative'
   return ''
-
 }
-
-
-/* =========================================================
-   GO BACK
-========================================================= */
 
 async function goBack() {
-
   try {
-
-    await router.push({
-      name: 'exams',
-    })
-
+    await router.push({ name: 'exams' })
   } catch {
-
     router.back()
-
   }
-
 }
 
-
 /* =========================================================
-   QUESTION PDF WATCHERS
+   WATCHERS
 ========================================================= */
-
 watch(
   () => activeTab.value,
-  value => {
+  async value => {
     if (value === 'review') {
-      renderFilteredQuestionPages()
+      resetQuestionRendering()
+      await renderFilteredQuestionPages()
+    } else if (value === 'analytics') {
+      await initCharts()
+    } else {
+      destroyCharts()
     }
   }
 )
 
 watch(
-  () => filteredReview.value
-    .map(item => item.question_number)
-    .join(','),
-  () => {
+  () => reviewFilter.value,
+  async () => {
     if (activeTab.value === 'review') {
-      renderFilteredQuestionPages()
+      resetQuestionRendering()
+      await renderFilteredQuestionPages()
     }
   }
 )
 
-
 /* =========================================================
-   MOUNT
+   MOUNT / UNMOUNT
 ========================================================= */
-
 onMounted(async () => {
-
   observeTheme()
   await loadResult()
 
   if (activeTab.value === 'review') {
     await renderFilteredQuestionPages()
   }
-
 })
 
-
-/* =========================================================
-   UNMOUNT
-========================================================= */
-
 onBeforeUnmount(() => {
-
   themeObserver?.disconnect()
   themeObserver = null
+  destroyCharts()
 
   for (const task of questionRenderTasks.values()) {
-    try {
-      task.cancel()
-    } catch {
-      // Ignore already-finished PDF.js tasks.
-    }
+    try { task.cancel() } catch { /* ignore */ }
   }
 
   questionRenderTasks.clear()
@@ -3054,4950 +1989,3216 @@ onBeforeUnmount(() => {
     questionPdfDocument.value.destroy()
     questionPdfDocument.value = null
   }
-
 })
-
 </script>
 
-
 <style scoped>
-
 /* =========================================================
-   ROOT
+   DOPAMINE • EXAM RESULT — PREMIUM
 ========================================================= */
 
 .exam-result-page {
+  --bg: #f4f6fc;
+  --surface: rgba(255, 255, 255, .9);
+  --surface-solid: #ffffff;
+  --surface-soft: #f8f9fd;
+  --text: #14172a;
+  --text-soft: #5e6781;
+  --text-faint: #98a2b3;
+  --border: rgba(91, 92, 240, .10);
+  --border-strong: rgba(91, 92, 240, .2);
 
-  --bg:
-    #f4f7fb;
+  --primary: #6567f1;
+  --primary-dark: #4d4fd8;
+  --primary-light: #8c8eff;
+  --primary-soft: rgba(101, 103, 241, .10);
 
-  --surface:
-    #ffffff;
+  --success: #18a88b;
+  --success-soft: rgba(24, 168, 139, .10);
+  --danger: #e35d68;
+  --danger-soft: rgba(227, 93, 104, .10);
+  --warning: #e3a62f;
+  --warning-soft: rgba(227, 166, 47, .11);
+  --orange: #f0862f;
+  --orange-soft: rgba(240, 134, 47, .11);
 
-  --surface-soft:
-    #f8fafc;
+  --shadow-sm: 0 8px 28px rgba(32, 35, 70, .06);
+  --shadow: 0 18px 55px rgba(32, 35, 70, .09);
+  --shadow-lg: 0 30px 90px rgba(53, 56, 145, .16);
 
-  --text:
-    #172033;
+  --mx: 50vw;
+  --my: 50vh;
 
-  --text-soft:
-    #68748a;
-
-  --text-faint:
-    #98a2b3;
-
-  --border:
-    #e7ebf2;
-
-  --primary:
-    #5b5cf0;
-
-  --primary-dark:
-    #4546d8;
-
-  --primary-soft:
-    rgba(91, 92, 240, .10);
-
-  --success:
-    #16a085;
-
-  --success-soft:
-    rgba(22, 160, 133, .11);
-
-  --danger:
-    #e05252;
-
-  --danger-soft:
-    rgba(224, 82, 82, .10);
-
-  --warning:
-    #e3a52f;
-
-  --warning-soft:
-    rgba(227, 165, 47, .12);
-
-  --shadow:
-    0 15px 45px rgba(31, 41, 55, .07);
-
-  min-height:
-    100vh;
-
-  background:
-    var(--bg);
-
-  color:
-    var(--text);
-
-  padding:
-    28px 20px 70px;
-
-  transition:
-    background .25s ease,
-    color .25s ease;
-
+  position: relative;
+  isolation: isolate;
+  min-height: 100vh;
+  overflow: hidden;
+  padding: 30px 20px 70px;
+  color: var(--text);
+  background: linear-gradient(180deg, #f6f7fd 0%, var(--bg) 40%, #eef0f9 100%);
+  transition: background .4s ease, color .35s ease;
 }
-
-
-/* =========================================================
-   DARK
-========================================================= */
 
 .exam-result-page.is-dark {
+  --bg: #080b13;
+  --surface: rgba(18, 24, 36, .85);
+  --surface-solid: #121824;
+  --surface-soft: #0e1520;
+  --text: #f4f6fb;
+  --text-soft: #aab4c6;
+  --text-faint: #6d7789;
+  --border: rgba(145, 151, 255, .12);
+  --border-strong: rgba(145, 151, 255, .24);
 
-  --bg:
-    #0c1018;
+  --primary: #8587ff;
+  --primary-dark: #6f71f5;
+  --primary-light: #a6a7ff;
+  --primary-soft: rgba(133,135,255,.13);
 
-  --surface:
-    #151b26;
+  --success: #2ac7a6;
+  --danger: #ff7180;
+  --warning: #efb84e;
+  --orange: #ff9a4a;
+  --orange-soft: rgba(255, 154, 74, .14);
 
-  --surface-soft:
-    #101620;
+  --shadow-sm: 0 10px 32px rgba(0,0,0,.18);
+  --shadow: 0 20px 60px rgba(0,0,0,.26);
+  --shadow-lg: 0 35px 100px rgba(0,0,0,.4);
 
-  --text:
-    #f1f5f9;
-
-  --text-soft:
-    #aab4c4;
-
-  --text-faint:
-    #737f91;
-
-  --border:
-    #252e3c;
-
-  --primary:
-    #7778ff;
-
-  --primary-dark:
-    #6465f2;
-
-  --primary-soft:
-    rgba(119, 120, 255, .13);
-
-  --success:
-    #28c7a7;
-
-  --success-soft:
-    rgba(40, 199, 167, .12);
-
-  --danger:
-    #ff6c6c;
-
-  --danger-soft:
-    rgba(255, 108, 108, .12);
-
-  --warning:
-    #f0b746;
-
-  --warning-soft:
-    rgba(240, 183, 70, .12);
-
-  --shadow:
-    0 18px 55px rgba(0, 0, 0, .25);
-
+  background: linear-gradient(180deg, #0a0e18 0%, #080b13 100%);
 }
 
+.exam-result-page *,
+.exam-result-page *::before,
+.exam-result-page *::after {
+  box-sizing: border-box;
+}
+
+.exam-result-page button,
+.exam-result-page a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.exam-result-page button:focus-visible,
+.exam-result-page a:focus-visible {
+  outline: 3px solid rgba(101,103,241,.3);
+  outline-offset: 3px;
+}
 
 /* =========================================================
-   CONTAINER
+   SIMPLE BACKGROUND (grid + spotlight)
 ========================================================= */
 
-.result-container {
-
-  width:
-    min(1280px, 100%);
-
-  margin:
-    0 auto;
-
+.bg-layer {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
 }
 
+.bg-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(101, 103, 241, .05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(101, 103, 241, .05) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: radial-gradient(circle at var(--mx) var(--my), black 0%, transparent 65%);
+  -webkit-mask-image: radial-gradient(circle at var(--mx) var(--my), black 0%, transparent 65%);
+}
+
+.is-dark .bg-grid {
+  background-image:
+    linear-gradient(rgba(133, 135, 255, .07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(133, 135, 255, .07) 1px, transparent 1px);
+}
+
+.bg-glow {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    700px circle at var(--mx) var(--my),
+    rgba(101, 103, 241, .07),
+    transparent 45%
+  );
+}
+
+.is-dark .bg-glow {
+  background: radial-gradient(
+    700px circle at var(--mx) var(--my),
+    rgba(133, 135, 255, .09),
+    transparent 45%
+  );
+}
 
 /* =========================================================
-   STATE
+   LOADING / ERROR
 ========================================================= */
 
 .page-state {
-
-  width:
-    min(600px, 100%);
-
-  min-height:
-    65vh;
-
-  margin:
-    auto;
-
-  display:
-    flex;
-
-  flex-direction:
-    column;
-
-  justify-content:
-    center;
-
-  align-items:
-    center;
-
-  text-align:
-    center;
-
+  min-height: calc(100vh - 100px);
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 9px;
+  text-align: center;
+  animation: pageReveal .65s ease both;
 }
 
 .page-state h2 {
-
-  margin:
-    20px 0 8px;
-
-  font-size:
-    24px;
-
+  margin: 14px 0 0;
+  font-size: clamp(21px, 3vw, 29px);
+  letter-spacing: -.04em;
 }
 
 .page-state p {
-
-  margin:
-    0;
-
-  color:
-    var(--text-soft);
-
+  max-width: 520px;
+  margin: 0;
+  color: var(--text-soft);
+  font-size: 12px;
+  line-height: 2;
 }
 
 .loading-orb {
+  position: relative;
+  width: 74px;
+  height: 74px;
+  display: grid;
+  place-items: center;
+}
 
-  display:
-    flex;
+.loading-orb::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 1px solid var(--border-strong);
+  border-radius: 50%;
+  box-shadow: 0 0 0 12px var(--primary-soft), 0 18px 50px rgba(101,103,241,.16);
+  animation: orbPulse 1.8s ease-in-out infinite;
+}
 
-  gap:
-    8px;
-
+.loading-orb::after {
+  content: "";
+  width: 22px;
+  height: 22px;
+  border: 3px solid rgba(255,255,255,.18);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin .75s linear infinite;
 }
 
 .loading-orb span {
-
-  width:
-    10px;
-
-  height:
-    10px;
-
-  border-radius:
-    50%;
-
-  background:
-    var(--primary);
-
-  animation:
-    loadingBounce 1s infinite ease-in-out;
-
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--primary);
+  box-shadow: 0 0 16px var(--primary);
+  animation: orbit 1.8s linear infinite;
 }
 
-.loading-orb span:nth-child(2) {
-  animation-delay:
-    .12s;
-}
-
-.loading-orb span:nth-child(3) {
-  animation-delay:
-    .24s;
-}
-
-@keyframes loadingBounce {
-
-  0%,
-  80%,
-  100% {
-    transform:
-      translateY(0);
-    opacity:
-      .35;
-  }
-
-  40% {
-    transform:
-      translateY(-8px);
-    opacity:
-      1;
-  }
-
-}
+.loading-orb span:nth-child(2) { animation-delay: -.6s; }
+.loading-orb span:nth-child(3) { animation-delay: -1.2s; }
 
 .state-icon {
-
-  width:
-    70px;
-
-  height:
-    70px;
-
-  display:
-    grid;
-
-  place-items:
-    center;
-
-  border-radius:
-    22px;
-
-  background:
-    var(--primary-soft);
-
+  width: 72px;
+  height: 72px;
+  display: grid;
+  place-items: center;
+  border-radius: 24px;
+  color: var(--danger);
+  background: var(--danger-soft);
+  box-shadow: var(--shadow);
 }
 
-.state-icon svg {
-
-  width:
-    34px;
-
-  height:
-    34px;
-
-}
-
-.state-icon.error {
-
-  color:
-    var(--danger);
-
-  background:
-    var(--danger-soft);
-
-}
+.state-icon svg { width: 32px; height: 32px; }
 
 .retry-button {
-
-  border:
-    0;
-
-  margin-top:
-    24px;
-
-  padding:
-    12px 24px;
-
-  border-radius:
-    14px;
-
-  background:
-    var(--primary);
-
-  color:
-    #fff;
-
-  cursor:
-    pointer;
-
-  font:
-    inherit;
-
+  margin-top: 12px;
+  padding: 11px 18px;
+  border: 1px solid var(--border-strong);
+  border-radius: 13px;
+  color: #fff;
+  background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+  cursor: pointer;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 850;
+  box-shadow: 0 10px 25px rgba(101,103,241,.2);
+  transition: transform .22s ease, box-shadow .22s ease;
 }
 
+.retry-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 15px 34px rgba(101,103,241,.28);
+}
+
+/* =========================================================
+   MAIN CONTAINER
+========================================================= */
+
+.result-container {
+  width: min(1180px, 100%);
+  margin-inline: auto;
+  animation: pageReveal .7s cubic-bezier(.2,.8,.2,1) both;
+}
+
+.hero-card,
+.panel,
+.metric-card,
+.booklet-card,
+.review-hero,
+.review-stat-card,
+.review-toolbar,
+.question-card,
+.result-tabs,
+.insight-card,
+.signal-panel {
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
 
 /* =========================================================
    HERO
 ========================================================= */
 
 .hero-card {
-
-  position:
-    relative;
-
-  overflow:
-    hidden;
-
-  border-radius:
-    30px;
-
-  padding:
-    32px;
-
-  color:
-    #fff;
-
+  position: relative;
+  overflow: hidden;
+  padding: 34px;
+  border: 1px solid rgba(255,255,255,.16);
+  border-radius: 36px;
+  color: #fff;
   background:
-    linear-gradient(
-      135deg,
-      #3435aa 0%,
-      #5556e9 48%,
-      #7677ff 100%
-    );
-
-  box-shadow:
-    0 25px 65px rgba(77, 78, 220, .25);
-
+    radial-gradient(circle at 12% 20%, rgba(255,255,255,.18), transparent 18rem),
+    radial-gradient(circle at 88% 82%, rgba(170,150,255,.24), transparent 20rem),
+    linear-gradient(135deg, #2b2da0 0%, #5557e8 45%, #7779ff 100%);
+  box-shadow: var(--shadow-lg);
 }
 
-.hero-glow {
+.hero-card::before {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  border-radius: inherit;
+  border: 1px solid rgba(255,255,255,.09);
+  pointer-events: none;
+}
 
-  position:
-    absolute;
-
-  border-radius:
-    50%;
-
-  pointer-events:
-    none;
-
-  filter:
-    blur(4px);
-
+.hero-aurora {
+  position: absolute;
+  inset: 0;
   background:
-    rgba(255,255,255,.09);
-
+    radial-gradient(ellipse 60% 40% at 20% 10%, rgba(180, 200, 255, .35), transparent),
+    radial-gradient(ellipse 50% 50% at 80% 90%, rgba(180, 140, 255, .3), transparent);
+  filter: blur(20px);
+  opacity: .7;
+  animation: auroraShift 12s ease-in-out infinite alternate;
+  pointer-events: none;
 }
 
-.glow-one {
-
-  width:
-    330px;
-
-  height:
-    330px;
-
-  top:
-    -180px;
-
-  left:
-    -80px;
-
-}
-
-.glow-two {
-
-  width:
-    400px;
-
-  height:
-    400px;
-
-  right:
-    -230px;
-
-  bottom:
-    -240px;
-
+.hero-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+  -webkit-mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+  pointer-events: none;
 }
 
 .hero-content {
-
-  position:
-    relative;
-
-  z-index:
-    1;
-
-  display:
-    flex;
-
-  align-items:
-    center;
-
-  justify-content:
-    space-between;
-
-  gap:
-    30px;
-
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 30px;
 }
 
 .back-button {
-
-  width: 42px;
-
-  height: 42px;
-
-  border:
-    1px solid var(--border);
-
-  border-radius: 12px;
-
-  background:
-    var(--surface);
-
-  color:
-    var(--text);
-
-  display: flex;
-
-  align-items: center;
-
-  justify-content: center;
-
+  position: relative;
+  z-index: 3;
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 24px;
+  border: 1px solid rgba(255,255,255,.2);
+  border-radius: 15px;
+  color: #fff;
+  background: rgba(255,255,255,.1);
   cursor: pointer;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.12), 0 8px 20px rgba(0,0,0,.12);
+  transition: transform .25s ease, background .25s ease;
 }
 
-
-.back-button svg {
-  transform: rotate(180deg);
-  width: 20px;
-
-  height: 20px;
+.back-button:hover {
+  transform: translateX(4px);
+  background: rgba(255,255,255,.18);
 }
+
+.back-button svg { width: 20px; height: 20px; }
 
 .hero-user {
-
-  display:
-    flex;
-
-  align-items:
-    center;
-
-  gap:
-    18px;
-
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  min-width: 0;
 }
 
 .avatar-wrap {
-
-  position:
-    relative;
-
-  width:
-    82px;
-
-  height:
-    82px;
-
-  flex:
-    0 0 82px;
-
+  position: relative;
+  width: 78px;
+  height: 78px;
+  flex: 0 0 78px;
+  padding: 3px;
+  border-radius: 26px;
+  background: linear-gradient(145deg, rgba(255,255,255,.85), rgba(255,255,255,.2));
+  box-shadow: 0 14px 35px rgba(22,24,100,.25);
+  animation: avatarIn .8s cubic-bezier(.2,.8,.2,1) both;
 }
 
 .avatar-image,
 .avatar-fallback {
-
-  width:
-    100%;
-
-  height:
-    100%;
-
-  border-radius:
-    26px;
-
-  object-fit:
-    cover;
-
-  border:
-    3px solid rgba(255,255,255,.35);
-
-  background:
-    rgba(255,255,255,.12);
-
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  border-radius: 23px;
+  object-fit: cover;
+  background: rgba(255,255,255,.16);
 }
 
-.avatar-fallback {
-
-  display:
-    grid;
-
-  place-items:
-    center;
-
-  font-size:
-    26px;
-
-  font-weight:
-    900;
-
-}
+.avatar-fallback { font-size: 25px; font-weight: 950; }
 
 .avatar-status {
-
-  position:
-    absolute;
-
-  width:
-    16px;
-
-  height:
-    16px;
-
-  border:
-    3px solid #5556e9;
-
-  background:
-    #35d39b;
-
-  border-radius:
-    50%;
-
-  right:
-    -1px;
-
-  bottom:
-    -1px;
-
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  width: 16px;
+  height: 16px;
+  border: 3px solid #5557e8;
+  border-radius: 50%;
+  background: #36d6b1;
+  box-shadow: 0 0 0 5px rgba(54,214,177,.12), 0 0 18px rgba(54,214,177,.5);
+  animation: statusPulse 2s ease-in-out infinite;
 }
 
-.hero-user-info {
+.hero-user-info { min-width: 0; }
 
-  min-width:
-    0;
-
+.hero-eyebrow,
+.review-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: rgba(255,255,255,.75);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .04em;
 }
 
-.hero-eyebrow {
-
-  display:
-    block;
-
-  font-size:
-    13px;
-
-  opacity:
-    .75;
-
-  margin-bottom:
-    7px;
-
+.hero-eyebrow::before,
+.review-kicker::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #b8b9ff;
+  box-shadow: 0 0 0 5px rgba(255,255,255,.07), 0 0 14px #b8b9ff;
 }
 
 .hero-user-info h1 {
-
-  margin:
-    0;
-
-  font-size:
-    clamp(22px, 3vw, 34px);
-
-  line-height:
-    1.35;
-
-  font-weight:
-    900;
-
+  max-width: 650px;
+  margin: 7px 0 4px;
+  overflow: hidden;
+  font-size: clamp(22px, 4vw, 36px);
+  line-height: 1.25;
+  letter-spacing: -.045em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .hero-user-info p {
-
-  margin:
-    8px 0 0;
-
-  font-size:
-    14px;
-
-  opacity:
-    .75;
-
+  margin: 0;
+  color: rgba(255,255,255,.7);
+  font-size: 12px;
 }
 
 .hero-score {
-
-  display:
-    flex;
-
-  flex-direction:
-    column;
-
-  align-items:
-    center;
-
+  position: relative;
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  animation: scoreIn .8s cubic-bezier(.2,.8,.2,1) .12s both;
 }
 
 .score-ring {
+  position: relative;
+  width: 158px;
+  height: 158px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  filter: drop-shadow(0 18px 32px rgba(15,17,85,.25));
+}
 
-  position:
-    relative;
-
-  width:
-    142px;
-
-  height:
-    142px;
-
+.score-ring::before {
+  content: "";
+  position: absolute;
+  inset: 10px;
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 50%;
+  box-shadow: inset 0 0 30px rgba(255,255,255,.08);
 }
 
 .score-svg {
-
-  width:
-    100%;
-
-  height:
-    100%;
-
-  transform:
-    rotate(-90deg);
-
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+  overflow: visible;
 }
 
 .score-track {
-
-  fill:
-    none;
-
-  stroke:
-    rgba(255,255,255,.15);
-
-  stroke-width:
-    8;
-
+  fill: none;
+  stroke: rgba(255,255,255,.15);
+  stroke-width: 8;
 }
 
 .score-progress {
-
-  fill:
-    none;
-
-  stroke:
-    #fff;
-
-  stroke-width:
-    8;
-
-  stroke-linecap:
-    round;
-
-  transition:
-    stroke-dasharray .7s ease;
-
+  fill: none;
+  stroke: url(#scoreGrad);
+  stroke-width: 8;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 10px rgba(255,255,255,.55));
+  transition: stroke-dasharray 1.2s cubic-bezier(.2,.8,.2,1);
 }
 
 .score-center {
-
-  position:
-    absolute;
-
-  inset:
-    0;
-
-  display:
-    flex;
-
-  flex-direction:
-    column;
-
-  align-items:
-    center;
-
-  justify-content:
-    center;
-
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
 .score-center strong {
-
-  font-size:
-    29px;
-
-  line-height:
-    1;
-
-  font-weight:
-    950;
-
+  font-size: 34px;
+  line-height: 1;
+  font-weight: 950;
+  letter-spacing: -.04em;
+  text-shadow: 0 2px 12px rgba(0,0,0,.15);
 }
 
 .score-center span {
-
-  font-size:
-    12px;
-
-  margin-top:
-    6px;
-
-  opacity:
-    .72;
-
+  margin-top: 7px;
+  color: rgba(255,255,255,.72);
+  font-size: 11px;
 }
 
 .score-caption {
-
-  margin-top:
-    7px;
-
-  font-size:
-    12px;
-
-  opacity:
-    .75;
-
+  margin-top: 9px;
+  color: rgba(255,255,255,.65);
+  font-size: 10px;
 }
 
 .hero-bottom {
-
-  position:
-    relative;
-
-  z-index:
-    1;
-
-  display:
-    flex;
-
-  justify-content:
-    space-between;
-
-  gap:
-    15px;
-
-  margin-top:
-    30px;
-
-  padding-top:
-    20px;
-
-  border-top:
-    1px solid rgba(255,255,255,.14);
-
-  font-size:
-    13px;
-
-  opacity:
-    .8;
-
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  margin-top: 28px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(255,255,255,.14);
+  color: rgba(255,255,255,.72);
+  font-size: 10px;
 }
 
 .hero-meta {
-
-  display:
-    flex;
-
-  align-items:
-    center;
-
-  gap:
-    8px;
-
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .hero-meta-dot {
-
-  width:
-    8px;
-
-  height:
-    8px;
-
-  border-radius:
-    50%;
-
-  background:
-    #45dfa8;
-
-  box-shadow:
-    0 0 0 5px rgba(69,223,168,.12);
-
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #52dfbe;
+  box-shadow: 0 0 12px rgba(82,223,190,.85);
 }
 
-.meta-separator {
-
-  opacity:
-    .5;
-
-}
-
+.meta-separator { opacity: .4; }
 
 /* =========================================================
    TABS
 ========================================================= */
 
 .result-tabs {
-
-  display:
-    flex;
-
-  align-items:
-    center;
-
-  gap:
-    8px;
-
-  overflow-x:
-    auto;
-
-  margin:
-    20px 0;
-
-  padding:
-    7px;
-
-  background:
-    var(--surface);
-
-  border:
-    1px solid var(--border);
-
-  border-radius:
-    19px;
-
-  box-shadow:
-    var(--shadow);
-
-  scrollbar-width:
-    none;
-
+  position: sticky;
+  top: 14px;
+  z-index: 20;
+  display: flex;
+  gap: 7px;
+  overflow-x: auto;
+  margin: 20px 0;
+  padding: 7px;
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  background: color-mix(in srgb, var(--surface-solid) 85%, transparent);
+  box-shadow: var(--shadow-sm);
+  scrollbar-width: none;
 }
 
-.result-tabs::-webkit-scrollbar {
-  display:
-    none;
-}
+.result-tabs::-webkit-scrollbar { display: none; }
 
 .result-tab {
-
-  flex:
-    1 0 auto;
-
-  min-width:
-    max-content;
-
-  display:
-    flex;
-
-  align-items:
-    center;
-
-  justify-content:
-    center;
-
-  gap:
-    9px;
-
-  border:
-    0;
-
-  padding:
-    13px 17px;
-
-  border-radius:
-    13px;
-
-  background:
-    transparent;
-
-  color:
-    var(--text-soft);
-
-  cursor:
-    pointer;
-
-  font:
-    inherit;
-
-  font-size:
-    13px;
-
-  transition:
-    .2s ease;
-
+  position: relative;
+  flex: 1 0 auto;
+  min-width: max-content;
+  min-height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 11px 17px;
+  border: 0;
+  border-radius: 16px;
+  color: var(--text-soft);
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 750;
+  transition: color .22s ease, background .22s ease, transform .22s ease;
 }
 
 .result-tab:hover {
-
-  color:
-    var(--text);
-
-  background:
-    var(--surface-soft);
-
+  color: var(--text);
+  background: var(--surface-soft);
+  transform: translateY(-1px);
 }
 
 .result-tab.active {
-
-  color:
-    #fff;
-
-  background:
-    var(--primary);
-
-  box-shadow:
-    0 7px 20px rgba(91,92,240,.22);
-
+  color: var(--primary);
+  background: var(--primary-soft);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.5), 0 8px 22px rgba(101,103,241,.12);
 }
 
 .tab-icon {
-
-  display:
-    grid;
-
-  place-items:
-    center;
-
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: rgba(101,103,241,.08);
+  transition: transform .3s cubic-bezier(.2,.8,.2,1);
 }
 
-.tab-icon svg {
-
-  width:
-    19px;
-
-  height:
-    19px;
-
+.result-tab:hover .tab-icon,
+.result-tab.active .tab-icon {
+  transform: translateY(-2px) scale(1.08);
 }
+
+.result-tab.active .tab-icon {
+  background: rgba(101,103,241,.16);
+  box-shadow: 0 0 0 5px rgba(101,103,241,.05);
+}
+
+.tab-icon svg { width: 17px; height: 17px; }
 
 .result-tab small {
-
-  min-width:
-    23px;
-
-  padding:
-    2px 6px;
-
-  border-radius:
-    8px;
-
-  background:
-    var(--primary-soft);
-
-  color:
-    var(--primary);
-
-  font-size:
-    10px;
-
+  min-width: 20px;
+  padding: 3px 6px;
+  border-radius: 7px;
+  color: var(--primary);
+  background: var(--primary-soft);
+  font-size: 9px;
+  font-weight: 900;
 }
-
-.result-tab.active small {
-
-  color:
-    #fff;
-
-  background:
-    rgba(255,255,255,.18);
-
-}
-
 
 /* =========================================================
    TAB CONTENT
 ========================================================= */
 
 .tab-content {
-
-  animation:
-    tabIn .3s ease;
-
+  animation: tabIn .5s cubic-bezier(.2,.8,.2,1) both;
 }
 
-@keyframes tabIn {
-
-  from {
-    opacity:
-      0;
-
-    transform:
-      translateY(8px);
-  }
-
-  to {
-    opacity:
-      1;
-
-    transform:
-      translateY(0);
-  }
-
+.tab-content > * {
+  animation: itemIn .55s cubic-bezier(.2,.8,.2,1) both;
 }
 
+.tab-content > *:nth-child(2) { animation-delay: .05s; }
+.tab-content > *:nth-child(3) { animation-delay: .1s; }
+.tab-content > *:nth-child(4) { animation-delay: .15s; }
 
 /* =========================================================
-   SUMMARY
+   PERFORMANCE SIGNAL
+========================================================= */
+
+.signal-panel {
+  position: relative;
+  display: grid;
+  grid-template-columns: 130px 1fr auto;
+  align-items: center;
+  gap: 26px;
+  overflow: hidden;
+  margin-top: 15px;
+  padding: 26px;
+  border: 1px solid var(--border);
+  border-radius: 28px;
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+
+/* رنگ‌های سیگنال */
+.signal-very-high {
+  background: linear-gradient(135deg,
+    color-mix(in srgb, var(--primary-soft) 80%, var(--surface)) 0%,
+    var(--surface) 70%);
+  border-color: rgba(101,103,241,.24);
+}
+.signal-very-high .signal-radar::before { background: rgba(101,103,241,.5); }
+.signal-very-high .signal-title { color: var(--primary); }
+.signal-very-high .signal-bar.active { background: var(--primary); box-shadow: 0 0 12px var(--primary); }
+
+.signal-rising {
+  background: linear-gradient(135deg,
+    rgba(101, 103, 241, .06) 0%, var(--surface) 70%);
+  border-color: rgba(101,103,241,.2);
+}
+.signal-rising .signal-radar::before { background: rgba(101,103,241,.4); }
+.signal-rising .signal-title { color: var(--primary); }
+.signal-rising .signal-bar.active { background: var(--primary); box-shadow: 0 0 12px var(--primary); }
+
+.signal-strong {
+  background: linear-gradient(135deg, var(--success-soft) 0%, var(--surface) 70%);
+  border-color: rgba(24,168,139,.22);
+}
+.signal-strong .signal-radar::before { background: rgba(24,168,139,.45); }
+.signal-strong .signal-title { color: var(--success); }
+.signal-strong .signal-bar.active { background: var(--success); box-shadow: 0 0 12px var(--success); }
+
+.signal-stable {
+  background: linear-gradient(135deg, var(--warning-soft) 0%, var(--surface) 70%);
+  border-color: rgba(227,166,47,.22);
+}
+.signal-stable .signal-radar::before { background: rgba(227,166,47,.45); }
+.signal-stable .signal-title { color: var(--warning); }
+.signal-stable .signal-bar.active { background: var(--warning); box-shadow: 0 0 12px var(--warning); }
+
+.signal-challenging {
+  background: linear-gradient(135deg, var(--orange-soft) 0%, var(--surface) 70%);
+  border-color: rgba(240,134,47,.22);
+}
+.signal-challenging .signal-radar::before { background: rgba(240,134,47,.45); }
+.signal-challenging .signal-title { color: var(--orange); }
+.signal-challenging .signal-bar.active { background: var(--orange); box-shadow: 0 0 12px var(--orange); }
+
+.signal-critical {
+  background: linear-gradient(135deg, var(--danger-soft) 0%, var(--surface) 70%);
+  border-color: rgba(227,93,104,.22);
+}
+.signal-critical .signal-radar::before { background: rgba(227,93,104,.45); }
+.signal-critical .signal-title { color: var(--danger); }
+.signal-critical .signal-bar.active { background: var(--danger); box-shadow: 0 0 12px var(--danger); }
+
+/* Radar */
+.signal-radar {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+}
+
+.signal-radar::before {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  animation: radarCore 2s ease-in-out infinite;
+}
+
+.radar-ring {
+  position: absolute;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  opacity: .22;
+}
+
+.r1 { inset: 0; animation: radarRing 3s ease-out infinite; }
+.r2 { inset: 20px; animation: radarRing 3s ease-out .5s infinite; }
+.r3 { inset: 40px; animation: radarRing 3s ease-out 1s infinite; }
+
+.radar-sweep {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    currentColor 30deg,
+    transparent 60deg
+  );
+  opacity: .28;
+  animation: radarSweep 3s linear infinite;
+}
+
+.radar-dot {
+  position: relative;
+  z-index: 2;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 20px currentColor;
+}
+
+.signal-content { position: relative; z-index: 1; }
+
+.signal-label {
+  display: block;
+  color: var(--text-faint);
+  font-size: 9px;
+  font-weight: 850;
+  letter-spacing: .12em;
+}
+
+.signal-title {
+  margin: 6px 0 6px;
+  font-size: clamp(24px, 3vw, 34px);
+  font-weight: 1000;
+  letter-spacing: -.045em;
+}
+
+.signal-desc {
+  margin: 0;
+  max-width: 520px;
+  color: var(--text-soft);
+  font-size: 11px;
+  line-height: 1.9;
+}
+
+.signal-bars {
+  display: flex;
+  gap: 5px;
+  margin-top: 14px;
+}
+
+.signal-bar {
+  width: 26px;
+  height: 5px;
+  border-radius: 99px;
+  background: var(--border);
+  transition: .3s ease;
+}
+
+.signal-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-inline-start: 24px;
+  border-inline-start: 1px solid var(--border);
+}
+
+.signal-percent strong,
+.signal-rank strong {
+  display: block;
+  font-size: 24px;
+  font-weight: 1000;
+  line-height: 1;
+  letter-spacing: -.04em;
+}
+
+.signal-percent span,
+.signal-rank span {
+  display: block;
+  margin-top: 4px;
+  color: var(--text-faint);
+  font-size: 9px;
+}
+
+.signal-percent strong { color: var(--primary); }
+
+/* =========================================================
+   SUMMARY METRICS
 ========================================================= */
 
 .summary-grid {
-
-  display:
-    grid;
-
-  grid-template-columns:
-    repeat(4, 1fr);
-
-  gap:
-    14px;
-
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-top: 15px;
 }
 
 .metric-card {
-
-  display:
-    flex;
-
-  align-items:
-    center;
-
-  gap:
-    15px;
-
-  min-height:
-    125px;
-
-  padding:
-    20px;
-
-  background:
-    var(--surface);
-
-  border:
-    1px solid var(--border);
-
-  border-radius:
-    22px;
-
-  box-shadow:
-    var(--shadow);
-
+  position: relative;
+  min-width: 0;
+  min-height: 128px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  overflow: hidden;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  transition: transform .3s cubic-bezier(.2,.8,.2,1), box-shadow .3s ease, border-color .3s ease;
 }
+
+.metric-card::after {
+  content: "";
+  position: absolute;
+  width: 110px;
+  height: 110px;
+  left: -60px;
+  bottom: -65px;
+  border-radius: 50%;
+  background: var(--primary-soft);
+  filter: blur(3px);
+  transition: transform .5s ease;
+}
+
+.metric-card:hover {
+  transform: translateY(-6px);
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow);
+}
+
+.metric-card:hover::after { transform: scale(1.3); }
 
 .metric-icon {
-
-  width:
-    50px;
-
-  height:
-    50px;
-
-  flex:
-    0 0 50px;
-
-  display:
-    grid;
-
-  place-items:
-    center;
-
-  border-radius:
-    16px;
-
-  background:
-    var(--primary-soft);
-
-  color:
-    var(--primary);
-
+  width: 54px;
+  height: 54px;
+  flex: 0 0 54px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(101,103,241,.08);
+  border-radius: 18px;
+  color: var(--primary);
+  background: var(--primary-soft);
+  box-shadow: 0 8px 20px rgba(101,103,241,.08);
 }
 
-.metric-icon svg {
+.metric-icon.correct { color: var(--success); background: var(--success-soft); }
+.metric-icon.wrong { color: var(--danger); background: var(--danger-soft); }
+.metric-icon.unanswered { color: var(--warning); background: var(--warning-soft); }
 
-  width:
-    24px;
+.metric-icon svg { width: 25px; height: 25px; }
 
-  height:
-    24px;
-
-}
-
-.metric-icon.correct {
-
-  color:
-    var(--success);
-
-  background:
-    var(--success-soft);
-
-}
-
-.metric-icon.wrong {
-
-  color:
-    var(--danger);
-
-  background:
-    var(--danger-soft);
-
-}
-
-.metric-icon.unanswered {
-
-  color:
-    var(--warning);
-
-  background:
-    var(--warning-soft);
-
-}
-
-.metric-content {
-
-  min-width:
-    0;
-
-}
+.metric-content { min-width: 0; }
 
 .metric-content span {
-
-  display:
-    block;
-
-  color:
-    var(--text-soft);
-
-  font-size:
-    12px;
-
+  display: block;
+  color: var(--text-faint);
+  font-size: 9px;
+  font-weight: 700;
 }
 
 .metric-content strong {
-
-  display:
-    block;
-
-  margin-top:
-    5px;
-
-  font-size:
-    26px;
-
-  font-weight:
-    950;
-
+  display: block;
+  margin-top: 4px;
+  font-size: 27px;
+  line-height: 1;
+  font-weight: 950;
+  letter-spacing: -.04em;
 }
 
 .metric-content small {
-
-  color:
-    var(--text-faint);
-
-  font-size:
-    10px;
-
+  display: block;
+  margin-top: 6px;
+  color: var(--text-faint);
+  font-size: 9px;
 }
 
-
 /* =========================================================
-   PANEL
+   PANELS
 ========================================================= */
 
 .panel {
+  position: relative;
+  overflow: hidden;
+  margin-top: 15px;
+  padding: 24px;
+  border: 1px solid var(--border);
+  border-radius: 26px;
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  transition: border-color .3s ease, box-shadow .3s ease, transform .3s ease;
+}
 
-  margin-top:
-    16px;
+.panel::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 8%;
+  width: 130px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--primary), transparent);
+  opacity: .5;
+}
 
-  padding:
-    25px;
-
-  background:
-    var(--surface);
-
-  border:
-    1px solid var(--border);
-
-  border-radius:
-    24px;
-
-  box-shadow:
-    var(--shadow);
-
+.panel:hover {
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow);
 }
 
 .panel-heading {
-
-  display:
-    flex;
-
-  align-items:
-    center;
-
-  justify-content:
-    space-between;
-
-  gap:
-    20px;
-
-  margin-bottom:
-    22px;
-
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  margin-bottom: 20px;
 }
 
-.panel-heading > div:first-child span {
-
-  color:
-    var(--primary);
-
-  font-size:
-    11px;
-
-  font-weight:
-    700;
-
+.panel-heading > div:first-child > span,
+.section-intro > div:first-child > span {
+  display: block;
+  color: var(--primary);
+  font-size: 9px;
+  font-weight: 850;
+  letter-spacing: .05em;
 }
 
-.panel-heading h2 {
-
-  margin:
-    5px 0 0;
-
-  font-size:
-    20px;
-
+.panel-heading h2,
+.section-intro h2 {
+  margin: 5px 0 0;
+  font-size: clamp(18px, 2.5vw, 23px);
+  line-height: 1.35;
+  letter-spacing: -.035em;
 }
 
-.ranking-crown {
-
-  width:
-    50px;
-
-  height:
-    50px;
-
-  display:
-    grid;
-
-  place-items:
-    center;
-
-  color:
-    var(--warning);
-
-  background:
-    var(--warning-soft);
-
-  border-radius:
-    16px;
-
+.section-intro {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  margin: 6px 2px 18px;
 }
 
-.ranking-crown svg {
-
-  width:
-    25px;
-
-  height:
-    25px;
-
+.section-intro p {
+  max-width: 680px;
+  margin: 7px 0 0;
+  color: var(--text-soft);
+  font-size: 11px;
+  line-height: 1.9;
 }
 
+/* =========================================================
+   PEAK PANEL — قله عملکرد
+========================================================= */
+
+.peak-icon {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 15px;
+  color: var(--primary);
+  background: var(--primary-soft);
+}
+
+.peak-icon svg { width: 22px; height: 22px; }
+
+.peak-chart {
+  padding: 10px 4px 4px;
+}
+
+.peak-top-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 22px;
+}
+
+.peak-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 11px;
+  border-radius: 10px;
+  color: var(--warning);
+  background: var(--warning-soft);
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.peak-badge-label {
+  color: var(--text-faint);
+  font-size: 10px;
+  font-weight: 850;
+}
+
+.peak-track-wrap {
+  position: relative;
+  height: 92px;
+  padding: 0 22px;
+}
+
+.peak-track {
+  position: absolute;
+  top: 50%;
+  right: 22px;
+  left: 22px;
+  height: 10px;
+  transform: translateY(-50%);
+  border-radius: 99px;
+  background: linear-gradient(90deg,
+    rgba(227,93,104,.18) 0%,
+    rgba(240,134,47,.18) 25%,
+    rgba(227,166,47,.18) 50%,
+    rgba(24,168,139,.18) 75%,
+    rgba(101,103,241,.18) 100%);
+  box-shadow: inset 0 1px 2px rgba(0,0,0,.05);
+}
+
+.peak-fill {
+  position: absolute;
+  top: 50%;
+  right: 22px;
+  height: 10px;
+  transform: translateY(-50%);
+  border-radius: 99px;
+  background: linear-gradient(90deg,
+    #e35d68 0%,
+    #f0862f 25%,
+    #e3a62f 50%,
+    #18a88b 75%,
+    #6567f1 100%);
+  background-size: 100% 100%;
+  box-shadow: 0 0 22px rgba(101,103,241,.3);
+  max-width: calc(100% - 44px);
+  animation: peakFill 1.4s cubic-bezier(.2,.8,.2,1) both;
+}
+
+.peak-marker {
+  position: absolute;
+  top: 50%;
+  transform: translate(50%, -50%);
+  z-index: 3;
+  animation: peakMarker 1.6s cubic-bezier(.2,.8,.2,1) both;
+}
+
+.peak-marker-pulse {
+  position: absolute;
+  top: 50%;
+  right: 50%;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--primary);
+  opacity: .2;
+  transform: translate(50%, -50%);
+  animation: peakPulse 2s ease-out infinite;
+}
+
+.peak-marker-dot {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: linear-gradient(145deg, var(--primary-dark), var(--primary));
+  color: #fff;
+  border: 4px solid var(--surface-solid);
+  box-shadow: 0 10px 28px rgba(101,103,241,.4), 0 0 0 4px rgba(101,103,241,.15);
+}
+
+.peak-marker-dot span {
+  font-size: 13px;
+  font-weight: 1000;
+  letter-spacing: -.03em;
+}
+
+.peak-marker-arrow {
+  position: absolute;
+  top: calc(50% + 34px);
+  right: 50%;
+  width: 0;
+  height: 0;
+  border-inline: 7px solid transparent;
+  border-top: 8px solid var(--primary);
+  transform: translateX(50%);
+}
+
+.peak-tick {
+  position: absolute;
+  top: 50%;
+  height: 16px;
+  border-inline-start: 1px dashed var(--border-strong);
+  transform: translate(50%, -50%);
+  opacity: .6;
+}
+
+.peak-tick span {
+  position: absolute;
+  top: -26px;
+  right: 50%;
+  transform: translateX(50%);
+  color: var(--text-faint);
+  font-size: 9px;
+  font-weight: 850;
+  white-space: nowrap;
+}
+
+.peak-bottom {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
+.peak-stat {
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface-soft);
+  transition: border-color .25s ease, transform .25s ease;
+}
+
+.peak-stat:hover {
+  border-color: var(--border-strong);
+  transform: translateY(-2px);
+}
+
+.peak-stat > span {
+  display: block;
+  color: var(--text-faint);
+  font-size: 9px;
+  font-weight: 750;
+}
+
+.peak-stat > strong {
+  display: block;
+  margin-top: 5px;
+  overflow: hidden;
+  font-size: 13px;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.peak-stat > small {
+  display: block;
+  margin-top: 4px;
+  color: var(--primary);
+  font-size: 10px;
+  font-weight: 850;
+}
+
+.peak-stat-bar {
+  height: 4px;
+  margin-top: 8px;
+  border-radius: 99px;
+  overflow: hidden;
+  background: rgba(100,116,139,.1);
+}
+
+.peak-stat-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--success), #53d4b8);
+  box-shadow: 0 0 10px rgba(24,168,139,.3);
+  transform-origin: right;
+  animation: barGrow 1s cubic-bezier(.2,.8,.2,1) both;
+}
 
 /* =========================================================
    RANKING
 ========================================================= */
 
+.ranking-crown {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 15px;
+  color: var(--warning);
+  background: var(--warning-soft);
+  box-shadow: 0 0 0 7px rgba(227,166,47,.04);
+  animation: crownFloat 3s ease-in-out infinite;
+}
+
+.ranking-crown svg { width: 22px; height: 22px; }
+
 .ranking-grid {
-
-  display:
-    grid;
-
-  grid-template-columns:
-    repeat(2, 1fr);
-
-  gap:
-    15px;
-
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 13px;
 }
 
 .rank-card {
-
-  display:
-    flex;
-
-  align-items:
-    center;
-
-  gap:
-    16px;
-
-  padding:
-    20px;
-
-  border-radius:
-    19px;
-
-  border:
-    1px solid var(--border);
-
-  background:
-    var(--surface-soft);
-
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  overflow: hidden;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 21px;
+  background: linear-gradient(135deg, var(--surface-soft), var(--surface));
+  transition: transform .3s cubic-bezier(.2,.8,.2,1), box-shadow .3s ease;
 }
 
-.rank-card.national {
-
-  background:
-    linear-gradient(
-      135deg,
-      var(--primary-soft),
-      transparent
-    );
-
+.rank-card::after {
+  content: "";
+  position: absolute;
+  width: 130px;
+  height: 130px;
+  left: -75px;
+  bottom: -75px;
+  border-radius: 50%;
+  background: var(--primary-soft);
+  filter: blur(3px);
 }
 
-.rank-card.province {
-
-  background:
-    linear-gradient(
-      135deg,
-      var(--success-soft),
-      transparent
-    );
-
+.rank-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-sm);
 }
 
 .rank-card-icon {
-
-  width:
-    52px;
-
-  height:
-    52px;
-
-  display:
-    grid;
-
-  place-items:
-    center;
-
-  border-radius:
-    16px;
-
-  color:
-    var(--primary);
-
-  background:
-    var(--surface);
-
+  position: relative;
+  z-index: 1;
+  width: 50px;
+  height: 50px;
+  flex: 0 0 50px;
+  display: grid;
+  place-items: center;
+  border-radius: 16px;
+  color: var(--primary);
+  background: var(--primary-soft);
+  transition: transform .35s cubic-bezier(.2,.8,.2,1);
 }
 
-.province .rank-card-icon {
-
-  color:
-    var(--success);
-
+.rank-card:hover .rank-card-icon {
+  transform: scale(1.08) rotate(-5deg);
 }
 
-.rank-card-icon svg {
+.rank-card.province .rank-card-icon {
+  color: var(--success);
+  background: var(--success-soft);
+}
 
-  width:
-    25px;
+.rank-card-icon svg { width: 22px; height: 22px; }
 
-  height:
-    25px;
-
+.rank-card-copy {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
 }
 
 .rank-card-copy span {
-
-  display:
-    block;
-
-  color:
-    var(--text-soft);
-
-  font-size:
-    12px;
-
+  display: block;
+  color: var(--text-soft);
+  font-size: 9px;
 }
 
 .rank-card-copy strong {
-
-  display:
-    inline-block;
-
-  margin-top:
-    4px;
-
-  font-size:
-    29px;
-
-  font-weight:
-    950;
-
+  display: block;
+  margin-top: 3px;
+  font-size: 27px;
+  line-height: 1;
+  font-weight: 950;
 }
 
 .rank-card-copy small {
-
-  color:
-    var(--text-faint);
-
-  font-size:
-    11px;
-
-  margin-right:
-    7px;
-
+  display: block;
+  margin-top: 6px;
+  color: var(--text-faint);
+  font-size: 9px;
 }
 
+/* =========================================================
+   LEAGUE — با افکت کامل
+========================================================= */
+
+.league-panel {
+  --league-color: #8b5cf6;
+  --league-soft: rgba(139,92,246,.22);
+  --league-glow: rgba(139,92,246,.55);
+
+  position: relative;
+  overflow: hidden;
+  margin-top: 15px;
+  padding: 32px;
+  border: 1px solid rgba(124,92,255,.2);
+  border-radius: 30px;
+  background:
+    radial-gradient(circle at 78% 18%, var(--league-soft), transparent 30%),
+    radial-gradient(circle at 14% 90%, rgba(44,211,188,.08), transparent 28%),
+    var(--surface);
+  box-shadow: 0 24px 80px rgba(28,25,55,.12), inset 0 1px 0 rgba(255,255,255,.09);
+}
+
+.is-dark .league-panel {
+  box-shadow: 0 28px 90px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.06);
+}
+
+.league-panel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--league-color), #2bd3b0, var(--league-color), transparent);
+  background-size: 200% 100%;
+  animation: leagueBorderGlow 3s linear infinite;
+  pointer-events: none;
+}
+
+/* رنگ‌های هر لیگ */
+.league-bronze { --league-color: #c48354; --league-soft: rgba(196,131,84,.22); --league-glow: rgba(196,131,84,.6); }
+.league-silver { --league-color: #c7d2e0; --league-soft: rgba(199,210,224,.25); --league-glow: rgba(199,210,224,.65); }
+.league-gold { --league-color: #ffcb47; --league-soft: rgba(255,203,71,.25); --league-glow: rgba(255,203,71,.7); }
+.league-platinum { --league-color: #7de8e0; --league-soft: rgba(125,232,224,.22); --league-glow: rgba(125,232,224,.6); }
+.league-diamond { --league-color: #7dc4ff; --league-soft: rgba(125,196,255,.25); --league-glow: rgba(125,196,255,.7); }
+.league-elite { --league-color: #c79bff; --league-soft: rgba(199,155,255,.28); --league-glow: rgba(199,155,255,.75); }
+
+.league-bg-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(124,92,255,.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(124,92,255,.04) 1px, transparent 1px);
+  background-size: 40px 40px;
+  mask-image: radial-gradient(ellipse at center, black 20%, transparent 80%);
+  -webkit-mask-image: radial-gradient(ellipse at center, black 20%, transparent 80%);
+  pointer-events: none;
+}
+
+.league-particles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.particle {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--league-color);
+  box-shadow: 0 0 10px var(--league-color);
+  opacity: .6;
+}
+
+.particle-1 { top: 15%; left: 12%; animation: particleFloat 5s ease-in-out infinite; }
+.particle-2 { top: 25%; left: 28%; animation: particleFloat 7s ease-in-out .5s infinite; }
+.particle-3 { top: 40%; left: 8%; animation: particleFloat 6s ease-in-out 1s infinite; }
+.particle-4 { top: 55%; left: 42%; animation: particleFloat 8s ease-in-out 1.5s infinite; }
+.particle-5 { top: 70%; left: 18%; animation: particleFloat 5.5s ease-in-out 2s infinite; }
+.particle-6 { top: 80%; left: 55%; animation: particleFloat 7.5s ease-in-out .8s infinite; }
+.particle-7 { top: 12%; right: 20%; animation: particleFloat 6.5s ease-in-out 1.2s infinite; }
+.particle-8 { top: 35%; right: 8%; animation: particleFloat 8.5s ease-in-out .3s infinite; }
+.particle-9 { top: 50%; right: 30%; animation: particleFloat 5.2s ease-in-out 1.8s infinite; }
+.particle-10 { top: 68%; right: 15%; animation: particleFloat 7.2s ease-in-out .6s infinite; }
+.particle-11 { top: 85%; right: 42%; animation: particleFloat 6.8s ease-in-out 2.2s infinite; }
+.particle-12 { top: 22%; left: 50%; animation: particleFloat 5.8s ease-in-out 1.4s infinite; }
+
+.league-head,
+.league-main,
+.league-track {
+  position: relative;
+  z-index: 2;
+}
+
+.league-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.league-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--league-color);
+  font-size: 9px;
+  font-weight: 950;
+  letter-spacing: .1em;
+}
+
+.league-kicker::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 0 5px var(--league-soft), 0 0 16px currentColor;
+  animation: statusPulse 2s infinite;
+}
+
+.league-head h2 {
+  margin: 6px 0 5px;
+  font-size: clamp(20px, 2.2vw, 30px);
+  font-weight: 950;
+  letter-spacing: -.045em;
+}
+
+.league-head p {
+  max-width: 650px;
+  margin: 0;
+  color: var(--text-faint);
+  font-size: 11px;
+  line-height: 1.9;
+}
+
+.league-season {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 13px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text-soft);
+  background: rgba(255,255,255,.05);
+  font-size: 9px;
+  font-weight: 850;
+  white-space: nowrap;
+}
+
+.season-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #2bd3b0;
+  box-shadow: 0 0 0 5px rgba(43,211,176,.1), 0 0 18px rgba(43,211,176,.6);
+  animation: seasonPulse 1.8s infinite;
+}
+
+.league-main {
+  display: grid;
+  grid-template-columns: 240px minmax(0,1fr);
+  align-items: center;
+  gap: 36px;
+  margin-top: 30px;
+}
+
+/* ============ EMBLEM ============ */
+.league-emblem {
+  position: relative;
+  width: 200px;
+  height: 200px;
+  margin-inline: auto;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--league-color);
+  animation: emblemFloat 5s ease-in-out infinite;
+}
+
+.emblem-aura {
+  position: absolute;
+  inset: -20px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--league-soft) 0%, transparent 65%);
+  filter: blur(14px);
+  animation: auraPulse 3s ease-in-out infinite;
+}
+
+.emblem-ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid var(--league-color);
+}
+
+.ring-outer {
+  inset: 0;
+  border-style: dashed;
+  opacity: .35;
+  animation: emblemSpin 18s linear infinite;
+}
+
+.ring-mid {
+  inset: 16px;
+  opacity: .55;
+  animation: emblemSpinReverse 12s linear infinite;
+  box-shadow: 0 0 20px var(--league-soft), inset 0 0 20px var(--league-soft);
+}
+
+.ring-inner {
+  inset: 32px;
+  border-style: dotted;
+  opacity: .4;
+  animation: emblemSpin 9s linear infinite;
+}
+
+.emblem-core {
+  position: relative;
+  z-index: 3;
+  width: 110px;
+  height: 110px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 30% 30%, rgba(255,255,255,.25), transparent 50%),
+    linear-gradient(145deg, var(--league-soft), rgba(0,0,0,.05));
+  border: 2px solid var(--league-color);
+  box-shadow:
+    0 0 40px var(--league-glow),
+    0 0 80px var(--league-soft),
+    inset 0 0 30px var(--league-soft),
+    inset 0 2px 4px rgba(255,255,255,.15);
+  animation: coreGlow 3s ease-in-out infinite;
+}
+
+.emblem-core svg {
+  width: 62px;
+  height: 62px;
+  stroke-width: 1.7;
+  filter: drop-shadow(0 0 10px var(--league-color)) drop-shadow(0 0 22px var(--league-glow));
+  animation: emblemIcon 2.5s ease-in-out infinite;
+}
+
+.emblem-shine {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: linear-gradient(
+    135deg,
+    transparent 35%,
+    rgba(255,255,255,.35) 45%,
+    transparent 55%
+  );
+  pointer-events: none;
+  overflow: hidden;
+  mix-blend-mode: overlay;
+}
+
+/* ============ COPY ============ */
+.league-copy { min-width: 0; }
+
+.league-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.league-label {
+  display: block;
+  color: var(--text-faint);
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.league-title-row h3 {
+  margin: 4px 0 0;
+  font-size: clamp(26px, 3vw, 40px);
+  font-weight: 1000;
+  letter-spacing: -.055em;
+  background: linear-gradient(110deg, var(--text) 0%, var(--league-color) 50%, var(--text) 100%);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: titleGradient 5s ease-in-out infinite;
+}
+
+.league-rank-chip {
+  min-width: 82px;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 17px;
+  text-align: center;
+  background: rgba(255,255,255,.05);
+  box-shadow: var(--shadow-sm);
+}
+
+.league-rank-chip span,
+.league-rank-chip strong { display: block; }
+
+.league-rank-chip span {
+  color: var(--text-faint);
+  font-size: 8px;
+}
+
+.league-rank-chip strong {
+  margin-top: 2px;
+  color: var(--league-color);
+  font-size: 23px;
+  font-weight: 1000;
+}
+
+.league-progress-wrap { margin-top: 26px; }
+
+.league-progress-labels {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-faint);
+  font-size: 8px;
+}
+
+.league-progress-labels strong {
+  color: var(--text);
+  font-size: 13px;
+}
+
+.league-progress-labels span:last-child { text-align: left; }
+
+.league-progress {
+  position: relative;
+  height: 10px;
+  margin-top: 10px;
+  overflow: visible;
+  border-radius: 999px;
+  background: rgba(127,127,160,.12);
+  box-shadow: inset 0 1px 3px rgba(0,0,0,.1);
+}
+
+.league-progress-fill {
+  height: 100%;
+  border-radius: inherit;
+  transform-origin: right center;
+  background: linear-gradient(90deg, var(--league-color), #2bd3b0, var(--league-color));
+  background-size: 180% 100%;
+  box-shadow: 0 0 22px var(--league-glow);
+  animation: leagueBar 1.5s cubic-bezier(.16,1,.3,1) both, gradientMove 3s linear infinite;
+}
+
+.league-progress i {
+  position: absolute;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  transform: translateY(-50%);
+  border: 3px solid var(--surface);
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 0 2px var(--league-color), 0 0 22px var(--league-glow);
+  animation: progressKnob 1.5s cubic-bezier(.16,1,.3,1) both;
+}
+
+/* Distance to next league */
+.league-distance {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 18px;
+  padding: 12px 14px;
+  border: 1px dashed var(--league-color);
+  border-radius: 15px;
+  background: var(--league-soft);
+  opacity: .95;
+}
+
+.distance-icon {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 11px;
+  color: var(--league-color);
+  background: rgba(255,255,255,.15);
+  animation: distanceBounce 2s ease-in-out infinite;
+}
+
+.distance-icon.crown {
+  color: var(--warning);
+  background: var(--warning-soft);
+}
+
+.distance-icon svg { width: 18px; height: 18px; }
+
+.distance-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.distance-copy span {
+  display: block;
+  color: var(--text-soft);
+  font-size: 9px;
+  font-weight: 750;
+}
+
+.distance-copy strong {
+  display: block;
+  margin-top: 3px;
+  color: var(--league-color);
+  font-size: 13px;
+  font-weight: 950;
+}
+
+.distance-target {
+  padding: 5px 11px;
+  border-radius: 9px;
+  color: var(--league-color);
+  background: rgba(255,255,255,.15);
+  font-size: 10px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.league-foot {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 9px;
+  margin-top: 20px;
+}
+
+.league-stat {
+  min-width: 0;
+  padding: 12px 13px;
+  border: 1px solid var(--border);
+  border-radius: 15px;
+  background: rgba(255,255,255,.04);
+  transition: border-color .25s ease, background .25s ease;
+}
+
+.league-stat:hover {
+  border-color: var(--border-strong);
+  background: var(--league-soft);
+}
+
+.league-stat span,
+.league-stat strong { display: block; }
+
+.league-stat span {
+  color: var(--text-faint);
+  font-size: 8px;
+}
+
+.league-stat strong {
+  margin-top: 4px;
+  overflow: hidden;
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 950;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.league-stat.highlight strong { color: var(--league-color); }
+
+/* ============ TIER TRACK ============ */
+.league-track {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 10px;
+  margin-top: 30px;
+  padding-top: 22px;
+  border-top: 1px solid var(--border);
+}
+
+.tier {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 12px 8px;
+  border: 1px solid transparent;
+  border-radius: 15px;
+  color: var(--text-faint);
+  background: rgba(127,127,160,.05);
+  font-size: 9px;
+  font-weight: 850;
+  transition: all .4s cubic-bezier(.2,.8,.2,1);
+}
+
+.tier:hover {
+  transform: translateY(-4px);
+  background: var(--league-soft);
+  color: var(--text-soft);
+}
+
+.tier-badge {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: rgba(127,127,160,.1);
+  color: var(--text-faint);
+  transition: all .4s cubic-bezier(.2,.8,.2,1);
+}
+
+.tier-badge svg {
+  width: 26px;
+  height: 26px;
+}
+
+.tier-name { white-space: nowrap; }
+
+.tier.passed {
+  color: var(--text-soft);
+  background: rgba(127,127,160,.08);
+}
+
+.tier.passed .tier-badge {
+  color: var(--text-faint);
+  background: rgba(127,127,160,.15);
+}
+
+.tier.active {
+  color: var(--league-color);
+  border-color: var(--league-color);
+  background: var(--league-soft);
+  box-shadow: 0 12px 32px var(--league-glow);
+  transform: translateY(-5px);
+}
+
+.tier.active .tier-badge {
+  color: var(--league-color);
+  background: rgba(255,255,255,.2);
+  box-shadow: 0 0 22px var(--league-glow), inset 0 0 12px var(--league-soft);
+  animation: tierBadgePulse 2s ease-in-out infinite;
+}
+
+.tier.active::after {
+  content: '';
+  position: absolute;
+  left: 20%;
+  right: 20%;
+  bottom: -22px;
+  height: 2px;
+  border-radius: 999px;
+  background: var(--league-color);
+  box-shadow: 0 0 14px var(--league-color);
+}
 
 /* =========================================================
    RAW SCORE
 ========================================================= */
 
 .raw-comparison {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 18px;
+}
 
-  display:
-    grid;
-
-  grid-template-columns:
-    repeat(2, 1fr);
-
-  gap:
-    25px;
-
+.raw-item {
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 19px;
+  background: var(--surface-soft);
 }
 
 .raw-label {
-
-  display:
-    flex;
-
-  justify-content:
-    space-between;
-
-  align-items:
-    center;
-
-  margin-bottom:
-    9px;
-
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
 }
 
-.raw-label span {
-
-  color:
-    var(--text-soft);
-
-  font-size:
-    13px;
-
-}
+.raw-label span { color: var(--text-soft); font-size: 10px; }
 
 .raw-label strong {
-
-  font-size:
-    20px;
-
+  color: var(--primary);
+  font-size: 22px;
+  font-weight: 950;
 }
 
-.progress-track {
+.progress-track,
+.average-track,
+.review-progress-track {
+  overflow: hidden;
+  border-radius: 99px;
+  background: rgba(100,116,139,.1);
+}
 
-  height:
-    9px;
-
-  border-radius:
-    99px;
-
-  overflow:
-    hidden;
-
-  background:
-    var(--border);
-
+.raw-item .progress-track {
+  height: 9px;
+  margin-top: 14px;
 }
 
 .progress-fill {
-
-  height:
-    100%;
-
-  border-radius:
-    inherit;
-
+  height: 100%;
+  min-width: 0;
+  border-radius: inherit;
+  transform-origin: right center;
+  animation: barGrow .9s cubic-bezier(.2,.8,.2,1) both;
 }
 
 .progress-fill.negative {
-
-  background:
-    linear-gradient(
-      90deg,
-      #4546d8,
-      #7778ff
-    );
-
+  background: linear-gradient(90deg, var(--primary-dark), var(--primary-light));
+  box-shadow: 0 0 18px rgba(101,103,241,.3);
 }
 
 .progress-fill.raw {
-
-  background:
-    linear-gradient(
-      90deg,
-      #13a884,
-      #45d8b7
-    );
-
+  background: linear-gradient(90deg, #13a989, #53d4b8);
+  box-shadow: 0 0 18px rgba(24,168,139,.25);
 }
 
-.raw-item > small {
-
-  display:
-    block;
-
-  margin-top:
-    8px;
-
-  color:
-    var(--text-faint);
-
-  font-size:
-    10px;
-
+.raw-item small {
+  display: block;
+  margin-top: 8px;
+  color: var(--text-faint);
+  font-size: 9px;
 }
 
-
-/* =========================================================
-   PREVIOUS
-========================================================= */
-
-.change-badge,
-.trend-chip {
-
-  padding:
-    7px 12px;
-
-  border-radius:
-    11px;
-
-  font-size:
-    12px;
-
-  font-weight:
-    800;
-
-}
-
-.change-badge.positive,
-.trend-chip.positive {
-
-  color:
-    var(--success);
-
-  background:
-    var(--success-soft);
-
-}
-
-.change-badge.negative,
-.trend-chip.negative {
-
-  color:
-    var(--danger);
-
-  background:
-    var(--danger-soft);
-
-}
-
-.change-badge.neutral,
-.trend-chip.neutral {
-
-  color:
-    var(--text-soft);
-
-  background:
-    var(--surface-soft);
-
-}
-
+/* Previous */
 .previous-content {
-
-  display:
-    flex;
-
-  align-items:
-    center;
-
-  justify-content:
-    center;
-
-  gap:
-    45px;
-
-  padding:
-    20px;
-
-}
-
-.previous-score {
-
-  text-align:
-    center;
-
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 25px;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 21px;
+  background: var(--surface-soft);
 }
 
 .previous-score span {
-
-  display:
-    block;
-
-  color:
-    var(--text-soft);
-
-  font-size:
-    12px;
-
+  display: block;
+  color: var(--text-faint);
+  font-size: 9px;
 }
 
 .previous-score strong {
-
-  display:
-    block;
-
-  margin-top:
-    5px;
-
-  font-size:
-    31px;
-
-  color:
-    var(--text);
-
+  display: block;
+  margin-top: 6px;
+  font-size: 30px;
+  font-weight: 950;
 }
 
-.previous-score.current strong {
-
-  color:
-    var(--primary);
-
-}
+.previous-score.current strong { color: var(--primary); }
 
 .change-arrow {
-
-  width:
-    45px;
-
-  height:
-    45px;
-
-  display:
-    grid;
-
-  place-items:
-    center;
-
-  color:
-    var(--primary);
-
-  background:
-    var(--primary-soft);
-
-  border-radius:
-    50%;
-
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--primary);
+  background: var(--primary-soft);
+  animation: arrowPulse 2.5s ease-in-out infinite;
 }
 
-.change-arrow svg {
+.change-arrow svg { width: 19px; height: 19px; }
 
-  width:
-    22px;
-
-  height:
-    22px;
-
+.change-badge,
+.trend-chip {
+  padding: 8px 12px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 900;
 }
+
+.change-badge.positive,
+.trend-chip.positive { color: var(--success); background: var(--success-soft); }
+
+.change-badge.negative,
+.trend-chip.negative { color: var(--danger); background: var(--danger-soft); }
+
+.change-badge.neutral,
+.trend-chip.neutral { color: var(--text-soft); background: var(--surface-soft); }
 
 .previous-details {
-
-  display:
-    grid;
-
-  grid-template-columns:
-    repeat(4, 1fr);
-
-  border-top:
-    1px solid var(--border);
-
-  padding-top:
-    18px;
-
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+  margin-top: 16px;
+  padding: 5px 0;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--surface);
 }
 
 .previous-details > div {
-
-  text-align:
-    center;
-
-  padding:
-    0 15px;
-
-  border-left:
-    1px solid var(--border);
-
+  padding: 12px 15px;
+  border-left: 1px solid var(--border);
 }
 
-.previous-details > div:last-child {
-
-  border-left:
-    0;
-
-}
+.previous-details > div:last-child { border-left: 0; }
 
 .previous-details span {
-
-  display:
-    block;
-
-  color:
-    var(--text-faint);
-
-  font-size:
-    11px;
-
+  display: block;
+  color: var(--text-faint);
+  font-size: 9px;
 }
 
 .previous-details strong {
-
-  display:
-    block;
-
-  margin-top:
-    5px;
-
-  font-size:
-    17px;
-
+  display: block;
+  margin-top: 4px;
+  font-size: 14px;
 }
 
-.text-positive {
-
-  color:
-    var(--success);
-
-}
-
-.text-negative {
-
-  color:
-    var(--danger);
-
-}
-
-
-/* =========================================================
-   SECTION INTRO
-========================================================= */
-
-.section-intro {
-
-  display:
-    flex;
-
-  align-items:
-    center;
-
-  justify-content:
-    space-between;
-
-  gap:
-    20px;
-
-  margin:
-    5px 0 20px;
-
-}
-
-.section-intro span,
-.review-header > div:first-child > span {
-
-  color:
-    var(--primary);
-
-  font-size:
-    11px;
-
-  font-weight:
-    800;
-
-}
-
-.section-intro h2,
-.review-header h2 {
-
-  margin:
-    5px 0;
-
-  font-size:
-    26px;
-
-}
-
-.section-intro p,
-.review-header p {
-
-  margin:
-    0;
-
-  color:
-    var(--text-soft);
-
-  font-size:
-    13px;
-
-}
-
-.booklet-total {
-
-  display:
-    flex;
-
-  flex-direction:
-    column;
-
-  align-items:
-    center;
-
-  padding:
-    15px 20px;
-
-  border-radius:
-    18px;
-
-  background:
-    var(--surface);
-
-  border:
-    1px solid var(--border);
-
-}
-
-.booklet-total strong {
-
-  font-size:
-    25px;
-
-}
-
-.booklet-total span {
-
-  color:
-    var(--text-soft);
-
-}
-
+.text-positive { color: var(--success); }
+.text-negative { color: var(--danger); }
 
 /* =========================================================
    BOOKLETS
 ========================================================= */
 
+.booklet-total {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 13px;
+  border: 1px solid var(--border);
+  border-radius: 15px;
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.booklet-total strong {
+  color: var(--primary);
+  font-size: 20px;
+  font-weight: 950;
+}
+
+.booklet-total span {
+  color: var(--text-faint);
+  font-size: 9px;
+}
+
 .booklet-cards {
-
-  display:
-    grid;
-
-  grid-template-columns:
-    repeat(2, 1fr);
-
-  gap:
-    16px;
-
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0,1fr));
+  gap: 16px;
 }
 
 .booklet-card {
+  position: relative;
+  overflow: hidden;
+  padding: 22px;
+  border: 1px solid var(--border);
+  border-radius: 26px;
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  transition: transform .35s cubic-bezier(.2,.8,.2,1), box-shadow .35s ease, border-color .35s ease;
+}
 
-  padding:
-    22px;
-
-  background:
-    var(--surface);
-
-  border:
-    1px solid var(--border);
-
-  border-radius:
-    24px;
-
-  box-shadow:
-    var(--shadow);
-
-  transition:
-    transform .2s ease,
-    box-shadow .2s ease;
-
+.booklet-card::before {
+  content: "";
+  position: absolute;
+  top: -110px;
+  left: -110px;
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  background: var(--primary-soft);
+  filter: blur(12px);
+  opacity: .55;
+  transition: transform .5s ease;
 }
 
 .booklet-card:hover {
+  transform: translateY(-7px);
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow);
+}
 
-  transform:
-    translateY(-3px);
+.booklet-card:hover::before { transform: scale(1.2); }
 
-  box-shadow:
-    0 20px 50px rgba(31,41,55,.10);
-
+.booklet-card-top,
+.booklet-score-row,
+.booklet-ranks,
+.booklet-range,
+.average-line {
+  position: relative;
+  z-index: 1;
 }
 
 .booklet-card-top {
-
-  display:
-    flex;
-
-  align-items:
-    center;
-
-  gap:
-    13px;
-
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .booklet-number {
-
-  width:
-    44px;
-
-  height:
-    44px;
-
-  display:
-    grid;
-
-  place-items:
-    center;
-
-  flex:
-    0 0 44px;
-
-  border-radius:
-    14px;
-
-  color:
-    #fff;
-
-  background:
-    linear-gradient(
-      135deg,
-      var(--primary),
-      #8586ff
-    );
-
-  font-weight:
-    900;
-
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  color: #fff;
+  background: linear-gradient(145deg, var(--primary-dark), var(--primary-light));
+  box-shadow: 0 9px 22px rgba(101,103,241,.28);
+  font-size: 13px;
+  font-weight: 950;
 }
 
 .booklet-title-wrap {
-
-  min-width:
-    0;
-
-  flex:
-    1;
-
+  min-width: 0;
+  flex: 1;
 }
 
-.booklet-title-wrap span {
-
-  color:
-    var(--text-faint);
-
-  font-size:
-    10px;
-
+.booklet-title-wrap > span {
+  display: block;
+  color: var(--primary);
+  font-size: 9px;
+  font-weight: 800;
 }
 
 .booklet-title-wrap h3 {
-
-  margin:
-    3px 0 0;
-
-  font-size:
-    16px;
-
-  overflow:
-    hidden;
-
-  white-space:
-    nowrap;
-
-  text-overflow:
-    ellipsis;
-
+  overflow: hidden;
+  margin: 4px 0 0;
+  font-size: 14px;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .decile-badge {
-
-  display:
-    flex;
-
-  align-items:
-    center;
-
-  gap:
-    6px;
-
-  padding:
-    7px 10px;
-
-  border-radius:
-    12px;
-
-  background:
-    var(--warning-soft);
-
-  color:
-    var(--warning);
-
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface-soft);
 }
 
 .decile-badge span {
-
-  font-size:
-    10px;
-
+  color: var(--text-faint);
+  font-size: 8px;
 }
 
 .decile-badge strong {
-
-  font-size:
-    16px;
-
+  color: var(--primary);
+  font-size: 13px;
 }
 
 .booklet-score-row {
-
-  display:
-    flex;
-
-  justify-content:
-    space-between;
-
-  align-items:
-    end;
-
-  margin-top:
-    25px;
-
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 15px;
+  margin-top: 22px;
 }
 
 .booklet-score strong {
-
-  display:
-    block;
-
-  font-size:
-    35px;
-
-  font-weight:
-    950;
-
+  display: block;
+  color: var(--primary);
+  font-size: 30px;
+  line-height: 1;
+  font-weight: 950;
+  letter-spacing: -.04em;
 }
 
 .booklet-score span {
-
-  color:
-    var(--text-faint);
-
-  font-size:
-    10px;
-
+  display: block;
+  margin-top: 6px;
+  color: var(--text-faint);
+  font-size: 9px;
 }
 
-.booklet-raw {
-
-  text-align:
-    left;
-
-}
+.booklet-raw { text-align: left; }
 
 .booklet-raw span {
-
-  color:
-    var(--text-faint);
-
-  font-size:
-    10px;
-
+  display: block;
+  color: var(--text-faint);
+  font-size: 9px;
 }
 
 .booklet-raw strong {
-
-  display:
-    block;
-
-  margin-top:
-    3px;
-
-  font-size:
-    17px;
-
+  display: block;
+  margin-top: 4px;
+  font-size: 16px;
 }
 
 .booklet-bar {
-
-  height:
-    8px;
-
-  margin:
-    15px 0;
-
-  overflow:
-    hidden;
-
-  border-radius:
-    99px;
-
-  background:
-    var(--border);
-
+  position: relative;
+  z-index: 1;
+  height: 7px;
+  margin-top: 14px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: rgba(100,116,139,.1);
 }
 
 .booklet-bar-fill {
-
-  height:
-    100%;
-
-  border-radius:
-    inherit;
-
-  background:
-    linear-gradient(
-      90deg,
-      var(--primary),
-      #8889ff
-    );
-
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--primary-dark), var(--primary-light));
+  box-shadow: 0 0 16px rgba(101,103,241,.28);
+  transform-origin: right;
+  animation: barGrow 1s cubic-bezier(.2,.8,.2,1) both;
 }
 
 .answer-breakdown {
-
-  display:
-    grid;
-
-  grid-template-columns:
-    repeat(3, 1fr);
-
-  gap:
-    8px;
-
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 16px;
 }
 
 .answer-stat {
-
-  display:
-    flex;
-
-  align-items:
-    center;
-
-  gap:
-    6px;
-
-  padding:
-    10px;
-
-  border-radius:
-    13px;
-
-  background:
-    var(--surface-soft);
-
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  background: var(--surface-soft);
+  font-size: 9px;
 }
 
 .answer-dot {
-
-  width:
-    7px;
-
-  height:
-    7px;
-
-  border-radius:
-    50%;
-
-  background:
-    currentColor;
-
+  width: 7px;
+  height: 7px;
+  flex: 0 0 7px;
+  border-radius: 50%;
 }
 
-.answer-stat span:not(.answer-dot) {
+.answer-stat.correct .answer-dot { background: var(--success); box-shadow: 0 0 10px rgba(24,168,139,.5); }
+.answer-stat.wrong .answer-dot { background: var(--danger); box-shadow: 0 0 10px rgba(227,93,104,.5); }
+.answer-stat.unanswered .answer-dot { background: var(--warning); box-shadow: 0 0 10px rgba(227,166,47,.5); }
 
-  color:
-    var(--text-soft);
-
-  font-size:
-    10px;
-
-}
+.answer-stat span { color: var(--text-soft); }
 
 .answer-stat strong {
-
-  margin-right:
-    auto;
-
-  font-size:
-    14px;
-
-}
-
-.answer-stat.correct {
-
-  color:
-    var(--success);
-
-}
-
-.answer-stat.wrong {
-
-  color:
-    var(--danger);
-
-}
-
-.answer-stat.unanswered {
-
-  color:
-    var(--warning);
-
+  margin-right: auto;
+  font-weight: 900;
 }
 
 .booklet-ranks {
-
-  display:
-    grid;
-
-  grid-template-columns:
-    repeat(2, 1fr);
-
-  gap:
-    10px;
-
-  margin-top:
-    13px;
-
+  display: grid;
+  grid-template-columns: repeat(2,1fr);
+  gap: 10px;
+  margin-top: 13px;
 }
 
 .booklet-ranks > div {
-
-  padding:
-    13px;
-
-  border-radius:
-    14px;
-
-  background:
-    var(--surface-soft);
-
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface-soft);
 }
 
-.booklet-ranks span {
-
-  display:
-    block;
-
-  color:
-    var(--text-faint);
-
-  font-size:
-    10px;
-
+.booklet-ranks span,
+.booklet-ranks small {
+  display: block;
+  color: var(--text-faint);
+  font-size: 8px;
 }
 
 .booklet-ranks strong {
-
-  display:
-    inline-block;
-
-  margin-top:
-    3px;
-
-  font-size:
-    19px;
-
-}
-
-.booklet-ranks small {
-
-  color:
-    var(--text-faint);
-
-  font-size:
-    9px;
-
-  margin-right:
-    4px;
-
+  display: block;
+  margin: 3px 0;
+  font-size: 16px;
 }
 
 .booklet-average {
-
-  margin-top:
-    14px;
-
-  padding:
-    14px;
-
-  border:
-    1px solid var(--border);
-
-  border-radius:
-    15px;
-
+  position: relative;
+  z-index: 1;
+  margin-top: 13px;
+  padding: 13px;
+  border: 1px solid var(--border);
+  border-radius: 15px;
+  background: var(--surface-soft);
 }
 
 .average-line {
-
-  display:
-    flex;
-
-  align-items:
-    center;
-
-  justify-content:
-    space-between;
-
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
 }
 
 .average-line span {
-
-  color:
-    var(--text-soft);
-
-  font-size:
-    10px;
-
+  color: var(--text-faint);
+  font-size: 9px;
 }
 
-.average-line strong {
-
-  font-size:
-    13px;
-
-}
+.average-line strong { font-size: 11px; }
 
 .average-track {
-
-  position:
-    relative;
-
-  height:
-    8px;
-
-  margin:
-    13px 0;
-
-  border-radius:
-    99px;
-
-  background:
-    var(--border);
-
+  position: relative;
+  height: 8px;
+  margin: 9px 0;
+  overflow: visible;
 }
 
 .average-user-marker,
 .average-country-marker {
-
-  position:
-    absolute;
-
-  top:
-    50%;
-
-  width:
-    13px;
-
-  height:
-    13px;
-
-  transform:
-    translate(50%, -50%);
-
-  border:
-    3px solid var(--surface);
-
-  border-radius:
-    50%;
-
+  position: absolute;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--surface-solid);
+  border-radius: 50%;
+  transform: translate(50%, -50%);
+  box-shadow: 0 3px 10px rgba(0,0,0,.18);
 }
 
 .average-user-marker {
-
-  background:
-    var(--primary);
-
-  z-index:
-    2;
-
+  z-index: 2;
+  background: var(--primary);
 }
 
 .average-country-marker {
-
-  background:
-    var(--warning);
-
-  z-index:
-    1;
-
-}
-
-.province-line {
-
-  margin-top:
-    5px;
-
+  z-index: 1;
+  background: var(--success);
 }
 
 .performance-message {
-
-  display:
-    flex;
-
-  gap:
-    12px;
-
-  margin-top:
-    14px;
-
-  padding:
-    15px;
-
-  border-radius:
-    17px;
-
-  background:
-    var(--primary-soft);
-
+  position: relative;
+  z-index: 1;
+  display: flex;
+  gap: 11px;
+  margin-top: 13px;
+  padding: 13px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: linear-gradient(135deg, var(--primary-soft), transparent);
 }
 
 .performance-icon {
-
-  width:
-    38px;
-
-  height:
-    38px;
-
-  flex:
-    0 0 38px;
-
-  display:
-    grid;
-
-  place-items:
-    center;
-
-  color:
-    var(--primary);
-
-  background:
-    var(--surface);
-
-  border-radius:
-    12px;
-
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  color: var(--primary);
+  background: var(--primary-soft);
 }
 
-.performance-icon svg {
+.performance-icon svg { width: 18px; height: 18px; }
 
-  width:
-    19px;
-
-  height:
-    19px;
-
-}
-
-.performance-message strong {
-
-  display:
-    block;
-
-  font-size:
-    13px;
-
-}
+.performance-message strong { font-size: 10px; }
 
 .performance-message p {
-
-  margin:
-    5px 0 0;
-
-  color:
-    var(--text-soft);
-
-  font-size:
-    11px;
-
-  line-height:
-    1.9;
-
+  margin: 4px 0 0;
+  color: var(--text-soft);
+  font-size: 9px;
+  line-height: 1.85;
 }
 
 .booklet-range {
-
-  display:
-    flex;
-
-  justify-content:
-    space-between;
-
-  gap:
-    10px;
-
-  margin-top:
-    15px;
-
-  color:
-    var(--text-faint);
-
-  font-size:
-    10px;
-
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 13px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--border-strong);
+  color: var(--text-faint);
+  font-size: 8px;
 }
-
 
 /* =========================================================
-   CHARTS
+   ANALYTICS
 ========================================================= */
 
-.chart-panel {
+.analytics-intro { align-items: center; }
 
-  overflow:
-    hidden;
-
+.analytics-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 13px;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  color: var(--text-soft);
+  background: var(--surface);
+  font-size: 9px;
+  font-weight: 800;
 }
 
-.chart-legend {
-
-  display:
-    flex;
-
-  gap:
-    14px;
-
-  color:
-    var(--text-soft);
-
-  font-size:
-    10px;
-
+.analytics-live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--success);
+  box-shadow: 0 0 0 4px var(--success-soft);
+  animation: statusPulse 2s infinite;
 }
 
-.chart-legend span {
+.chart-mini-note { color: var(--text-faint); font-size: 9px; }
 
-  display:
-    flex;
+.chartjs-panel { overflow: visible; }
 
-  align-items:
-    center;
-
-  gap:
-    5px;
-
+.chartjs-wrap {
+  position: relative;
+  width: 100%;
+  padding: 12px 4px 4px;
 }
 
-.chart-legend i {
-
-  width:
-    8px;
-
-  height:
-    8px;
-
-  border-radius:
-    50%;
-
-}
-
-.legend-user {
-
-  background:
-    var(--primary);
-
-}
-
-.legend-country {
-
-  background:
-    var(--warning);
-
-}
-
-.legend-province {
-
-  background:
-    var(--success);
-
-}
-
-.comparison-chart {
-
-  min-height:
-    320px;
-
-  display:
-    flex;
-
-  align-items:
-    end;
-
-  justify-content:
-    space-around;
-
-  gap:
-    15px;
-
-  padding:
-    30px 15px 0;
-
-  border-bottom:
-    1px solid var(--border);
-
-}
-
-.comparison-column {
-
-  width:
-    100%;
-
-  max-width:
-    130px;
-
-  height:
-    280px;
-
-  display:
-    flex;
-
-  flex-direction:
-    column;
-
-  justify-content:
-    end;
-
-}
-
-.comparison-values {
-
-  display:
-    flex;
-
-  justify-content:
-    center;
-
-  gap:
-    8px;
-
-  margin-bottom:
-    5px;
-
-  font-size:
-    9px;
-
-}
-
-.value-user {
-
-  color:
-    var(--primary);
-
-  font-weight:
-    900;
-
-}
-
-.value-country {
-
-  color:
-    var(--warning);
-
-}
-
-.bars {
-
-  height:
-    225px;
-
-  display:
-    flex;
-
-  align-items:
-    end;
-
-  justify-content:
-    center;
-
-  gap:
-    5px;
-
-  border-bottom:
-    1px solid var(--border);
-
-}
-
-.chart-bar {
-
-  width:
-    20px;
-
-  min-height:
-    3px;
-
-  border-radius:
-    7px 7px 0 0;
-
-  transition:
-    height .5s ease;
-
-}
-
-.chart-bar.user {
-
-  background:
-    linear-gradient(
-      180deg,
-      #7778ff,
-      #5051e4
-    );
-
-}
-
-.chart-bar.country {
-
-  background:
-    var(--warning);
-
-  opacity:
-    .65;
-
-}
-
-.chart-bar.province {
-
-  background:
-    var(--success);
-
-  opacity:
-    .65;
-
-}
-
-.column-label {
-
-  min-height:
-    42px;
-
-  display:
-    grid;
-
-  place-items:
-    center;
-
-  text-align:
-    center;
-
-  padding-top:
-    10px;
-
-}
-
-.column-label strong {
-
-  max-width:
-    100%;
-
-  overflow:
-    hidden;
-
-  text-overflow:
-    ellipsis;
-
-  white-space:
-    nowrap;
-
-  font-size:
-    10px;
-
-  color:
-    var(--text-soft);
-
-}
-
-
-/* =========================================================
-   LINE CHART
-========================================================= */
-
-.line-chart {
-
-  display:
-    flex;
-
-  gap:
-    12px;
-
-}
-
-.line-chart-y {
-
-  width:
-    35px;
-
-  display:
-    flex;
-
-  flex-direction:
-    column;
-
-  justify-content:
-    space-between;
-
-  height:
-    300px;
-
-  color:
-    var(--text-faint);
-
-  font-size:
-    9px;
-
-  text-align:
-    left;
-
-}
-
-.line-chart-main {
-
-  position:
-    relative;
-
-  flex:
-    1;
-
-  height:
-    300px;
-
-}
-
-.grid-lines {
-
-  position:
-    absolute;
-
-  inset:
-    0;
-
-  display:
-    flex;
-
-  flex-direction:
-    column;
-
-  justify-content:
-    space-between;
-
-}
-
-.grid-lines span {
-
-  width:
-    100%;
-
-  height:
-    1px;
-
-  background:
-    var(--border);
-
-}
-
-.progress-svg {
-
-  position:
-    absolute;
-
-  inset:
-    0;
-
-  width:
-    100%;
-
-  height:
-    100%;
-
-  overflow:
-    visible;
-
-}
-
-.progress-area {
-
-  fill:
-    url(#progressGradient);
-
-}
-
-.progress-line {
-
-  fill:
-    none;
-
-  stroke:
-    var(--primary);
-
-  stroke-width:
-    4;
-
-  stroke-linecap:
-    round;
-
-  stroke-linejoin:
-    round;
-
-}
-
-.progress-point {
-
-  fill:
-    var(--surface);
-
-  stroke:
-    var(--primary);
-
-  stroke-width:
-    4;
-
-}
-
-.progress-labels {
-
-  position:
-    absolute;
-
-  left:
-    0;
-
-  right:
-    0;
-
-  bottom:
-    -30px;
-
-  height:
-    20px;
-
-}
-
-.progress-label {
-
-  position:
-    absolute;
-
-  transform:
-    translateX(-50%);
-
-  width:
-    90px;
-
-  overflow:
-    hidden;
-
-  text-overflow:
-    ellipsis;
-
-  white-space:
-    nowrap;
-
-  text-align:
-    center;
-
-  color:
-    var(--text-faint);
-
-  font-size:
-    8px;
-
+.comparison-chartjs-wrap { height: 360px; }
+.progress-chartjs-wrap { height: 350px; }
+
+.chartjs-wrap canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
 }
 
 .empty-chart {
-
-  min-height:
-    260px;
-
-  display:
-    grid;
-
-  place-items:
-    center;
-
-  color:
-    var(--text-faint);
-
+  min-height: 230px;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  border: 1px dashed var(--border-strong);
+  border-radius: 19px;
+  color: var(--text-faint);
+  font-size: 10px;
+  background: var(--surface-soft);
 }
 
 .progress-summary {
-
-  display:
-    grid;
-
-  grid-template-columns:
-    repeat(3, 1fr);
-
-  margin-top:
-    55px;
-
-  padding-top:
-    20px;
-
-  border-top:
-    1px solid var(--border);
-
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-top: 15px;
 }
 
 .progress-summary > div {
-
-  text-align:
-    center;
-
-  border-left:
-    1px solid var(--border);
-
-}
-
-.progress-summary > div:last-child {
-
-  border-left:
-    0;
-
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface-soft);
 }
 
 .progress-summary span {
-
-  display:
-    block;
-
-  color:
-    var(--text-faint);
-
-  font-size:
-    10px;
-
+  display: block;
+  color: var(--text-faint);
+  font-size: 8px;
 }
 
 .progress-summary strong {
-
-  display:
-    block;
-
-  margin-top:
-    4px;
-
-  font-size:
-    19px;
-
+  display: block;
+  margin-top: 4px;
+  font-size: 17px;
 }
 
-
-/* =========================================================
-   INSIGHTS
-========================================================= */
-
 .insights-grid {
-
-  display:
-    grid;
-
-  grid-template-columns:
-    repeat(3, 1fr);
-
-  gap:
-    15px;
-
-  margin-top:
-    16px;
-
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-top: 15px;
 }
 
 .insight-card {
-
-  padding:
-    21px;
-
-  border:
-    1px solid var(--border);
-
-  background:
-    var(--surface);
-
-  border-radius:
-    21px;
-
-  box-shadow:
-    var(--shadow);
-
+  position: relative;
+  overflow: hidden;
+  min-height: 145px;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  transition: transform .3s cubic-bezier(.2,.8,.2,1), box-shadow .3s ease;
 }
+
+.insight-card::after {
+  content: "";
+  position: absolute;
+  width: 110px;
+  height: 110px;
+  left: -65px;
+  bottom: -60px;
+  border-radius: 50%;
+  background: var(--primary-soft);
+  transition: transform .5s ease;
+}
+
+.insight-card:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--shadow);
+}
+
+.insight-card:hover::after { transform: scale(1.25); }
 
 .insight-icon {
-
-  width:
-    43px;
-
-  height:
-    43px;
-
-  display:
-    grid;
-
-  place-items:
-    center;
-
-  border-radius:
-    14px;
-
-  color:
-    var(--primary);
-
-  background:
-    var(--primary-soft);
-
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 18px;
+  border-radius: 14px;
+  color: var(--primary);
+  background: var(--primary-soft);
 }
 
-.insight-icon svg {
-
-  width:
-    21px;
-
-  height:
-    21px;
-
-}
+.insight-icon svg { width: 20px; height: 20px; }
 
 .insight-card > span {
-
-  display:
-    block;
-
-  margin-top:
-    15px;
-
-  color:
-    var(--text-faint);
-
-  font-size:
-    10px;
-
+  display: block;
+  color: var(--text-faint);
+  font-size: 9px;
 }
 
 .insight-card > strong {
-
-  display:
-    block;
-
-  margin-top:
-    5px;
-
-  font-size:
-    16px;
-
+  display: block;
+  overflow: hidden;
+  margin-top: 4px;
+  font-size: 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .insight-card > small {
-
-  display:
-    block;
-
-  margin-top:
-    5px;
-
-  color:
-    var(--primary);
-
-  font-weight:
-    800;
-
+  display: block;
+  margin-top: 5px;
+  color: var(--primary);
+  font-size: 10px;
+  font-weight: 850;
 }
-
 
 /* =========================================================
    REVIEW
 ========================================================= */
 
-.review-header {
-
-  display:
-    flex;
-
-  justify-content:
-    space-between;
-
-  align-items:
-    end;
-
-  gap:
-    20px;
-
-  margin:
-    5px 0 20px;
-
-}
-
-.review-summary {
-
-  display:
-    flex;
-
-  gap:
-    8px;
-
-}
-
-.review-mini {
-
-  min-width:
-    65px;
-
-  padding:
-    10px;
-
-  text-align:
-    center;
-
-  border-radius:
-    13px;
-
-  background:
-    var(--surface);
-
-  border:
-    1px solid var(--border);
-
-}
-
-.review-mini strong {
-
-  display:
-    block;
-
-  font-size:
-    18px;
-
-}
-
-.review-mini span {
-
-  color:
-    var(--text-faint);
-
-  font-size:
-    9px;
-
-}
-
-.review-mini.correct strong {
-
-  color:
-    var(--success);
-
-}
-
-.review-mini.wrong strong {
-
-  color:
-    var(--danger);
-
-}
-
-.review-mini.unanswered strong {
-
-  color:
-    var(--warning);
-
-}
-
-.review-filters {
-
-  display:
-    flex;
-
-  gap:
-    8px;
-
-  overflow-x:
-    auto;
-
-  margin-bottom:
-    15px;
-
-  scrollbar-width:
-    none;
-
-}
-
-.review-filters::-webkit-scrollbar {
-  display:
-    none;
-}
-
-.review-filters button {
-
-  display:
-    flex;
-
-  align-items:
-    center;
-
-  gap:
-    7px;
-
-  padding:
-    10px 14px;
-
-  border:
-    1px solid var(--border);
-
-  border-radius:
-    13px;
-
-  background:
-    var(--surface);
-
-  color:
-    var(--text-soft);
-
-  cursor:
-    pointer;
-
-  font:
-    inherit;
-
-  font-size:
-    11px;
-
-  white-space:
-    nowrap;
-
-}
-
-.review-filters button span {
-
-  padding:
-    2px 6px;
-
-  border-radius:
-    7px;
-
-  background:
-    var(--surface-soft);
-
-}
-
-.review-filters button.active {
-
-  color:
-    #fff;
-
-  background:
-    var(--primary);
-
-  border-color:
-    var(--primary);
-
-}
-
-.review-filters button.active span {
-
-  background:
-    rgba(255,255,255,.18);
-
-}
-
-.review-list {
-
-  display:
-    flex;
-
-  flex-direction:
-    column;
-
-  gap:
-    13px;
-
-}
-
-.question-card {
-
-  padding:
-    20px;
-
-  background:
-    var(--surface);
-
-  border:
-    1px solid var(--border);
-
-  border-radius:
-    22px;
-
-  box-shadow:
-    var(--shadow);
-
-  overflow:
-    hidden;
-
-}
-
-.question-card.correct {
-
-  border-right:
-    4px solid var(--success);
-
-}
-
-.question-card.wrong {
-
-  border-right:
-    4px solid var(--danger);
-
-}
-
-.question-card.unanswered {
-
-  border-right:
-    4px solid var(--warning);
-
-}
-
-.question-top {
-
-  display:
-    flex;
-
-  align-items:
-    center;
-
-  gap:
-    13px;
-
-  padding-bottom:
-    17px;
-
-  border-bottom:
-    1px solid var(--border);
-
-}
-
-.question-number {
-
-  display:
-    flex;
-
-  align-items:
-    center;
-
-  gap:
-    7px;
-
-}
-
-.question-number span {
-
-  color:
-    var(--text-faint);
-
-  font-size:
-    10px;
-
-}
-
-.question-number strong {
-
-  font-size:
-    21px;
-
-}
-
-.question-context {
-
-  flex:
-    1;
-
-  min-width:
-    0;
-
-}
-
-.question-context strong {
-
-  display:
-    block;
-
-  overflow:
-    hidden;
-
-  text-overflow:
-    ellipsis;
-
-  white-space:
-    nowrap;
-
-  font-size:
-    13px;
-
-}
-
-.question-context span {
-
-  display:
-    block;
-
-  margin-top:
-    3px;
-
-  color:
-    var(--text-faint);
-
-  font-size:
-    10px;
-
-}
-
-.question-status {
-
-  display:
-    flex;
-
-  align-items:
-    center;
-
-  gap:
-    6px;
-
-  padding:
-    7px 10px;
-
-  border-radius:
-    11px;
-
-  font-size:
-    10px;
-
-}
-
-.question-status.correct {
-
-  color:
-    var(--success);
-
-  background:
-    var(--success-soft);
-
-}
-
-.question-status.wrong {
-
-  color:
-    var(--danger);
-
-  background:
-    var(--danger-soft);
-
-}
-
-.question-status.unanswered {
-
-  color:
-    var(--warning);
-
-  background:
-    var(--warning-soft);
-
-}
-
-.status-dot {
-
-  width:
-    6px;
-
-  height:
-    6px;
-
-  border-radius:
-    50%;
-
-  background:
-    currentColor;
-
-}
-
-.options-grid {
-
-  display:
-    grid;
-
-  grid-template-columns:
-    repeat(4, 1fr);
-
-  gap:
-    10px;
-
-  margin-top:
-    17px;
-
-}
-
-.option-card {
-
-  position:
-    relative;
-
-  min-height:
-    72px;
-
-  display:
-    flex;
-
-  align-items:
-    center;
-
-  gap:
-    10px;
-
-  padding:
-    10px;
-
-  border:
-    1px solid var(--border);
-
-  border-radius:
-    15px;
-
-  background:
-    var(--surface-soft);
-
-  transition:
-    .2s ease;
-
-}
-
-.option-card.selected {
-
-  border-color:
-    var(--primary);
-
-  background:
-    var(--primary-soft);
-
-}
-
-.option-card.correct {
-
-  border-color:
-    var(--success);
-
-  background:
-    var(--success-soft);
-
-}
-
-.option-card.selected-wrong {
-
-  border-color:
-    var(--danger);
-
-  background:
-    var(--danger-soft);
-
-}
-
-.option-number {
-
-  width:
-    32px;
-
-  height:
-    32px;
-
-  flex:
-    0 0 32px;
-
-  display:
-    grid;
-
-  place-items:
-    center;
-
-  border-radius:
-    10px;
-
-  background:
-    var(--surface);
-
-  color:
-    var(--text-soft);
-
-  font-weight:
-    900;
-
-}
-
-.option-content {
-
-  min-width:
-    0;
-
-}
-
-.option-content span {
-
-  display:
-    block;
-
-  color:
-    var(--text-soft);
-
-  font-size:
-    10px;
-
-}
-
-.option-content small {
-
-  display:
-    block;
-
-  margin-top:
-    4px;
-
-  color:
-    var(--primary);
-
-  font-size:
-    9px;
-
-  font-weight:
-    800;
-
-}
-
-.option-content small.correct-label {
-
-  color:
-    var(--success);
-
-}
-
-.option-mark {
-
-  margin-right:
-    auto;
-
-}
-
-.option-mark svg {
-
-  width:
-    19px;
-
-  height:
-    19px;
-
-}
-
-.option-card.correct .option-mark {
-
-  color:
-    var(--success);
-
-}
-
-.option-card.selected-wrong .option-mark {
-
-  color:
-    var(--danger);
-
-}
-
-.question-answer-summary {
-
-  display:
-    grid;
-
-  grid-template-columns:
-    repeat(2, 1fr);
-
-  gap:
-    10px;
-
-  margin-top:
-    15px;
-
-}
-
-.question-answer-summary > div {
-
-  display:
-    flex;
-
-  justify-content:
-    space-between;
-
-  align-items:
-    center;
-
-  padding:
-    12px 14px;
-
-  border-radius:
-    13px;
-
-  background:
-    var(--surface-soft);
-
-}
-
-.question-answer-summary span {
-
-  color:
-    var(--text-faint);
-
-  font-size:
-    10px;
-
-}
-
-.question-answer-summary strong {
-
-  font-size:
-    12px;
-
-}
-
-.question-answer-summary strong.empty {
-
-  color:
-    var(--warning);
-
-}
-
-.empty-review {
-
-  padding:
-    60px 20px;
-
-  text-align:
-    center;
-
-  background:
-    var(--surface);
-
-  border:
-    1px solid var(--border);
-
-  border-radius:
-    22px;
-
-}
-
-.empty-review-icon {
-
-  width:
-    60px;
-
-  height:
-    60px;
-
-  margin:
-    0 auto;
-
-  display:
-    grid;
-
-  place-items:
-    center;
-
-  color:
-    var(--text-faint);
-
-  background:
-    var(--surface-soft);
-
-  border-radius:
-    18px;
-
-}
-
-.empty-review-icon svg {
-
-  width:
-    28px;
-
-  height:
-    28px;
-
-}
-
-.empty-review h3 {
-
-  margin:
-    16px 0 5px;
-
-}
-
-.empty-review p {
-
-  margin:
-    0;
-
-  color:
-    var(--text-faint);
-
-  font-size:
-    12px;
-
-}
-
-
-
-/* =========================================================
-   REVIEW ENHANCED UI
-========================================================= */
-
 .review-hero {
-
-  position:
-    relative;
-
-  display:
-    grid;
-
-  grid-template-columns:
-    1fr auto;
-
-  gap:
-    28px;
-
-  align-items:
-    center;
-
-  margin-bottom:
-    16px;
-
-  padding:
-    28px;
-
-  overflow:
-    hidden;
-
-  border:
-    1px solid var(--border);
-
-  border-radius:
-    26px;
-
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 170px;
+  align-items: center;
+  gap: 25px;
+  overflow: hidden;
+  padding: 28px;
+  border: 1px solid var(--border);
+  border-radius: 28px;
   background:
-    linear-gradient(
-      135deg,
-      var(--surface),
-      var(--primary-soft)
-    );
-
-  box-shadow:
-    var(--shadow);
-
+    radial-gradient(circle at 100% 0%, rgba(101,103,241,.13), transparent 20rem),
+    var(--surface);
+  box-shadow: var(--shadow);
 }
 
 .review-hero::before {
-
-  content:
-    '';
-
-  position:
-    absolute;
-
-  width:
-    220px;
-
-  height:
-    220px;
-
-  left:
-    -90px;
-
-  top:
-    -120px;
-
-  border-radius:
-    50%;
-
-  background:
-    var(--primary-soft);
-
-  pointer-events:
-    none;
-
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 8%;
+  width: 200px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--primary-light), transparent);
 }
 
-.review-hero-copy {
+.review-hero-copy { position: relative; z-index: 1; }
 
-  position:
-    relative;
-
-  z-index:
-    1;
-
-}
-
-.review-kicker {
-
-  display:
-    inline-flex;
-
-  align-items:
-    center;
-
-  gap:
-    7px;
-
-  color:
-    var(--primary);
-
-  font-size:
-    11px;
-
-  font-weight:
-    900;
-
-}
+.review-kicker { color: var(--primary); }
 
 .review-kicker::before {
-
-  content:
-    '';
-
-  width:
-    7px;
-
-  height:
-    7px;
-
-  border-radius:
-    50%;
-
-  background:
-    currentColor;
-
-  box-shadow:
-    0 0 0 5px var(--primary-soft);
-
+  background: var(--primary);
+  box-shadow: 0 0 0 5px var(--primary-soft), 0 0 14px var(--primary);
 }
 
 .review-hero h2 {
-
-  margin:
-    8px 0 7px;
-
-  font-size:
-    clamp(22px, 3vw, 30px);
-
-  line-height:
-    1.35;
-
+  margin: 8px 0 7px;
+  font-size: clamp(22px, 3vw, 31px);
+  line-height: 1.35;
+  letter-spacing: -.045em;
 }
 
 .review-hero p {
-
-  max-width:
-    700px;
-
-  margin:
-    0;
-
-  color:
-    var(--text-soft);
-
-  font-size:
-    12px;
-
-  line-height:
-    2;
-
+  max-width: 700px;
+  margin: 0;
+  color: var(--text-soft);
+  font-size: 11px;
+  line-height: 2;
 }
 
 .review-progress-row {
-
-  display:
-    flex;
-
-  align-items:
-    center;
-
-  gap:
-    12px;
-
-  margin-top:
-    20px;
-
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 20px;
 }
 
 .review-progress-track {
-
-  width:
-    min(360px, 55vw);
-
-  height:
-    8px;
-
-  overflow:
-    hidden;
-
-  border-radius:
-    99px;
-
-  background:
-    var(--border);
-
+  width: min(390px, 55vw);
+  height: 8px;
 }
 
 .review-progress-fill {
-
-  height:
-    100%;
-
-  border-radius:
-    inherit;
-
-  background:
-    linear-gradient(
-      90deg,
-      var(--primary-dark),
-      var(--primary)
-    );
-
-  box-shadow:
-    0 0 14px rgba(91,92,240,.28);
-
-  transition:
-    width .5s ease;
-
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--primary-dark), var(--primary-light));
+  box-shadow: 0 0 16px rgba(101,103,241,.35);
+  animation: barGrow 1s cubic-bezier(.2,.8,.2,1) both;
+  transition: width .5s ease;
 }
 
 .review-progress-row strong {
-
-  white-space:
-    nowrap;
-
-  color:
-    var(--text-soft);
-
-  font-size:
-    10px;
-
+  white-space: nowrap;
+  color: var(--text-soft);
+  font-size: 9px;
 }
 
 .review-donut {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 160px;
+  height: 160px;
+  justify-self: center;
+}
 
-  position:
-    relative;
-
-  z-index:
-    1;
-
-  display:
-    grid;
-
-  place-items:
-    center;
-
-  width:
-    150px;
-
-  height:
-    150px;
-
+.review-donut::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  box-shadow: 0 0 50px rgba(101,103,241,.15);
+  animation: orbPulse 2.5s ease-in-out infinite;
 }
 
 .review-donut-ring {
-
-  position:
-    relative;
-
-  display:
-    grid;
-
-  place-items:
-    center;
-
-  width:
-    140px;
-
-  height:
-    140px;
-
-  border-radius:
-    50%;
-
-  background:
-    conic-gradient(
-      var(--primary) var(--review-progress),
-      var(--border) var(--review-progress)
-    );
-
-  box-shadow:
-    0 12px 35px rgba(91,92,240,.16);
-
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 148px;
+  height: 148px;
+  border-radius: 50%;
+  background: conic-gradient(
+    var(--primary) var(--review-progress),
+    var(--border) var(--review-progress)
+  );
+  box-shadow: 0 15px 40px rgba(101,103,241,.18);
 }
 
 .review-donut-ring::before {
-
-  content:
-    '';
-
-  position:
-    absolute;
-
-  inset:
-    10px;
-
-  border-radius:
-    50%;
-
-  background:
-    var(--surface);
-
+  content: "";
+  position: absolute;
+  inset: 12px;
+  border-radius: 50%;
+  background: var(--surface-solid);
+  box-shadow: inset 0 0 30px rgba(101,103,241,.06);
 }
 
 .review-donut-center {
-
-  position:
-    relative;
-
-  z-index:
-    1;
-
-  display:
-    flex;
-
-  flex-direction:
-    column;
-
-  align-items:
-    center;
-
-  justify-content:
-    center;
-
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
 .review-donut-center strong {
-
-  font-size:
-    27px;
-
-  font-weight:
-    950;
-
+  font-size: 30px;
+  line-height: 1;
+  font-weight: 950;
 }
 
 .review-donut-center span {
-
-  margin-top:
-    2px;
-
-  color:
-    var(--text-faint);
-
-  font-size:
-    10px;
-
+  margin-top: 4px;
+  color: var(--text-faint);
+  font-size: 9px;
 }
 
 .review-dashboard {
-
-  display:
-    grid;
-
-  grid-template-columns:
-    repeat(4, 1fr);
-
-  gap:
-    12px;
-
-  margin-bottom:
-    16px;
-
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin: 15px 0;
 }
 
 .review-stat-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 17px;
+  border: 1px solid var(--border);
+  border-radius: 19px;
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  transition: transform .25s ease, box-shadow .25s ease;
+}
 
-  display:
-    flex;
-
-  align-items:
-    center;
-
-  gap:
-    12px;
-
-  min-width:
-    0;
-
-  padding:
-    16px;
-
-  border:
-    1px solid var(--border);
-
-  border-radius:
-    18px;
-
-  background:
-    var(--surface);
-
-  box-shadow:
-    var(--shadow);
-
+.review-stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow);
 }
 
 .review-stat-icon {
-
-  width:
-    42px;
-
-  height:
-    42px;
-
-  flex:
-    0 0 42px;
-
-  display:
-    grid;
-
-  place-items:
-    center;
-
-  border-radius:
-    13px;
-
-  color:
-    var(--primary);
-
-  background:
-    var(--primary-soft);
-
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  color: var(--primary);
+  background: var(--primary-soft);
 }
 
-.review-stat-card.correct .review-stat-icon {
+.review-stat-card.correct .review-stat-icon { color: var(--success); background: var(--success-soft); }
+.review-stat-card.wrong .review-stat-icon { color: var(--danger); background: var(--danger-soft); }
+.review-stat-card.unanswered .review-stat-icon { color: var(--warning); background: var(--warning-soft); }
 
-  color:
-    var(--success);
-
-  background:
-    var(--success-soft);
-
-}
-
-.review-stat-card.wrong .review-stat-icon {
-
-  color:
-    var(--danger);
-
-  background:
-    var(--danger-soft);
-
-}
-
-.review-stat-card.unanswered .review-stat-icon {
-
-  color:
-    var(--warning);
-
-  background:
-    var(--warning-soft);
-
-}
-
-.review-stat-icon svg {
-
-  width:
-    20px;
-
-  height:
-    20px;
-
-}
+.review-stat-icon svg { width: 21px; height: 21px; }
 
 .review-stat-card span {
-
-  display:
-    block;
-
-  color:
-    var(--text-faint);
-
-  font-size:
-    9px;
-
+  display: block;
+  color: var(--text-faint);
+  font-size: 9px;
 }
 
 .review-stat-card strong {
-
-  display:
-    block;
-
-  margin-top:
-    3px;
-
-  font-size:
-    21px;
-
-  font-weight:
-    950;
-
+  display: block;
+  margin-top: 3px;
+  font-size: 22px;
+  font-weight: 950;
 }
 
 .review-toolbar {
-
-  display:
-    flex;
-
-  align-items:
-    center;
-
-  justify-content:
-    space-between;
-
-  gap:
-    18px;
-
-  margin-bottom:
-    15px;
-
-  padding:
-    12px;
-
-  border:
-    1px solid var(--border);
-
-  border-radius:
-    18px;
-
-  background:
-    var(--surface);
-
-  box-shadow:
-    var(--shadow);
-
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 15px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 19px;
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
 }
 
-.review-toolbar-copy {
-
-  padding:
-    0 7px;
-
-}
+.review-toolbar-copy { padding: 0 8px; }
 
 .review-toolbar-copy span {
-
-  display:
-    block;
-
-  color:
-    var(--text-faint);
-
-  font-size:
-    9px;
-
+  display: block;
+  color: var(--text-faint);
+  font-size: 9px;
 }
 
 .review-toolbar-copy strong {
-
-  display:
-    block;
-
-  margin-top:
-    3px;
-
-  font-size:
-    12px;
-
+  display: block;
+  margin-top: 3px;
+  font-size: 11px;
 }
 
-.question-paper {
-
-  margin-top:
-    18px;
-
-  padding:
-    14px;
-
-  border:
-    1px solid var(--border);
-
-  border-radius:
-    19px;
-
-  background:
-    var(--surface-soft);
-
+.review-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 15px;
+  background: var(--surface-soft);
 }
 
-.question-paper-heading {
-
-  display:
-    flex;
-
-  align-items:
-    center;
-
-  justify-content:
-    space-between;
-
-  gap:
-    12px;
-
-  margin-bottom:
-    11px;
-
+.review-filters button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 11px;
+  border: 0;
+  border-radius: 11px;
+  color: var(--text-soft);
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  font-size: 9px;
+  font-weight: 800;
+  transition: .25s ease;
 }
 
-.question-paper-heading > div:first-child span {
-
-  display:
-    block;
-
-  color:
-    var(--text-faint);
-
-  font-size:
-    9px;
-
+.review-filters button span {
+  min-width: 18px;
+  padding: 2px 5px;
+  border-radius: 6px;
+  color: var(--text-faint);
+  background: var(--surface);
+  font-size: 8px;
 }
 
-.question-paper-heading > div:first-child strong {
+.review-filters button:hover { color: var(--text); }
 
-  display:
-    block;
-
-  margin-top:
-    3px;
-
-  font-size:
-    12px;
-
+.review-filters button.active {
+  color: var(--primary);
+  background: var(--surface);
+  box-shadow: 0 6px 18px rgba(31,41,55,.08);
 }
 
-.paper-open-link {
-
-  display:
-    inline-flex;
-
-  align-items:
-    center;
-
-  gap:
-    6px;
-
-  padding:
-    8px 10px;
-
-  border:
-    1px solid var(--border);
-
-  border-radius:
-    10px;
-
-  color:
-    var(--primary);
-
-  background:
-    var(--surface);
-
-  font-size:
-    9px;
-
-  font-weight:
-    800;
-
-  text-decoration:
-    none;
-
-  transition:
-    .2s ease;
-
+.review-filters button.active span {
+  color: var(--primary);
+  background: var(--primary-soft);
 }
 
-.paper-open-link:hover {
-
-  transform:
-    translateY(-1px);
-
-  border-color:
-    var(--primary);
-
-  box-shadow:
-    0 8px 20px rgba(91,92,240,.12);
-
-}
-
-.paper-open-link svg {
-
-  width:
-    14px;
-
-  height:
-    14px;
-
-}
-
-.question-pdf-frame {
-
-  position:
-    relative;
-
-  width:
-    100%;
-
-  
-  overflow:
-    hidden;
-
-  border:
-    1px solid var(--border);
-
-  border-radius:
-    14px;
-
-  background:
-    #fff;
-
-}
-
-.question-pdf-canvas {
-
-  display:
-    block;
-
-  max-width:
-    100%;
-
-  height:
-    auto;
-
-  margin:
-    0 auto;
-
-  background:
-    #fff;
-
-  box-shadow:
-    0 10px 30px rgba(15, 23, 42, .10);
-
-}
-
-.question-pdf-state {
-
-  position:
-    absolute;
-
-  inset:
-    0;
-
-  z-index:
-    2;
-
-  display:
-    flex;
-
-  flex-direction:
-    column;
-
-  align-items:
-    center;
-
-  justify-content:
-    center;
-
-  gap:
-    10px;
-
-  min-height:
-    260px;
-
-  padding:
-    24px;
-
-  text-align:
-    center;
-
-  color:
-    var(--text-soft);
-
-  background:
-    rgba(248, 250, 252, .94);
-
-  backdrop-filter:
-    blur(4px);
-
-  font-size:
-    11px;
-
-}
-
-.exam-result-page.is-dark .question-pdf-state {
-
-  background:
-    rgba(16, 22, 32, .94);
-
-}
-
-.question-pdf-state.error {
-
-  color:
-    var(--danger);
-
-}
-
-.question-pdf-state.error strong {
-
-  font-size:
-    12px;
-
-}
-
-.pdf-loader {
-
-  width:
-    28px;
-
-  height:
-    28px;
-
-  border:
-    3px solid var(--border);
-
-  border-top-color:
-    var(--primary);
-
-  border-radius:
-    50%;
-
-  animation:
-    pdfSpin .75s linear infinite;
-
-}
-
-@keyframes pdfSpin {
-
-  to {
-    transform:
-      rotate(360deg);
-  }
-
-}
-
-.answer-comparison {
-
-  margin-top:
-    16px;
-
-  padding:
-    15px;
-
-  border:
-    1px solid var(--border);
-
-  border-radius:
-    19px;
-
-  background:
-    var(--surface-soft);
-
-}
-
-.answer-comparison-heading {
-
-  display:
-    flex;
-
-  align-items:
-    center;
-
-  justify-content:
-    space-between;
-
-  gap:
-    12px;
-
-}
-
-.answer-comparison-heading span {
-
-  display:
-    block;
-
-  color:
-    var(--text-faint);
-
-  font-size:
-    9px;
-
-}
-
-.answer-comparison-heading strong {
-
-  display:
-    block;
-
-  margin-top:
-    3px;
-
-  font-size:
-    13px;
-
-}
-
-.answer-result-pill {
-
-  padding:
-    7px 10px;
-
-  border-radius:
-    10px;
-
-  font-size:
-    9px;
-
-  font-weight:
-    900;
-
-}
-
-.answer-result-pill.correct {
-
-  color:
-    var(--success);
-
-  background:
-    var(--success-soft);
-
-}
-
-.answer-result-pill.wrong {
-
-  color:
-    var(--danger);
-
-  background:
-    var(--danger-soft);
-
-}
-
-.answer-result-pill.unanswered {
-
-  color:
-    var(--warning);
-
-  background:
-    var(--warning-soft);
-
-}
-
-.answer-comparison .options-grid {
-
-  margin-top:
-    13px;
-
-}
+.review-list { display: grid; gap: 16px; }
 
 .question-card {
-
-  transition:
-    transform .2s ease,
-    box-shadow .2s ease;
-
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 25px;
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease;
 }
 
 .question-card:hover {
-
-  transform:
-    translateY(-2px);
-
-  box-shadow:
-    0 20px 55px rgba(31,41,55,.10);
-
+  transform: translateY(-3px);
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow);
 }
 
-.is-dark .question-card:hover {
+.question-top {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 14px;
+  padding: 18px;
+  border-bottom: 1px solid var(--border);
+}
 
-  box-shadow:
-    0 20px 55px rgba(0,0,0,.28);
+.question-number {
+  min-width: 58px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 10px;
+  border-radius: 14px;
+  color: var(--primary);
+  background: var(--primary-soft);
+}
 
+.question-number span { font-size: 8px; }
+
+.question-number strong {
+  margin-top: 2px;
+  font-size: 17px;
+  line-height: 1;
+}
+
+.question-context { min-width: 0; }
+
+.question-context strong {
+  display: block;
+  overflow: hidden;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.question-context span {
+  display: block;
+  margin-top: 4px;
+  color: var(--text-faint);
+  font-size: 9px;
+}
+
+.question-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 11px;
+  border-radius: 11px;
+  font-size: 9px;
+  font-weight: 900;
+}
+
+.question-status.correct { color: var(--success); background: var(--success-soft); }
+.question-status.wrong { color: var(--danger); background: var(--danger-soft); }
+.question-status.unanswered { color: var(--warning); background: var(--warning-soft); }
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 0 4px color-mix(in srgb, currentColor 10%, transparent);
+}
+
+.question-paper {
+  margin: 16px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--surface-soft);
+}
+
+.question-paper-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.question-paper-heading > div:first-child span {
+  display: block;
+  color: var(--text-faint);
+  font-size: 9px;
+}
+
+.question-paper-heading > div:first-child strong {
+  display: block;
+  margin-top: 3px;
+  font-size: 11px;
+}
+
+.paper-open-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 11px;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  color: var(--primary);
+  background: var(--surface);
+  font-size: 9px;
+  font-weight: 850;
+  text-decoration: none;
+  transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease;
+}
+
+.paper-open-link:hover {
+  transform: translateY(-1px);
+  border-color: var(--primary);
+  box-shadow: 0 8px 20px rgba(101,103,241,.15);
+}
+
+.paper-open-link svg { width: 14px; height: 14px; }
+
+.question-pdf-frame {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 15px;
+  background: #fff;
+  box-shadow: 0 12px 35px rgba(15,23,42,.08);
+}
+
+.question-pdf-canvas {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+  background: #fff;
+}
+
+.question-pdf-state {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 260px;
+  padding: 24px;
+  text-align: center;
+  color: var(--text-soft);
+  background: rgba(248,250,252,.94);
+  backdrop-filter: blur(7px);
+  font-size: 10px;
+}
+
+.exam-result-page.is-dark .question-pdf-state { background: rgba(16,22,32,.94); }
+
+.question-pdf-state.error { color: var(--danger); }
+.question-pdf-state.error strong { font-size: 12px; }
+
+.pdf-loader {
+  width: 28px;
+  height: 28px;
+  border: 3px solid var(--border);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin .75s linear infinite;
+}
+
+.answer-comparison {
+  margin: 16px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--surface-soft);
+}
+
+.answer-comparison-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.answer-comparison-heading span {
+  display: block;
+  color: var(--text-faint);
+  font-size: 9px;
+}
+
+.answer-comparison-heading strong {
+  display: block;
+  margin-top: 3px;
+  font-size: 12px;
+}
+
+.answer-result-pill {
+  padding: 7px 11px;
+  border-radius: 11px;
+  font-size: 9px;
+  font-weight: 900;
+}
+
+.answer-result-pill.correct { color: var(--success); background: var(--success-soft); }
+.answer-result-pill.wrong { color: var(--danger); background: var(--danger-soft); }
+.answer-result-pill.unanswered { color: var(--warning); background: var(--warning-soft); }
+
+.answer-comparison .options-grid { margin-top: 13px; }
+
+.options-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 9px;
+}
+
+.option-card {
+  position: relative;
+  min-height: 62px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 15px;
+  background: var(--surface);
+  transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease;
+}
+
+.option-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-sm);
+}
+
+.option-card.selected {
+  border-color: rgba(101,103,241,.3);
+  background: var(--primary-soft);
+}
+
+.option-card.correct {
+  border-color: rgba(24,168,139,.35);
+  background: var(--success-soft);
+}
+
+.option-card.selected-wrong {
+  border-color: rgba(227,93,104,.35);
+  background: var(--danger-soft);
+}
+
+.option-number {
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  color: var(--text-soft);
+  background: var(--surface-soft);
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.option-content { min-width: 0; }
+
+.option-content span {
+  display: block;
+  color: var(--text);
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.option-content small {
+  display: block;
+  margin-top: 3px;
+  color: var(--primary);
+  font-size: 8px;
+}
+
+.option-content .correct-label { color: var(--success); }
+
+.option-mark {
+  width: 22px;
+  height: 22px;
+  flex: 0 0 22px;
+  display: grid;
+  place-items: center;
+  margin-right: auto;
+}
+
+.option-mark svg {
+  width: 17px;
+  height: 17px;
+  color: var(--success);
+}
+
+.option-card.selected-wrong .option-mark svg { color: var(--danger); }
+
+.question-answer-summary {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin: 0 16px 16px;
+}
+
+.question-answer-summary > div {
+  padding: 13px;
+  border: 1px solid var(--border);
+  border-radius: 15px;
+  background: var(--surface-soft);
+}
+
+.question-answer-summary span {
+  display: block;
+  color: var(--text-faint);
+  font-size: 8px;
+}
+
+.question-answer-summary strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+}
+
+.question-answer-summary strong.empty { color: var(--warning); }
+
+.empty-review {
+  padding: 55px 20px;
+  border: 1px dashed var(--border-strong);
+  border-radius: 23px;
+  text-align: center;
+  background: var(--surface-soft);
+}
+
+.empty-review-icon {
+  width: 58px;
+  height: 58px;
+  display: grid;
+  place-items: center;
+  margin: 0 auto 13px;
+  border-radius: 19px;
+  color: var(--primary);
+  background: var(--primary-soft);
+}
+
+.empty-review-icon svg { width: 25px; height: 25px; }
+
+.empty-review h3 { margin: 0; font-size: 15px; }
+
+.empty-review p {
+  margin: 6px 0 0;
+  color: var(--text-faint);
+  font-size: 10px;
 }
 
 /* =========================================================
@@ -8005,430 +5206,393 @@ onBeforeUnmount(() => {
 ========================================================= */
 
 .result-footer {
-
-  display:
-    flex;
-
-  justify-content:
-    space-between;
-
-  align-items:
-    center;
-
-  gap:
-    20px;
-
-  margin-top:
-    25px;
-
-  padding:
-    20px 5px;
-
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  margin-top: 28px;
+  padding: 22px 5px;
 }
 
-.result-footer strong {
-
-  display:
-    block;
-
-  font-size:
-    14px;
-
-}
+.result-footer strong { display: block; font-size: 14px; }
 
 .result-footer span {
-
-  display:
-    block;
-
-  margin-top:
-    4px;
-
-  color:
-    var(--text-faint);
-
-  font-size:
-    10px;
-
+  display: block;
+  margin-top: 4px;
+  color: var(--text-faint);
+  font-size: 9px;
 }
 
 .result-footer button {
-
-  display:
-    flex;
-
-  align-items:
-    center;
-
-  gap:
-    7px;
-
-  border:
-    0;
-
-  background:
-    transparent;
-
-  color:
-    var(--primary);
-
-  cursor:
-    pointer;
-
-  font:
-    inherit;
-
-  font-size:
-    11px;
-
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--primary);
+  background: var(--surface);
+  cursor: pointer;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 800;
+  box-shadow: var(--shadow-sm);
+  transition: transform .2s ease, box-shadow .2s ease;
 }
 
-.result-footer button svg {
-
-  width:
-    17px;
-
-  height:
-    17px;
-
+.result-footer button:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
 }
 
+.result-footer button svg { width: 16px; height: 16px; }
+
+/* =========================================================
+   ANIMATIONS
+========================================================= */
+
+@keyframes pageReveal {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes itemIn {
+  from { opacity: 0; transform: translateY(12px) scale(.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes tabIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes avatarIn {
+  from { opacity: 0; transform: scale(.72) rotate(-6deg); }
+  to { opacity: 1; transform: scale(1) rotate(0); }
+}
+
+@keyframes scoreIn {
+  from { opacity: 0; transform: scale(.76) rotate(8deg); }
+  to { opacity: 1; transform: scale(1) rotate(0); }
+}
+
+@keyframes statusPulse {
+  0%, 100% { box-shadow: 0 0 0 4px rgba(54,214,177,.1), 0 0 14px rgba(54,214,177,.4); }
+  50% { box-shadow: 0 0 0 8px rgba(54,214,177,.03), 0 0 26px rgba(54,214,177,.65); }
+}
+
+@keyframes crownFloat {
+  0%, 100% { transform: translateY(0) rotate(0); }
+  50% { transform: translateY(-4px) rotate(2deg); }
+}
+
+@keyframes orbPulse {
+  0%, 100% { transform: scale(.96); opacity: .75; }
+  50% { transform: scale(1.04); opacity: 1; }
+}
+
+@keyframes orbit {
+  from { transform: rotate(0deg) translateX(31px) rotate(0deg); }
+  to { transform: rotate(360deg) translateX(31px) rotate(-360deg); }
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+@keyframes barGrow {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+@keyframes auroraShift {
+  0% { transform: translate(0,0) scale(1); opacity: .65; }
+  50% { transform: translate(3%,-2%) scale(1.1); opacity: .85; }
+  100% { transform: translate(-2%,2%) scale(1.05); opacity: .7; }
+}
+
+/* Signal */
+@keyframes radarSweep { to { transform: rotate(360deg); } }
+
+@keyframes radarRing {
+  0% { transform: scale(.4); opacity: .6; }
+  100% { transform: scale(1.3); opacity: 0; }
+}
+
+@keyframes radarCore {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.3); opacity: .7; }
+}
+
+/* Peak */
+@keyframes peakFill { from { width: 0; } }
+
+@keyframes peakMarker {
+  0% { opacity: 0; transform: translate(50%, -50%) scale(0); }
+  70% { transform: translate(50%, -50%) scale(1.15); }
+  100% { opacity: 1; transform: translate(50%, -50%) scale(1); }
+}
+
+@keyframes peakPulse {
+  0% { transform: translate(50%, -50%) scale(.6); opacity: .5; }
+  100% { transform: translate(50%, -50%) scale(1.8); opacity: 0; }
+}
+
+/* League */
+@keyframes leagueBorderGlow {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+
+@keyframes particleFloat {
+  0%, 100% { transform: translate(0,0); opacity: .3; }
+  50% { transform: translate(15px,-20px); opacity: .9; }
+}
+
+@keyframes seasonPulse {
+  50% { box-shadow: 0 0 0 8px rgba(43,211,176,.03), 0 0 25px rgba(43,211,176,.8); }
+}
+
+@keyframes emblemFloat {
+  0%,100% { transform: translateY(0) rotate(0); }
+  50% { transform: translateY(-10px) rotate(1.5deg); }
+}
+
+@keyframes auraPulse {
+  0%,100% { transform: scale(1); opacity: .85; }
+  50% { transform: scale(1.15); opacity: 1; }
+}
+
+@keyframes emblemSpin { to { transform: rotate(360deg); } }
+@keyframes emblemSpinReverse { to { transform: rotate(-360deg); } }
+
+@keyframes coreGlow {
+  0%,100% {
+    box-shadow:
+      0 0 40px var(--league-glow),
+      0 0 80px var(--league-soft),
+      inset 0 0 30px var(--league-soft),
+      inset 0 2px 4px rgba(255,255,255,.15);
+  }
+  50% {
+    box-shadow:
+      0 0 60px var(--league-glow),
+      0 0 120px var(--league-soft),
+      inset 0 0 45px var(--league-soft),
+      inset 0 2px 4px rgba(255,255,255,.2);
+  }
+}
+
+@keyframes emblemIcon {
+  0%,100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-3px) scale(1.06); }
+}
+
+
+@keyframes titleGradient {
+  0%,100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+@keyframes leagueBar { from { width: 0 !important; } }
+
+@keyframes gradientMove { to { background-position: 180% 0; } }
+
+@keyframes progressKnob {
+  from { opacity: 0; transform: translateY(-50%) scale(.4); }
+  to { opacity: 1; transform: translateY(-50%) scale(1); }
+}
+
+@keyframes arrowPulse {
+  0%,100% { transform: scale(1); }
+  50% { transform: scale(1.08); box-shadow: 0 0 0 6px rgba(101,103,241,.08); }
+}
+
+@keyframes tierBadgePulse {
+  0%,100% { box-shadow: 0 0 22px var(--league-glow), inset 0 0 12px var(--league-soft); }
+  50% { box-shadow: 0 0 34px var(--league-glow), inset 0 0 18px var(--league-soft); }
+}
+
+@keyframes distanceBounce {
+  0%,100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
 
 /* =========================================================
    RESPONSIVE
 ========================================================= */
 
 @media (max-width: 1050px) {
-
-  .summary-grid {
-
-    grid-template-columns:
-      repeat(2, 1fr);
-
-  }
-
-  .booklet-cards {
-
-    grid-template-columns:
-      1fr;
-
-  }
-
+  .summary-grid { grid-template-columns: repeat(2, 1fr); }
+  .booklet-cards { grid-template-columns: 1fr; }
+  .review-dashboard { grid-template-columns: repeat(2, 1fr); }
+  .signal-panel { grid-template-columns: 110px 1fr auto; gap: 20px; }
 }
 
+@media (max-width: 850px) {
+  .exam-result-page { padding: 18px 12px 50px; }
 
-@media (max-width: 800px) {
+  .hero-card { padding: 24px; border-radius: 27px; }
+  .hero-content { flex-direction: column; align-items: flex-start; }
+  .hero-score { align-self: center; }
+  .hero-bottom { flex-direction: column; gap: 9px; }
 
-  .review-hero {
+  .signal-panel {
     grid-template-columns: 1fr;
+    text-align: center;
     padding: 22px;
   }
-
-  .review-donut {
-    justify-self: center;
+  .signal-radar { margin-inline: auto; }
+  .signal-meta {
+    flex-direction: row;
+    justify-content: center;
+    gap: 30px;
+    padding-inline-start: 0;
+    padding-top: 16px;
+    border-inline-start: 0;
+    border-top: 1px solid var(--border);
   }
 
-  .review-dashboard {
-    grid-template-columns: repeat(2, 1fr);
-  }
+  .ranking-grid,
+  .raw-comparison { grid-template-columns: 1fr; }
+
+  .previous-content { gap: 18px; }
+  .previous-details { grid-template-columns: repeat(2, 1fr); }
+  .previous-details > div:nth-child(2) { border-left: 0; }
+
+  .insights-grid { grid-template-columns: 1fr; }
+
+  .review-hero { grid-template-columns: 1fr; }
+  .review-donut { justify-self: center; }
 
   .review-toolbar {
     align-items: flex-start;
     flex-direction: column;
   }
+  .review-toolbar,
+  .review-filters { width: 100%; }
 
-}
-
-
-@media (max-width: 800px) {
-
-  .exam-result-page {
-
-    padding:
-      15px 12px 50px;
-
-  }
-
-  .hero-card {
-
-    padding:
-      23px;
-
-    border-radius:
-      24px;
-
-  }
-
-  .hero-content {
-
-    flex-direction:
-      column;
-
-    align-items:
-      flex-start;
-
-  }
-
-  .hero-score {
-
-    align-self:
-      center;
-
-  }
-
-  .hero-bottom {
-
-    flex-direction:
-      column;
-
-  }
-
-  .ranking-grid,
-  .raw-comparison {
-
-    grid-template-columns:
-      1fr;
-
-  }
-
-  .previous-content {
-
-    gap:
-      18px;
-
-  }
-
-  .previous-details {
-
-    grid-template-columns:
-      repeat(2, 1fr);
-
-    gap:
-      15px;
-
-  }
-
-  .previous-details > div {
-
-    border-left:
-      0;
-
-  }
-
-  .insights-grid {
-
-    grid-template-columns:
-      1fr;
-
-  }
-
-  .review-header {
-
-    flex-direction:
-      column;
-
-    align-items:
-      flex-start;
-
-  }
-
-}
-
-
-@media (max-width: 600px) {
-
-  .review-dashboard {
+  .league-main {
     grid-template-columns: 1fr;
+    text-align: center;
   }
+  .league-copy { width: 100%; }
+  .league-title-row { text-align: right; }
+  .league-foot { text-align: right; }
+
+  .analytics-intro { align-items: flex-start; }
+  .comparison-chartjs-wrap,
+  .progress-chartjs-wrap { height: 290px; }
+
+  .peak-bottom { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 650px) {
+  .result-tabs { top: 8px; margin: 13px 0; }
+  .result-tab { min-height: 46px; padding-inline: 12px; }
+  .result-tab span:not(.tab-icon) { font-size: 9px; }
+
+  .summary-grid,
+  .review-dashboard { grid-template-columns: 1fr; }
+
+  .section-intro {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .previous-details { grid-template-columns: 1fr 1fr; }
+  .previous-details > div { border-left: 0; }
 
   .review-progress-row {
     align-items: flex-start;
     flex-direction: column;
   }
+  .review-progress-track { width: 100%; }
 
-  .review-progress-track {
-    width: 100%;
-  }
-
-  .question-paper {
-    padding: 10px;
-  }
-
+  .question-paper { margin: 10px; padding: 10px; }
   .question-paper-heading,
   .answer-comparison-heading {
     align-items: flex-start;
     flex-direction: column;
   }
 
-  .question-pdf-canvas {
-    max-width: 100%;
+  .question-top { grid-template-columns: auto 1fr; }
+  .question-status {
+    grid-column: 1 / -1;
+    justify-self: start;
   }
 
-}
-
-
-@media (max-width: 600px) {
-
-  .summary-grid {
-
-    grid-template-columns:
-      1fr;
-
-  }
-
-  .metric-card {
-
-    min-height:
-      100px;
-
-  }
-
-  .panel {
-
-    padding:
-      18px;
-
-    border-radius:
-      19px;
-
-  }
-
-  .section-intro h2,
-  .review-header h2 {
-
-    font-size:
-      21px;
-
-  }
-
-  .booklet-card {
-
-    padding:
-      17px;
-
-  }
-
-  .answer-breakdown {
-
-    grid-template-columns:
-      1fr;
-
-  }
-
-  .booklet-ranks {
-
-    grid-template-columns:
-      1fr;
-
-  }
-
-  .comparison-chart {
-
-    overflow-x:
-      auto;
-
-    justify-content:
-      flex-start;
-
-    min-width:
-      650px;
-
-  }
-
-  .chart-panel {
-
-    overflow-x:
-      auto;
-
-  }
-
-  .line-chart {
-
-    min-width:
-      650px;
-
-  }
-
-  .options-grid {
-
-    grid-template-columns:
-      repeat(2, 1fr);
-
-  }
-
-  .question-top {
-
-    flex-wrap:
-      wrap;
-
-  }
-
-  .question-context {
-
-    order:
-      3;
-
-    flex-basis:
-      100%;
-
-  }
-
-  .question-answer-summary {
-
-    grid-template-columns:
-      1fr;
-
-  }
+  .options-grid { grid-template-columns: repeat(2, 1fr); }
+  .question-answer-summary { grid-template-columns: 1fr; }
 
   .result-footer {
-
-    flex-direction:
-      column;
-
-    align-items:
-      flex-start;
-
+    align-items: flex-start;
+    flex-direction: column;
   }
 
+  .league-panel { padding: 22px; border-radius: 24px; }
+  .league-head { align-items: flex-start; flex-direction: column; }
+  .league-season { align-self: flex-start; }
+
+  .league-emblem { width: 170px; height: 170px; }
+  .emblem-core { width: 92px; height: 92px; }
+  .emblem-core svg { width: 54px; height: 54px; }
+
+  .league-main { gap: 20px; }
+  .league-title-row { gap: 10px; }
+  .league-title-row h3 { font-size: 28px; }
+
+  .league-foot { grid-template-columns: 1fr; }
+  .league-track { grid-template-columns: repeat(3, 1fr); }
+  .tier.active::after { display: none; }
+
+  .league-distance { flex-wrap: wrap; }
+
+  .peak-track-wrap { padding: 0 10px; }
+  .peak-marker-dot { width: 52px; height: 52px; }
+  .peak-marker-dot span { font-size: 11px; }
 }
 
-
-@media (max-width: 390px) {
+@media (max-width: 430px) {
+  .hero-card { padding: 20px; }
+  .hero-user { gap: 11px; }
 
   .avatar-wrap {
-
-    width:
-      65px;
-
-    height:
-      65px;
-
-    flex-basis:
-      65px;
-
-  }
-
-  .hero-user {
-
-    gap:
-      11px;
-
+    width: 66px;
+    height: 66px;
+    flex-basis: 66px;
   }
 
   .hero-user-info h1 {
-
-    font-size:
-      19px;
-
+    max-width: calc(100vw - 125px);
+    font-size: 20px;
   }
 
-  .options-grid {
+  .score-ring { width: 142px; height: 142px; }
+  .score-center strong { font-size: 29px; }
 
-    grid-template-columns:
-      1fr;
+  .panel { padding: 18px; border-radius: 21px; }
+  .booklet-card { padding: 17px; }
 
+  .answer-breakdown,
+  .booklet-ranks { grid-template-columns: 1fr; }
+
+  .options-grid { grid-template-columns: 1fr; }
+
+  .review-hero { padding: 20px; }
+  .review-filters {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
   }
-
+  .review-filters button { justify-content: center; }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .exam-result-page *,
+  .exam-result-page *::before,
+  .exam-result-page *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: .001ms !important;
+  }
+}
 </style>

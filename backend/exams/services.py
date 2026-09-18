@@ -1,11 +1,17 @@
-from decimal import Decimal, ROUND_HALF_UP
 from datetime import timedelta
 
 from django.db import transaction
 from django.utils import timezone
 
-from .models import Exam, ExamAttempt, ExamAttemptStatus
-from .result_service import negative_percentage, raw_percentage
+from .models import (
+    Exam,
+    ExamAttempt,
+    ExamAttemptStatus,
+)
+
+from .result_service import (
+    calculate_attempt_stats,
+)
 
 
 class ExamError(Exception):
@@ -14,12 +20,16 @@ class ExamError(Exception):
 
 def get_exam_status(exam):
     now = timezone.now()
+
     if not exam.is_active:
         return "inactive"
+
     if now < exam.start_at:
         return "not_started"
+
     if now >= exam.end_at:
         return "ended"
+
     return "running"
 
 
@@ -28,41 +38,85 @@ def start_exam(*, user, exam_id):
     exam = (
         Exam.objects
         .select_for_update()
-        .filter(id=exam_id, is_active=True)
+        .filter(
+            id=exam_id,
+            is_active=True,
+        )
         .first()
     )
 
     if not exam:
-        raise ExamError("آزمون موردنظر پیدا نشد.")
+        raise ExamError(
+            "آزمون موردنظر پیدا نشد."
+        )
 
     now = timezone.now()
 
     if now < exam.start_at:
-        raise ExamError("زمان شروع این آزمون هنوز نرسیده است.")
+        raise ExamError(
+            "زمان شروع این آزمون هنوز نرسیده است."
+        )
 
     if now >= exam.end_at:
-        raise ExamError("زمان شرکت در این آزمون به پایان رسیده است.")
+        raise ExamError(
+            "زمان شرکت در این آزمون به پایان رسیده است."
+        )
 
     existing = (
         ExamAttempt.objects
-        .filter(user=user, exam=exam)
+        .filter(
+            user=user,
+            exam=exam,
+        )
         .first()
     )
 
     if existing:
-        if existing.status == ExamAttemptStatus.IN_PROGRESS:
-            if timezone.now() < existing.expires_at:
+        if (
+            existing.status
+            == ExamAttemptStatus.IN_PROGRESS
+        ):
+            if (
+                timezone.now()
+                < existing.expires_at
+            ):
                 return existing
 
-            existing.status = ExamAttemptStatus.EXPIRED
-            existing.submitted_at = timezone.now()
-            existing.save(update_fields=["status", "submitted_at", "updated_at"])
-            raise ExamError("زمان این آزمون برای شما به پایان رسیده است.")
+            existing.status = (
+                ExamAttemptStatus.EXPIRED
+            )
 
-        raise ExamError("شما قبلاً در این آزمون شرکت کرده‌اید.")
+            existing.submitted_at = (
+                timezone.now()
+            )
 
-    duration_end = now + timedelta(minutes=exam.duration_minutes)
-    real_expires_at = min(duration_end, exam.end_at)
+            existing.save(
+                update_fields=[
+                    "status",
+                    "submitted_at",
+                    "updated_at",
+                ]
+            )
+
+            raise ExamError(
+                "زمان این آزمون برای شما به پایان رسیده است."
+            )
+
+        raise ExamError(
+            "شما قبلاً در این آزمون شرکت کرده‌اید."
+        )
+
+    duration_end = (
+        now
+        + timedelta(
+            minutes=exam.duration_minutes
+        )
+    )
+
+    real_expires_at = min(
+        duration_end,
+        exam.end_at,
+    )
 
     return ExamAttempt.objects.create(
         user=user,
@@ -73,22 +127,40 @@ def start_exam(*, user, exam_id):
     )
 
 
-def normalize_answers(answers, total_questions):
+def normalize_answers(
+    answers,
+    total_questions,
+):
     if not isinstance(answers, dict):
-        raise ExamError("فرمت پاسخ‌ها نامعتبر است.")
+        raise ExamError(
+            "فرمت پاسخ‌ها نامعتبر است."
+        )
 
     normalized = {}
 
-    for question_number, answer in answers.items():
+    for question_number, answer in (
+        answers.items()
+    ):
         try:
-            question_number = int(question_number)
+            question_number = int(
+                question_number
+            )
         except (TypeError, ValueError):
             continue
 
-        if not 1 <= question_number <= total_questions:
+        if not (
+            1
+            <= question_number
+            <= total_questions
+        ):
             continue
 
-        if answer in (None, "", 0, "0"):
+        if answer in (
+            None,
+            "",
+            0,
+            "0",
+        ):
             continue
 
         try:
@@ -96,57 +168,117 @@ def normalize_answers(answers, total_questions):
         except (TypeError, ValueError):
             continue
 
-        if answer not in {1, 2, 3, 4}:
+        if answer not in {
+            1,
+            2,
+            3,
+            4,
+        }:
             continue
 
-        normalized[str(question_number)] = answer
+        normalized[
+            str(question_number)
+        ] = answer
 
     return normalized
 
 
 @transaction.atomic
-def save_attempt_answers(*, user, attempt_id, answers):
+def save_attempt_answers(
+    *,
+    user,
+    attempt_id,
+    answers,
+):
     attempt = (
         ExamAttempt.objects
         .select_for_update()
         .select_related("exam")
-        .filter(id=attempt_id, user=user)
+        .filter(
+            id=attempt_id,
+            user=user,
+        )
         .first()
     )
 
     if not attempt:
-        raise ExamError("آزمون شما پیدا نشد.")
+        raise ExamError(
+            "آزمون شما پیدا نشد."
+        )
 
-    if attempt.status != ExamAttemptStatus.IN_PROGRESS:
-        raise ExamError("این آزمون دیگر در حال اجرا نیست.")
+    if (
+        attempt.status
+        != ExamAttemptStatus.IN_PROGRESS
+    ):
+        raise ExamError(
+            "این آزمون دیگر در حال اجرا نیست."
+        )
 
     now = timezone.now()
 
     if now >= attempt.expires_at:
-        attempt.status = ExamAttemptStatus.EXPIRED
-        attempt.submitted_at = now
-        attempt.save(update_fields=["status", "submitted_at", "updated_at"])
-        raise ExamError("زمان آزمون به پایان رسیده است.")
+        attempt.status = (
+            ExamAttemptStatus.EXPIRED
+        )
 
-    attempt.answers = normalize_answers(answers, attempt.exam.total_questions)
-    attempt.save(update_fields=["answers", "updated_at"])
+        attempt.submitted_at = now
+
+        attempt.save(
+            update_fields=[
+                "status",
+                "submitted_at",
+                "updated_at",
+            ]
+        )
+
+        raise ExamError(
+            "زمان آزمون به پایان رسیده است."
+        )
+
+    attempt.answers = normalize_answers(
+        answers,
+        attempt.exam.total_questions,
+    )
+
+    attempt.save(
+        update_fields=[
+            "answers",
+            "updated_at",
+        ]
+    )
+
     return attempt
 
 
 @transaction.atomic
-def submit_attempt(*, user, attempt_id, answers=None, force_expired=False):
+def submit_attempt(
+    *,
+    user,
+    attempt_id,
+    answers=None,
+    force_expired=False,
+):
     attempt = (
         ExamAttempt.objects
         .select_for_update()
         .select_related("exam")
-        .filter(id=attempt_id, user=user)
+        .prefetch_related("exam__booklets")
+        .filter(
+            id=attempt_id,
+            user=user,
+        )
         .first()
     )
 
     if not attempt:
-        raise ExamError("آزمون شما پیدا نشد.")
+        raise ExamError(
+            "آزمون شما پیدا نشد."
+        )
 
-    if attempt.status != ExamAttemptStatus.IN_PROGRESS:
+    if (
+        attempt.status
+        != ExamAttemptStatus.IN_PROGRESS
+    ):
         return attempt
 
     now = timezone.now()
@@ -159,58 +291,76 @@ def submit_attempt(*, user, attempt_id, answers=None, force_expired=False):
 
     attempt.status = (
         ExamAttemptStatus.EXPIRED
-        if now >= attempt.expires_at or force_expired
+        if (
+            now >= attempt.expires_at
+            or force_expired
+        )
         else ExamAttemptStatus.SUBMITTED
     )
 
-    key = attempt.exam.answer_key or {}
-    answers_data = attempt.answers or {}
-    total = attempt.exam.total_questions
+    # ---------------------------------------------------------
+    # آمار مستقیم کل سوالات
+    # ---------------------------------------------------------
 
-    correct = 0
-    wrong = 0
+    stats = calculate_attempt_stats(
+        attempt
+    )
 
-    for q in range(1, total + 1):
-        user_answer = answers_data.get(str(q))
-        correct_answer = key.get(str(q))
-        if correct_answer is None:
-            correct_answer = key.get(q)
+    # ---------------------------------------------------------
+    # درصد کل وزنی دفترچه‌ها
+    # ---------------------------------------------------------
 
-        if user_answer is None:
-            continue
+    booklets = list(
+        attempt.exam.booklets.all()
+        .order_by("order")
+    )
 
-        try:
-            user_answer = int(user_answer)
-            correct_answer = int(correct_answer)
-        except (TypeError, ValueError):
-            wrong += 1
-            continue
+    weighted = (
+        calculate_weighted_exam_scores(
+            attempt,
+            booklets,
+        )
+    )
 
-        if user_answer == correct_answer:
-            correct += 1
-        else:
-            wrong += 1
+    attempt.correct_count = stats[
+        "correct"
+    ]
 
-    unanswered = max(0, total - correct - wrong)
+    attempt.wrong_count = stats[
+        "wrong"
+    ]
 
-    attempt.correct_count = correct
-    attempt.wrong_count = wrong
-    attempt.unanswered_count = unanswered
-    attempt.score = negative_percentage(correct, wrong, total)
-    attempt.raw_score = raw_percentage(correct, total)
+    attempt.unanswered_count = stats[
+        "unanswered"
+    ]
+
+    # درصد رسمی کل آزمون
+    attempt.score = weighted[
+        "score"
+    ]
+
+    # درصد خام کل آزمون
+    attempt.raw_score = weighted[
+        "raw_score"
+    ]
+
     attempt.submitted_at = now
 
-    attempt.save(update_fields=[
-        "answers",
-        "status",
-        "correct_count",
-        "wrong_count",
-        "unanswered_count",
-        "score",
-        "raw_score",
-        "submitted_at",
-        "updated_at",
-    ])
+    attempt.save(
+        update_fields=[
+            "answers",
+            "status",
+            "correct_count",
+            "wrong_count",
+            "unanswered_count",
+            "score",
+            "raw_score",
+            "submitted_at",
+            "updated_at",
+        ]
+    )
 
-    # نتیجه اولیه توسط build_exam_result هنگام مشاهده کارنامه ساخته می‌شود.
+    # نتیجه نهایی بعداً توسط finalize_exam
+    # یا build_exam_result ساخته/به‌روزرسانی می‌شود.
+
     return attempt

@@ -5,114 +5,135 @@
       <RouterView />
     </main>
 
-    <!-- نوار پایین -->
-    <nav class="bottom-nav">
-      <RouterLink
-        v-for="item in navItems"
-        :key="item.name"
-        :to="{ name: item.name }"
-        class="nav-item"
-        exact-active-class="nav-item-active"
+    <!-- دکمه باز کردن نوار (وقتی بسته است) -->
+    <Transition name="fade-up">
+      <button
+        v-if="!isNavVisible"
+        class="nav-toggle-open"
+        @click="isNavVisible = true"
+        aria-label="باز کردن نوار ناوبری"
       >
-        <span
-          v-if="item.notification"
-          class="nav-notification"
-        ></span>
-
         <svg
-          class="nav-icon"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
-          stroke-width="1.8"
+          stroke-width="2"
           stroke-linecap="round"
           stroke-linejoin="round"
+          class="toggle-icon"
         >
-          <template v-if="item.icon === 'home'">
-            <path d="m3 10 9-7 9 7" />
-            <path d="M5 9v11h14V9" />
-            <path d="M9 20v-6h6v6" />
-          </template>
-
-          <template v-else-if="item.icon === 'planner'">
-            <rect x="4" y="4" width="16" height="16" rx="3" />
-            <path d="M8 2v4" />
-            <path d="M16 2v4" />
-            <path d="M4 9h16" />
-            <path d="M8 13h2" />
-            <path d="M14 13h2" />
-            <path d="M8 17h2" />
-          </template>
-
-          <template v-else-if="item.icon === 'rooms'">
-            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-            <circle cx="9" cy="7" r="4" />
-            <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-          </template>
-
-          <template v-else-if="item.icon === 'exams'">
-            <rect x="5" y="3" width="14" height="18" rx="2" />
-            <path d="M9 7h6" />
-            <path d="M9 11h6" />
-            <path d="M9 15h4" />
-          </template>
-
-          <template v-else-if="item.icon === 'messages'">
-            <path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5H8l-4 2v-5.2A7.5 7.5 0 1 1 20 11.5Z" />
-            <circle cx="8.5" cy="11.5" r=".7" fill="currentColor" stroke="none" />
-            <circle cx="12" cy="11.5" r=".7" fill="currentColor" stroke="none" />
-            <circle cx="15.5" cy="11.5" r=".7" fill="currentColor" stroke="none" />
-          </template>
-
-          <template v-else-if="item.icon === 'profile'">
-            <circle cx="12" cy="12" r="9" />
-            <circle cx="12" cy="9" r="3" />
-            <path d="M6.5 19a6 6 0 0 1 11 0" />
-          </template>
+          <path d="m18 15-6-6-6 6" />
         </svg>
+      </button>
+    </Transition>
 
-        <span class="nav-label">{{ item.label }}</span>
-      </RouterLink>
-    </nav>
+    <!-- نوار پایین -->
+    <Transition name="slide-down">
+      <nav v-if="isNavVisible" class="bottom-nav">
+        <!-- دکمه بستن نوار -->
+        <button
+          class="nav-toggle-close"
+          @click="isNavVisible = false"
+          aria-label="بستن نوار ناوبری"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.4"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="toggle-icon"
+          >
+            <path d="m6 9 6 6 6-6" />
+          </svg>
+        </button>
+
+        <RouterLink
+          v-for="item in navItems"
+          :key="item.name"
+          :to="{ name: item.name }"
+          class="nav-item"
+          exact-active-class="nav-item-active"
+        >
+          <span
+            v-if="item.notification"
+            class="nav-notification"
+          ></span>
+
+          <svg
+            class="nav-icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <template v-if="item.icon === 'home'">
+              <path d="m3 10 9-7 9 7" />
+              <path d="M5 9v11h14V9" />
+              <path d="M9 20v-6h6v6" />
+            </template>
+
+            <template v-else-if="item.icon === 'planner'">
+              <rect x="4" y="4" width="16" height="16" rx="3" />
+              <path d="M8 2v4" />
+              <path d="M16 2v4" />
+              <path d="M4 9h16" />
+              <path d="M8 13h2" />
+              <path d="M14 13h2" />
+              <path d="M8 17h2" />
+            </template>
+
+            <template v-else-if="item.icon === 'rooms'">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+              <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+            </template>
+
+            <template v-else-if="item.icon === 'exams'">
+              <rect x="5" y="3" width="14" height="18" rx="2" />
+              <path d="M9 7h6" />
+              <path d="M9 11h6" />
+              <path d="M9 15h4" />
+            </template>
+
+            <template v-else-if="item.icon === 'messages'">
+              <path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5H8l-4 2v-5.2A7.5 7.5 0 1 1 20 11.5Z" />
+              <circle cx="8.5" cy="11.5" r=".7" fill="currentColor" stroke="none" />
+              <circle cx="12" cy="11.5" r=".7" fill="currentColor" stroke="none" />
+              <circle cx="15.5" cy="11.5" r=".7" fill="currentColor" stroke="none" />
+            </template>
+
+            <template v-else-if="item.icon === 'profile'">
+              <circle cx="12" cy="12" r="9" />
+              <circle cx="12" cy="9" r="3" />
+              <path d="M6.5 19a6 6 0 0 1 11 0" />
+            </template>
+          </svg>
+
+          <span class="nav-label">{{ item.label }}</span>
+        </RouterLink>
+      </nav>
+    </Transition>
   </div>
 </template>
 
 <script setup>
+import { ref } from 'vue'
 import { RouterLink, RouterView } from 'vue-router'
 
+const isNavVisible = ref(true)
+
 const navItems = [
-  {
-    name: 'home',
-    label: 'خانه',
-    icon: 'home'
-  },
-  {
-    name: 'planner',
-    label: 'برنامه‌ریز',
-    icon: 'planner'
-  },
-  {
-    name: 'rooms',
-    label: 'سالن‌ها',
-    icon: 'rooms'
-  },
-  {
-    name: 'exams',
-    label: 'آزمون‌ها',
-    icon: 'exams'
-  },
-  {
-    name: 'messages',
-    label: 'پیام‌ها',
-    icon: 'messages',
-    notification: true
-  },
-  {
-    name: 'profile',
-    label: 'پروفایل',
-    icon: 'profile'
-  }
+  { name: 'home', label: 'خانه', icon: 'home' },
+  { name: 'planner', label: 'برنامه‌ریز', icon: 'planner' },
+  { name: 'rooms', label: 'سالن‌ها', icon: 'rooms' },
+  { name: 'exams', label: 'آزمون‌ها', icon: 'exams' },
+  { name: 'messages', label: 'پیام‌ها', icon: 'messages', notification: true },
+  { name: 'profile', label: 'پروفایل', icon: 'profile' }
 ]
 </script>
 
@@ -258,6 +279,130 @@ const navItems = [
 
   border: 2px solid rgba(15, 23, 42, 0.97);
   border-radius: 50%;
+}
+
+/* =========================
+   Toggle Buttons
+========================= */
+
+.nav-toggle-close {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+
+  width: 24px;
+  height: 24px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: rgba(15, 23, 42, 0.97);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 50%;
+
+  color: #94a3b8;
+  cursor: pointer;
+
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.3);
+
+  transition:
+    color 0.2s ease,
+    background 0.2s ease,
+    transform 0.2s ease;
+}
+
+.nav-toggle-close:hover {
+  color: #ffffff;
+  background: rgba(30, 41, 59, 0.98);
+}
+
+.nav-toggle-close:active {
+  transform: translateX(-50%) scale(0.9);
+}
+
+.nav-toggle-open {
+  position: fixed;
+  z-index: 1000;
+
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+
+  width: 36px;
+  height: 36px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: rgba(15, 23, 42, 0.97);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 50%;
+
+  color: #94a3b8;
+  cursor: pointer;
+
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.35);
+
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+
+  transition:
+    color 0.2s ease,
+    background 0.2s ease,
+    transform 0.2s ease;
+}
+
+.nav-toggle-open:hover {
+  color: #ffffff;
+  background: rgba(30, 41, 59, 0.98);
+  transform: translateX(-50%) scale(1.08);
+}
+
+.nav-toggle-open:active {
+  transform: translateX(-50%) scale(0.92);
+}
+
+.toggle-icon {
+  width: 14px;
+  height: 14px;
+}
+
+.nav-toggle-open .toggle-icon {
+  width: 18px;
+  height: 18px;
+}
+
+/* =========================
+   Transitions
+========================= */
+
+.slide-down-enter-active,
+.slide-down-leave-active {
+  transition:
+    transform 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.35s ease;
+}
+
+.slide-down-enter-from,
+.slide-down-leave-to {
+  transform: translateX(-50%) translateY(120%);
+  opacity: 0;
+}
+
+.fade-up-enter-active,
+.fade-up-leave-active {
+  transition:
+    transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.3s ease;
+}
+
+.fade-up-enter-from,
+.fade-up-leave-to {
+  transform: translateX(-50%) translateY(20px) scale(0.8);
+  opacity: 0;
 }
 
 /* =========================
