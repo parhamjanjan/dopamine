@@ -107,6 +107,28 @@
         </div>
       </section>
 
+      <!-- RESULT PULSE -->
+      <section class="result-pulse" aria-label="نمایش سریع عملکرد">
+        <div class="pulse-main">
+          <div class="pulse-orbit" aria-hidden="true">
+            <span class="orbit orbit-one"></span>
+            <span class="orbit orbit-two"></span>
+            <span class="orbit-dot"></span>
+          </div>
+          <div class="pulse-copy">
+            <span class="pulse-kicker">نمایش هوشمند عملکرد</span>
+            <strong>{{ performanceSignal.title }}</strong>
+            <p>{{ performanceSignal.description }}</p>
+          </div>
+        </div>
+        <div class="pulse-stats">
+          <div><span>صدک</span><strong>{{ formatPercent(percentile) }}٪</strong></div>
+          <div><span>رتبه</span><strong>{{ formatRank(result.ranking?.national_rank) }}</strong></div>
+          <div><span>دقت</span><strong>{{ formatPercent(answerAccuracy) }}٪</strong></div>
+          <div><span>فاصله تا ۷۵٪</span><strong>{{ formatPercent(targetGap) }}٪</strong></div>
+        </div>
+      </section>
+
       <!-- TABS -->
       <nav class="result-tabs">
         <button
@@ -265,6 +287,55 @@
             </div>
           </div>
         </div>
+
+        <!-- SMART INSIGHTS -->
+        <section class="smart-insights">
+          <div class="smart-insight accent-purple">
+            <span class="smart-insight-icon">◈</span>
+            <div><span>صدک عملکرد</span><strong>{{ formatPercent(percentile) }}٪</strong><small>بالاتر از {{ formatPercent(percentile) }}٪ شرکت‌کننده‌ها</small></div>
+          </div>
+          <div class="smart-insight accent-cyan">
+            <span class="smart-insight-icon">✓</span>
+            <div><span>دقت پاسخ‌ها</span><strong>{{ formatPercent(answerAccuracy) }}٪</strong><small>از پاسخ‌های داده‌شده</small></div>
+          </div>
+          <div class="smart-insight accent-orange">
+            <span class="smart-insight-icon">!</span>
+            <div><span>فرصت رشد</span><strong>{{ toPersianNumber(unansweredCount) }}</strong><small>سؤال نزده برای بررسی</small></div>
+          </div>
+          <div class="smart-insight accent-pink">
+            <span class="smart-insight-icon">↑</span>
+            <div><span>فاصله تا هدف</span><strong>{{ formatPercent(targetGap) }}٪</strong><small>تا هدف ۷۵٪ عملکرد</small></div>
+          </div>
+        </section>
+
+        <!-- PERFORMANCE DNA -->
+        <section class="performance-dna">
+          <div class="dna-heading">
+            <div>
+              <span>DNA کارنامه</span>
+              <h2>این نتیجه دقیقاً چه چیزی درباره عملکردت می‌گوید؟</h2>
+            </div>
+            <div class="dna-live"><i></i>تحلیل زنده</div>
+          </div>
+
+          <div class="dna-grid">
+            <article class="dna-card dna-purple">
+              <div class="dna-icon">↗</div>
+              <div class="dna-copy"><span>قدرت حل سؤال</span><strong>{{ formatPercent(answerAccuracy) }}٪</strong><p>از سؤال‌هایی که جواب دادی، این درصد درست بوده.</p></div>
+              <div class="dna-meter"><i :style="{ width: clampPercent(answerAccuracy) + '%' }"></i></div>
+            </article>
+            <article class="dna-card dna-cyan">
+              <div class="dna-icon">◌</div>
+              <div class="dna-copy"><span>کنترل ریسک</span><strong>{{ formatPercent(riskControl) }}٪</strong><p>{{ riskControlText }}</p></div>
+              <div class="dna-meter"><i :style="{ width: clampPercent(riskControl) + '%' }"></i></div>
+            </article>
+            <article class="dna-card dna-orange">
+              <div class="dna-icon">✦</div>
+              <div class="dna-copy"><span>پتانسیل رشد</span><strong>{{ formatPercent(growthPotential) }}٪</strong><p>{{ growthPotentialText }}</p></div>
+              <div class="dna-meter"><i :style="{ width: clampPercent(growthPotential) + '%' }"></i></div>
+            </article>
+          </div>
+        </section>
 
         <!-- Performance Peak -->
         <section class="panel peak-panel">
@@ -620,14 +691,42 @@
           </div>
         </div>
 
+        <section class="booklet-spotlight">
+          <div class="spotlight-main">
+            <span class="spotlight-kicker">نقشه عملکرد دفترچه‌ها</span>
+            <h2>از کجا امتیاز می‌گیری و کجا جا برای جهش داری؟</h2>
+            <p>دفترچه‌ها بر اساس فاصله از میانگین کشور، دقت پاسخ و درصد نهایی قابل مقایسه‌اند.</p>
+          </div>
+          <div class="spotlight-podium">
+            <div class="podium-item second">
+              <span>میانگین</span><strong>{{ formatPercent(bookletAverage) }}٪</strong>
+            </div>
+            <div class="podium-item first">
+              <span>قوی‌ترین</span><strong>{{ bestBooklet?.title || '—' }}</strong><small v-if="bestBooklet">{{ formatPercent(bestBooklet.percentage) }}٪</small>
+            </div>
+            <div class="podium-item third">
+              <span>نیازمند توجه</span><strong>{{ weakestBooklet?.title || '—' }}</strong><small v-if="weakestBooklet">{{ formatPercent(weakestBooklet.percentage) }}٪</small>
+            </div>
+          </div>
+        </section>
+
+        <div class="booklet-toolbar">
+          <div class="booklet-toolbar-copy"><span>مرتب‌سازی</span><strong>{{ bookletSort === 'score' ? 'از بهترین به ضعیف‌ترین' : 'به ترتیب دفترچه' }}</strong></div>
+          <div class="booklet-sort-buttons">
+            <button type="button" :class="{ active: bookletSort === 'order' }" @click="bookletSort = 'order'">ترتیب آزمون</button>
+            <button type="button" :class="{ active: bookletSort === 'score' }" @click="bookletSort = 'score'">بیشترین درصد</button>
+          </div>
+        </div>
+
         <div class="booklet-cards">
-          <article v-for="booklet in sortedBooklets" :key="booklet.id" class="booklet-card">
+          <article v-for="(booklet, bookletIndex) in sortedBooklets" :key="booklet.id" class="booklet-card" :style="{ '--booklet-score': clampPercent(booklet.percentage) + '%' }">
             <div class="booklet-card-top">
               <div class="booklet-number">{{ toPersianNumber(booklet.order) }}</div>
               <div class="booklet-title-wrap">
                 <span>{{ booklet.subject || 'درس' }}</span>
                 <h3>{{ booklet.title }}</h3>
               </div>
+              <div class="booklet-rank-badge">#{{ toPersianNumber(bookletIndex + 1) }}</div>
               <div class="decile-badge">
                 <span>دهک</span>
                 <strong>{{ toPersianNumber(booklet.decile || 0) }}</strong>
@@ -635,6 +734,7 @@
             </div>
 
             <div class="booklet-score-row">
+              <div class="booklet-score-orb"><span>{{ formatPercent(booklet.percentage) }}٪</span></div>
               <div class="booklet-score">
                 <strong>{{ formatPercent(booklet.percentage) }}٪</strong>
                 <span>درصد با نمره منفی</span>
@@ -647,6 +747,7 @@
 
             <div class="booklet-bar">
               <div class="booklet-bar-fill" :style="{ width: positivePercent(booklet.percentage) + '%' }"></div>
+              <span class="booklet-bar-label">{{ bookletGapText(booklet) }}</span>
             </div>
 
             <div class="answer-breakdown">
@@ -873,6 +974,11 @@
             <span>فیلتر مرور</span>
             <strong>{{ toPersianNumber(filteredReview.length) }} سؤال نمایش داده می‌شود</strong>
           </div>
+          <div class="review-search">
+            <span>⌕</span>
+            <input v-model.trim="reviewSearch" type="search" placeholder="جستجو بر اساس شماره، درس یا دفترچه..." aria-label="جستجوی سؤال" />
+            <button v-if="reviewSearch" type="button" @click="reviewSearch = ''">×</button>
+          </div>
           <div class="review-filters">
             <button type="button" :class="{ active: reviewFilter === 'all' }" @click="setReviewFilter('all')">
               همه <span>{{ toPersianNumber(result.personalized_review?.length || 0) }}</span>
@@ -1018,6 +1124,8 @@
         </div>
       </section>
 
+      <button v-show="showScrollTop" type="button" class="scroll-top-button" aria-label="بازگشت به بالا" @click="scrollToTop">↑</button>
+
       <footer class="result-footer">
         <div>
           <strong>کارنامه دوپامین</strong>
@@ -1069,6 +1177,9 @@ const errorMessage = ref('')
 const activeTab = ref('overview')
 const reviewFilter = ref('all')
 const isDark = ref(false)
+const bookletSort = ref('order')
+const reviewSearch = ref('')
+const showScrollTop = ref(false)
 
 let themeObserver = null
 
@@ -1590,6 +1701,9 @@ function isTierPassed(tierKey) {
 ========================================================= */
 const sortedBooklets = computed(() => {
   const list = Array.isArray(result.value?.booklets) ? [...result.value.booklets] : []
+  if (bookletSort.value === 'score') {
+    return list.sort((a, b) => Number(b.percentage || 0) - Number(a.percentage || 0))
+  }
   return list.sort((a, b) => Number(a.order || 0) - Number(b.order || 0))
 })
 
@@ -1643,6 +1757,79 @@ const previousChange = computed(() => {
 })
 
 /* =========================================================
+   SMART METRICS
+========================================================= */
+const percentile = computed(() => {
+  const rank = Number(result.value?.ranking?.national_rank || 0)
+  const total = Number(result.value?.ranking?.national_participants || 0)
+  if (!rank || !total) return 0
+  return Math.max(0, Math.min(100, ((total - rank + 1) / total) * 100))
+})
+
+const answeredCount = computed(() => {
+  const correct = Number(result.value?.summary?.correct_count || 0)
+  const wrong = Number(result.value?.summary?.wrong_count || 0)
+  return correct + wrong
+})
+
+const unansweredCount = computed(() => Number(result.value?.summary?.unanswered_count || 0))
+
+const answerAccuracy = computed(() => {
+  if (!answeredCount.value) return 0
+  return (Number(result.value?.summary?.correct_count || 0) / answeredCount.value) * 100
+})
+
+const targetGap = computed(() => {
+  const score = Number(result.value?.summary?.percentage || 0)
+  return Math.max(0, 75 - score)
+})
+
+const riskControl = computed(() => {
+  const answered = answeredCount.value
+  if (!answered) return 0
+  const wrong = Number(result.value?.summary?.wrong_count || 0)
+  return Math.max(0, Math.min(100, 100 - (wrong / answered) * 100))
+})
+
+const riskControlText = computed(() => {
+  const wrong = Number(result.value?.summary?.wrong_count || 0)
+  if (!answeredCount.value) return 'هنوز پاسخ ثبت‌شده‌ای برای تحلیل وجود ندارد.'
+  if (wrong === 0) return 'هیچ پاسخ غلطی ثبت نشده؛ کنترل ریسک فوق‌العاده بوده.'
+  return `${toPersianNumber(wrong)} پاسخ غلط داشته‌ای؛ مرور خطاها بیشترین اثر را دارد.`
+})
+
+const growthPotential = computed(() => {
+  const unanswered = unansweredCount.value
+  const score = Number(result.value?.summary?.percentage || 0)
+  const unansweredBoost = Math.min(55, unanswered * 4)
+  const targetBoost = Math.min(45, Math.max(0, 75 - score))
+  return Math.max(0, Math.min(100, unansweredBoost + targetBoost))
+})
+
+const growthPotentialText = computed(() => {
+  if (unansweredCount.value > 0) return `${toPersianNumber(unansweredCount.value)} سؤال بدون پاسخ، بزرگ‌ترین فضای رشد فوری توست.`
+  if (targetGap.value > 0) return `تا هدف ۷۵٪ هنوز ${formatPercent(targetGap.value)}٪ فاصله داری.`
+  return 'به هدف ۷۵٪ رسیده‌ای؛ حالا هدف بعدی را بالاتر بگذار.'
+})
+
+const bookletAverage = computed(() => {
+  if (!sortedBooklets.value.length) return 0
+  return sortedBooklets.value.reduce((sum, booklet) => sum + Number(booklet.percentage || 0), 0) / sortedBooklets.value.length
+})
+
+function bookletGap(booklet) {
+  const value = Number(booklet?.percentage || 0) - Number(booklet?.country_average || 0)
+  return Number.isFinite(value) ? value : 0
+}
+
+function bookletGapText(booklet) {
+  const gap = bookletGap(booklet)
+  if (gap > 0) return `${signedPercent(gap)}٪ بالاتر از میانگین کشور`
+  if (gap < 0) return `${signedPercent(gap)}٪ پایین‌تر از میانگین کشور`
+  return 'برابر با میانگین کشور'
+}
+
+/* =========================================================
    SCORE RING
 ========================================================= */
 const scoreDash = computed(() => {
@@ -1667,8 +1854,14 @@ const reviewCounts = computed(() => {
 
 const filteredReview = computed(() => {
   const review = Array.isArray(result.value?.personalized_review) ? result.value.personalized_review : []
-  if (reviewFilter.value === 'all') return review
-  return review.filter(item => item.status === reviewFilter.value)
+  const query = reviewSearch.value.toLocaleLowerCase('fa-IR').trim()
+  return review.filter(item => {
+    const matchesFilter = reviewFilter.value === 'all' || item.status === reviewFilter.value
+    if (!matchesFilter) return false
+    if (!query) return true
+    const haystack = [item.question_number, item.booklet_title, item.subject, item.status].filter(Boolean).join(' ').toLocaleLowerCase('fa-IR')
+    return haystack.includes(query)
+  })
 })
 
 function setReviewFilter(filter) {
@@ -1925,6 +2118,33 @@ function changeTextClass(value) {
   return ''
 }
 
+async function shareResult() {
+  const title = result.value?.exam?.title || 'کارنامه آزمون'
+  const text = `کارنامه ${title} — درصد: ${formatPercent(result.value?.summary?.percentage)}٪`
+  try {
+    if (navigator.share) {
+      await navigator.share({ title, text, url: window.location.href })
+    } else if (navigator.clipboard) {
+      await navigator.clipboard.writeText(window.location.href)
+      window.alert('لینک کارنامه کپی شد.')
+    }
+  } catch (error) {
+    if (error?.name !== 'AbortError') console.error('SHARE ERROR:', error)
+  }
+}
+
+function printResult() {
+  window.print()
+}
+
+function scrollToTop() {
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
+
+function handleScroll() {
+  showScrollTop.value = window.scrollY > 700
+}
+
 async function goBack() {
   try {
     await router.push({ name: 'exams' })
@@ -1965,6 +2185,7 @@ watch(
 ========================================================= */
 onMounted(async () => {
   observeTheme()
+  window.addEventListener('scroll', handleScroll, { passive: true })
   await loadResult()
 
   if (activeTab.value === 'review') {
@@ -1973,6 +2194,7 @@ onMounted(async () => {
 })
 
 onBeforeUnmount(() => {
+  window.removeEventListener('scroll', handleScroll)
   themeObserver?.disconnect()
   themeObserver = null
   destroyCharts()
@@ -5417,6 +5639,89 @@ onBeforeUnmount(() => {
 }
 
 /* =========================================================
+   PREMIUM UX ADDITIONS
+========================================================= */
+.quick-actions {
+  position: relative;
+  margin: 16px 0 20px;
+  padding: 15px 17px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  box-shadow: 0 14px 40px rgba(30, 34, 70, .07);
+  backdrop-filter: blur(18px);
+  overflow: hidden;
+}
+.quick-actions::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 5px;
+  background: linear-gradient(180deg, #7c5cff, #16c7b7, #ffb454);
+}
+.quick-actions-copy { display:flex; flex-direction:column; gap:4px; }
+.quick-actions-copy span { font-size:11px; color:var(--muted); font-weight:800; }
+.quick-actions-copy strong { font-size:13px; color:var(--text); }
+.quick-actions-buttons { display:flex; flex-wrap:wrap; gap:8px; }
+.quick-action {
+  border:1px solid var(--border); background:var(--surface-soft); color:var(--text);
+  border-radius:13px; padding:9px 12px; display:flex; align-items:center; gap:7px;
+  font:inherit; font-size:11px; font-weight:800; cursor:pointer; transition:.25s ease;
+}
+.quick-action:hover { transform:translateY(-2px); border-color:rgba(101,103,241,.35); box-shadow:0 10px 24px rgba(70,60,150,.10); }
+.quick-action-icon { width:25px; height:25px; display:grid; place-items:center; border-radius:8px; background:linear-gradient(135deg,#7367ff,#4f46c8); color:#fff; font-size:15px; }
+
+.smart-insights { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin:16px 0 20px; }
+.smart-insight {
+  position:relative; display:flex; align-items:center; gap:12px; padding:15px; border:1px solid var(--border);
+  border-radius:20px; background:var(--surface); box-shadow:0 12px 35px rgba(30,34,70,.055); overflow:hidden;
+  transition:transform .28s ease, box-shadow .28s ease;
+}
+.smart-insight:hover { transform:translateY(-4px); box-shadow:0 18px 42px rgba(30,34,70,.10); }
+.smart-insight::after { content:''; position:absolute; width:90px; height:90px; border-radius:50%; left:-34px; bottom:-48px; background:var(--insight-glow); filter:blur(12px); opacity:.35; }
+.smart-insight-icon { width:38px; height:38px; flex:0 0 38px; display:grid; place-items:center; border-radius:13px; color:#fff; font-weight:950; background:var(--insight-color); box-shadow:0 8px 22px var(--insight-shadow); }
+.smart-insight div { min-width:0; display:flex; flex-direction:column; gap:2px; }
+.smart-insight span:not(.smart-insight-icon) { font-size:10px; color:var(--muted); font-weight:800; }
+.smart-insight strong { font-size:21px; line-height:1.1; color:var(--text); }
+.smart-insight small { color:var(--muted); font-size:9px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.accent-purple { --insight-color:#6f63ff; --insight-shadow:rgba(111,99,255,.24); --insight-glow:#8d82ff; }
+.accent-cyan { --insight-color:#11b8b0; --insight-shadow:rgba(17,184,176,.22); --insight-glow:#42ddd5; }
+.accent-orange { --insight-color:#f39a35; --insight-shadow:rgba(243,154,53,.22); --insight-glow:#ffc16e; }
+.accent-pink { --insight-color:#df5e9b; --insight-shadow:rgba(223,94,155,.22); --insight-glow:#ff91c0; }
+
+.booklet-toolbar { display:flex; align-items:center; justify-content:space-between; gap:12px; margin:0 0 14px; padding:11px 13px; border:1px solid var(--border); border-radius:17px; background:var(--surface-soft); }
+.booklet-toolbar-copy { display:flex; flex-direction:column; gap:2px; }
+.booklet-toolbar-copy span { font-size:9px; color:var(--muted); font-weight:800; }
+.booklet-toolbar-copy strong { font-size:11px; color:var(--text); }
+.booklet-sort-buttons { display:flex; gap:6px; }
+.booklet-sort-buttons button { border:1px solid var(--border); background:transparent; color:var(--muted); padding:7px 10px; border-radius:10px; font:inherit; font-size:10px; font-weight:800; cursor:pointer; transition:.2s ease; }
+.booklet-sort-buttons button.active { color:#fff; border-color:transparent; background:linear-gradient(135deg,#6f63ff,#5147cf); box-shadow:0 7px 18px rgba(81,71,207,.2); }
+
+.review-search { flex:1; min-width:220px; display:flex; align-items:center; gap:7px; height:40px; padding:0 10px; border:1px solid var(--border); border-radius:12px; background:var(--surface); }
+.review-search > span { color:var(--muted); font-size:18px; }
+.review-search input { flex:1; min-width:0; border:0; outline:0; background:transparent; color:var(--text); font:inherit; font-size:11px; }
+.review-search button { border:0; background:transparent; color:var(--muted); cursor:pointer; font-size:18px; }
+
+.scroll-top-button { position:fixed; z-index:50; right:22px; bottom:22px; width:46px; height:46px; border:1px solid rgba(255,255,255,.25); border-radius:15px; color:#fff; background:linear-gradient(135deg,#6f63ff,#4136bd); box-shadow:0 14px 35px rgba(64,52,180,.30); cursor:pointer; font-size:20px; animation:floatUp .3s ease both; }
+@keyframes floatUp { from { opacity:0; transform:translateY(10px) scale(.85); } to { opacity:1; transform:none; } }
+
+@media (max-width:1050px) { .smart-insights { grid-template-columns:repeat(2,1fr); } }
+@media (max-width:850px) { .quick-actions { align-items:flex-start; flex-direction:column; } .quick-actions-buttons { width:100%; } .quick-action { flex:1; justify-content:center; } }
+@media (max-width:650px) { .smart-insights { grid-template-columns:1fr; } .booklet-toolbar { align-items:flex-start; flex-direction:column; } .booklet-sort-buttons { width:100%; } .booklet-sort-buttons button { flex:1; } .review-search { width:100%; } .scroll-top-button { right:14px; bottom:14px; } }
+
+@media print {
+  .bg-layer, .result-tabs, .quick-actions, .scroll-top-button, .result-footer, .back-button, .review-toolbar, .paper-open-link { display:none !important; }
+  .exam-result-page { padding:0 !important; background:#fff !important; color:#111 !important; }
+  .tab-content { display:block !important; }
+  .hero-card, .panel, .league-panel, .smart-insight, .booklet-card, .question-card, .review-hero { break-inside:avoid; box-shadow:none !important; }
+  .is-dark { background:#fff !important; }
+}
+
+/* =========================================================
    RESPONSIVE
 ========================================================= */
 
@@ -5594,5 +5899,294 @@ onBeforeUnmount(() => {
     scroll-behavior: auto !important;
     transition-duration: .001ms !important;
   }
+}
+
+/* =========================================================
+   2026 VISUAL REFRESH — Aurora / Midnight / Glass
+========================================================= */
+:root {
+  --primary: #6557ff;
+  --primary-strong: #4b3fe5;
+  --primary-soft: rgba(101,87,255,.10);
+  --accent-cyan: #18c7c0;
+  --accent-mint: #54e3b5;
+  --accent-gold: #f5b84b;
+  --danger: #ef6b86;
+  --text: #111526;
+  --muted: #737b91;
+  --text-faint: #a0a7b8;
+  --surface: rgba(255,255,255,.82);
+  --surface-solid: #ffffff;
+  --surface-soft: #f4f6fb;
+  --border: rgba(32,39,67,.09);
+  --shadow-sm: 0 10px 30px rgba(24,31,61,.06);
+  --shadow: 0 24px 70px rgba(34,39,84,.10);
+}
+
+.exam-result-page {
+  --aurora-1: rgba(101,87,255,.17);
+  --aurora-2: rgba(24,199,192,.13);
+  --aurora-3: rgba(245,184,75,.09);
+  position: relative;
+  isolation: isolate;
+  background:
+    radial-gradient(circle at 8% 0%, var(--aurora-1), transparent 28rem),
+    radial-gradient(circle at 92% 8%, var(--aurora-2), transparent 25rem),
+    linear-gradient(180deg,#f8f9fd 0%,#f3f5fa 48%,#f8f9fd 100%);
+}
+
+.exam-result-page.is-dark {
+  --text: #f4f6ff;
+  --muted: #98a0b8;
+  --text-faint: #737c96;
+  --surface: rgba(17,23,39,.78);
+  --surface-solid: #111727;
+  --surface-soft: #0e1422;
+  --border: rgba(255,255,255,.085);
+  --shadow-sm: 0 14px 38px rgba(0,0,0,.22);
+  --shadow: 0 30px 90px rgba(0,0,0,.32);
+  --aurora-1: rgba(101,87,255,.20);
+  --aurora-2: rgba(24,199,192,.11);
+  --aurora-3: rgba(245,184,75,.07);
+  background:
+    radial-gradient(circle at 10% 0%,var(--aurora-1),transparent 30rem),
+    radial-gradient(circle at 90% 4%,var(--aurora-2),transparent 26rem),
+    linear-gradient(180deg,#080b14 0%,#0b0f1b 50%,#080b14 100%);
+}
+
+.bg-grid {
+  opacity: .25;
+  background-image:
+    linear-gradient(rgba(101,87,255,.055) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(101,87,255,.055) 1px,transparent 1px);
+  background-size: 42px 42px;
+}
+
+.bg-glow {
+  width: 55vw;
+  height: 55vw;
+  max-width: 720px;
+  max-height: 720px;
+  background: radial-gradient(circle,rgba(101,87,255,.12),rgba(24,199,192,.045) 42%,transparent 70%);
+  filter: blur(16px);
+}
+
+.hero-card {
+  border: 1px solid rgba(255,255,255,.15);
+  background:
+    radial-gradient(circle at 78% 12%,rgba(24,199,192,.24),transparent 19rem),
+    radial-gradient(circle at 15% 90%,rgba(245,184,75,.15),transparent 22rem),
+    linear-gradient(135deg,#11152b 0%,#211c52 46%,#3c2c83 100%);
+  box-shadow: 0 35px 100px rgba(58,43,154,.22), inset 0 1px 0 rgba(255,255,255,.12);
+}
+
+.hero-aurora {
+  opacity: .9;
+  background:
+    radial-gradient(circle at 18% 55%,rgba(84,227,181,.23),transparent 18rem),
+    radial-gradient(circle at 82% 40%,rgba(111,96,255,.30),transparent 20rem);
+  filter: blur(4px);
+}
+
+.hero-card::after {
+  content:'';
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  border-radius:inherit;
+  background: linear-gradient(120deg,transparent 25%,rgba(255,255,255,.055) 48%,transparent 70%);
+  transform: translateX(-100%);
+  animation: heroSheen 7s ease-in-out infinite;
+}
+@keyframes heroSheen { 0%,65%{transform:translateX(-100%)} 82%,100%{transform:translateX(100%)} }
+
+.score-ring {
+  filter: drop-shadow(0 0 24px rgba(84,227,181,.18));
+}
+.score-progress { stroke: #54e3b5 !important; }
+.score-track { stroke: rgba(255,255,255,.15) !important; }
+
+.result-pulse {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  gap: 16px;
+  align-items: center;
+  margin: 18px 0;
+  padding: 17px 18px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  background: linear-gradient(120deg,rgba(255,255,255,.78),rgba(246,247,253,.72));
+  box-shadow: var(--shadow-sm);
+  backdrop-filter: blur(18px);
+}
+.exam-result-page.is-dark .result-pulse { background:linear-gradient(120deg,rgba(17,23,39,.82),rgba(13,18,31,.72)); }
+.result-pulse::before {
+  content:''; position:absolute; width:280px; height:280px; left:-120px; top:-160px;
+  border-radius:50%; background:rgba(101,87,255,.10); filter:blur(15px);
+}
+.pulse-main { display:flex; align-items:center; gap:14px; min-width:0; }
+.pulse-orbit { position:relative; width:58px; height:58px; flex:0 0 58px; display:grid; place-items:center; }
+.orbit { position:absolute; border:1px solid rgba(101,87,255,.25); border-radius:50%; }
+.orbit-one { inset:2px; animation:orbitSpin 9s linear infinite; }
+.orbit-two { inset:9px; border-color:rgba(24,199,192,.34); animation:orbitSpin 6s linear reverse infinite; }
+.orbit-dot { width:12px; height:12px; border-radius:50%; background:linear-gradient(135deg,#6557ff,#54e3b5); box-shadow:0 0 0 6px rgba(101,87,255,.08),0 0 24px rgba(84,227,181,.45); }
+@keyframes orbitSpin { to{transform:rotate(360deg)} }
+.pulse-copy { min-width:0; }
+.pulse-kicker { display:block; margin-bottom:2px; color:var(--muted); font-size:9px; font-weight:900; letter-spacing:.05em; }
+.pulse-copy strong { display:block; color:var(--text); font-size:17px; }
+.pulse-copy p { margin:4px 0 0; color:var(--muted); font-size:10px; line-height:1.8; }
+.pulse-stats { display:grid; grid-template-columns:repeat(4,1fr); border-radius:17px; overflow:hidden; border:1px solid var(--border); background:rgba(127,136,170,.045); }
+.pulse-stats div { padding:10px 9px; text-align:center; border-inline-start:1px solid var(--border); }
+.pulse-stats div:first-child { border-inline-start:0; }
+.pulse-stats span { display:block; color:var(--muted); font-size:8px; font-weight:800; }
+.pulse-stats strong { display:block; margin-top:3px; color:var(--text); font-size:15px; font-weight:950; }
+
+.summary-grid { gap:12px; }
+.metric-card {
+  position:relative; overflow:hidden; border-radius:22px; border:1px solid var(--border);
+  background:linear-gradient(145deg,var(--surface),rgba(255,255,255,.48));
+  box-shadow:var(--shadow-sm); backdrop-filter:blur(14px);
+  transition:transform .3s ease,box-shadow .3s ease,border-color .3s ease;
+}
+.exam-result-page.is-dark .metric-card { background:linear-gradient(145deg,rgba(17,23,39,.88),rgba(12,17,29,.7)); }
+.metric-card:hover { transform:translateY(-5px); box-shadow:0 22px 55px rgba(35,40,88,.12); border-color:rgba(101,87,255,.22); }
+.metric-card::after { content:''; position:absolute; width:90px; height:90px; left:-45px; bottom:-50px; border-radius:50%; background:rgba(101,87,255,.10); filter:blur(8px); }
+.metric-icon { box-shadow:0 10px 24px rgba(101,87,255,.14); }
+
+.smart-insights { gap:12px; }
+.smart-insight { border-radius:22px; background:linear-gradient(145deg,var(--surface),rgba(255,255,255,.5)); backdrop-filter:blur(16px); }
+.exam-result-page.is-dark .smart-insight { background:linear-gradient(145deg,rgba(17,23,39,.88),rgba(12,17,29,.7)); }
+.smart-insight strong { font-variant-numeric:tabular-nums; }
+
+.performance-dna {
+  position:relative; margin:18px 0; padding:20px; border:1px solid var(--border); border-radius:28px;
+  background:linear-gradient(145deg,rgba(255,255,255,.75),rgba(246,247,252,.62)); box-shadow:var(--shadow-sm); overflow:hidden;
+}
+.exam-result-page.is-dark .performance-dna { background:linear-gradient(145deg,rgba(17,23,39,.82),rgba(11,16,28,.72)); }
+.performance-dna::before { content:''; position:absolute; width:300px; height:180px; left:-100px; bottom:-120px; border-radius:50%; background:rgba(101,87,255,.10); filter:blur(30px); }
+.dna-heading { position:relative; display:flex; justify-content:space-between; align-items:center; gap:15px; margin-bottom:14px; }
+.dna-heading span { color:var(--primary); font-size:9px; font-weight:950; }
+.dna-heading h2 { margin:3px 0 0; color:var(--text); font-size:17px; }
+.dna-live { display:flex; align-items:center; gap:7px; color:var(--muted); font-size:9px; font-weight:850; }
+.dna-live i { width:7px; height:7px; border-radius:50%; background:var(--accent-mint); box-shadow:0 0 0 5px rgba(84,227,181,.10),0 0 16px rgba(84,227,181,.55); animation:livePulse 1.8s ease-in-out infinite; }
+@keyframes livePulse { 50%{transform:scale(.7);opacity:.6} }
+.dna-grid { position:relative; display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+.dna-card { position:relative; min-height:130px; padding:15px; overflow:hidden; border:1px solid var(--border); border-radius:20px; background:rgba(255,255,255,.55); }
+.exam-result-page.is-dark .dna-card { background:rgba(255,255,255,.025); }
+.dna-card::before { content:''; position:absolute; width:120px; height:120px; left:-65px; top:-65px; border-radius:50%; background:var(--dna-color); opacity:.09; filter:blur(5px); }
+.dna-purple { --dna-color:#6557ff; } .dna-cyan { --dna-color:#18c7c0; } .dna-orange { --dna-color:#f5b84b; }
+.dna-icon { width:34px; height:34px; display:grid; place-items:center; margin-bottom:10px; border-radius:11px; color:var(--dna-color); background:color-mix(in srgb,var(--dna-color) 10%,transparent); font-weight:950; }
+.dna-copy span { color:var(--muted); font-size:9px; font-weight:850; }
+.dna-copy strong { display:block; margin-top:2px; color:var(--text); font-size:22px; }
+.dna-copy p { margin:4px 0 0; color:var(--muted); font-size:9px; line-height:1.7; min-height:30px; }
+.dna-meter { position:absolute; right:15px; left:15px; bottom:13px; height:5px; overflow:hidden; border-radius:99px; background:rgba(125,132,159,.12); }
+.dna-meter i { display:block; height:100%; border-radius:inherit; background:linear-gradient(90deg,var(--dna-color),color-mix(in srgb,var(--dna-color) 45%,white)); box-shadow:0 0 15px color-mix(in srgb,var(--dna-color) 35%,transparent); }
+
+.panel,.league-panel,.booklet-card,.review-hero,.review-toolbar,.question-card {
+  backdrop-filter:blur(16px);
+}
+.panel { border-radius:28px; box-shadow:var(--shadow-sm); }
+.section-intro { margin-bottom:17px; }
+.section-intro h2 { letter-spacing:-.03em; }
+
+.booklet-spotlight {
+  position:relative; display:grid; grid-template-columns:1.05fr 1.4fr; gap:16px; align-items:stretch; margin-bottom:14px;
+  padding:17px; overflow:hidden; border:1px solid rgba(101,87,255,.15); border-radius:25px;
+  background:
+    radial-gradient(circle at 85% 15%,rgba(24,199,192,.13),transparent 13rem),
+    radial-gradient(circle at 12% 80%,rgba(101,87,255,.11),transparent 14rem),
+    linear-gradient(145deg,rgba(255,255,255,.82),rgba(246,247,253,.68));
+  box-shadow:var(--shadow-sm);
+}
+.exam-result-page.is-dark .booklet-spotlight { background:radial-gradient(circle at 85% 15%,rgba(24,199,192,.12),transparent 13rem),linear-gradient(145deg,rgba(17,23,39,.88),rgba(11,16,28,.76)); }
+.spotlight-main { display:flex; flex-direction:column; justify-content:center; }
+.spotlight-kicker { color:var(--primary); font-size:9px; font-weight:950; }
+.spotlight-main h2 { margin:4px 0 5px; color:var(--text); font-size:18px; letter-spacing:-.025em; }
+.spotlight-main p { margin:0; color:var(--muted); font-size:10px; line-height:1.8; max-width:460px; }
+.spotlight-podium { display:grid; grid-template-columns:.8fr 1.25fr 1fr; gap:8px; align-items:stretch; }
+.podium-item { min-width:0; display:flex; flex-direction:column; justify-content:center; padding:13px; border:1px solid var(--border); border-radius:17px; background:rgba(255,255,255,.5); }
+.exam-result-page.is-dark .podium-item { background:rgba(255,255,255,.025); }
+.podium-item span { color:var(--muted); font-size:8px; font-weight:850; }
+.podium-item strong { margin-top:5px; overflow:hidden; color:var(--text); font-size:13px; text-overflow:ellipsis; white-space:nowrap; }
+.podium-item small { margin-top:3px; color:var(--primary); font-size:10px; font-weight:950; }
+.podium-item.first { border-color:rgba(245,184,75,.34); box-shadow:inset 0 1px 0 rgba(245,184,75,.18); }
+.podium-item.first strong { font-size:14px; }
+
+.booklet-toolbar { border-radius:18px; background:rgba(255,255,255,.54); backdrop-filter:blur(14px); }
+.exam-result-page.is-dark .booklet-toolbar { background:rgba(255,255,255,.025); }
+.booklet-sort-buttons button.active { background:linear-gradient(135deg,#6557ff,#4b3fe5); box-shadow:0 10px 25px rgba(75,63,229,.24); }
+.booklet-cards { gap:14px; }
+.booklet-card {
+  position:relative; overflow:hidden; border-radius:27px; border:1px solid var(--border);
+  background:linear-gradient(150deg,rgba(255,255,255,.84),rgba(247,248,252,.68));
+  box-shadow:var(--shadow-sm); transition:transform .35s cubic-bezier(.2,.8,.2,1),box-shadow .35s ease,border-color .35s ease;
+}
+.exam-result-page.is-dark .booklet-card { background:linear-gradient(150deg,rgba(17,23,39,.9),rgba(11,16,28,.74)); }
+.booklet-card::before { content:''; position:absolute; width:210px; height:210px; top:-130px; left:-110px; border-radius:50%; background:conic-gradient(from 90deg,rgba(101,87,255,.16),rgba(24,199,192,.10),transparent 70%); filter:blur(3px); }
+.booklet-card::after { content:''; position:absolute; right:0; top:0; width:4px; height:100%; background:linear-gradient(180deg,#6557ff,#18c7c0,#54e3b5); opacity:.55; }
+.booklet-card:hover { transform:translateY(-7px); box-shadow:0 28px 65px rgba(30,35,80,.14); border-color:rgba(101,87,255,.22); }
+.booklet-card-top { position:relative; z-index:1; }
+.booklet-number { background:linear-gradient(135deg,#6557ff,#4b3fe5) !important; box-shadow:0 10px 22px rgba(75,63,229,.25); }
+.booklet-rank-badge { min-width:31px; height:31px; display:grid; place-items:center; border:1px solid var(--border); border-radius:10px; color:var(--primary); background:rgba(101,87,255,.06); font-size:9px; font-weight:950; }
+.decile-badge { border-color:rgba(245,184,75,.22) !important; background:rgba(245,184,75,.07) !important; }
+.booklet-score-row { position:relative; z-index:1; }
+.booklet-score-orb { position:relative; width:68px; height:68px; flex:0 0 68px; display:grid; place-items:center; border-radius:50%; background:conic-gradient(#6557ff var(--booklet-score),rgba(101,87,255,.08) 0); box-shadow:0 8px 25px rgba(101,87,255,.13); }
+.booklet-score-orb::before { content:''; position:absolute; width:56px; height:56px; border-radius:50%; background:var(--surface-solid); }
+.exam-result-page.is-dark .booklet-score-orb::before { background:#111727; }
+.booklet-score-orb span { position:relative; z-index:1; color:var(--text); font-size:12px; font-weight:950; }
+.booklet-bar { position:relative; z-index:1; }
+.booklet-bar-fill { background:linear-gradient(90deg,#6557ff 0%,#18c7c0 58%,#54e3b5 100%) !important; box-shadow:0 0 16px rgba(24,199,192,.18); }
+.booklet-bar-label { color:var(--muted); font-size:8px; font-weight:850; }
+.answer-stat { border-radius:14px; background:rgba(127,136,170,.045); }
+.booklet-average { border-radius:18px; background:rgba(127,136,170,.045); padding:10px; }
+.average-track { background:linear-gradient(90deg,rgba(101,87,255,.08),rgba(24,199,192,.10)) !important; }
+.average-user-marker { box-shadow:0 0 0 4px rgba(101,87,255,.12),0 0 16px rgba(101,87,255,.45); }
+.average-country-marker { box-shadow:0 0 0 4px rgba(24,199,192,.10),0 0 16px rgba(24,199,192,.40); }
+
+.analytics-chart-card {
+  border-radius:28px !important;
+  background:linear-gradient(145deg,rgba(255,255,255,.82),rgba(247,248,252,.66)) !important;
+}
+.exam-result-page.is-dark .analytics-chart-card { background:linear-gradient(145deg,rgba(17,23,39,.88),rgba(11,16,28,.72)) !important; }
+.chartjs-wrap,.comparison-chartjs-wrap,.progress-chartjs-wrap { border-radius:22px !important; }
+
+.result-tabs {
+  border:1px solid var(--border) !important;
+  background:rgba(255,255,255,.68) !important;
+  box-shadow:0 18px 55px rgba(28,34,73,.08) !important;
+  backdrop-filter:blur(20px);
+}
+.exam-result-page.is-dark .result-tabs { background:rgba(13,18,31,.78) !important; }
+.result-tab.active { color:#fff !important; background:linear-gradient(135deg,#6557ff,#4b3fe5) !important; box-shadow:0 12px 28px rgba(75,63,229,.23); }
+.result-tab:hover:not(.active) { background:rgba(101,87,255,.06); color:var(--primary); }
+
+.ranking-panel,.peak-panel { background:linear-gradient(145deg,rgba(255,255,255,.82),rgba(247,248,252,.65)) !important; }
+.exam-result-page.is-dark .ranking-panel,.exam-result-page.is-dark .peak-panel { background:linear-gradient(145deg,rgba(17,23,39,.88),rgba(11,16,28,.72)) !important; }
+.rank-card { border-radius:21px !important; background:rgba(127,136,170,.045) !important; }
+
+.league-panel {
+  border:1px solid rgba(101,87,255,.20) !important;
+  box-shadow:0 30px 90px rgba(57,45,161,.16) !important;
+}
+.league-season { border-color:rgba(84,227,181,.24) !important; background:rgba(84,227,181,.07) !important; }
+
+.scroll-top-button { background:linear-gradient(135deg,#6557ff,#18c7c0); box-shadow:0 18px 40px rgba(75,63,229,.28); border:0; }
+
+@media (max-width: 900px) {
+  .result-pulse { grid-template-columns:1fr; }
+  .dna-grid { grid-template-columns:1fr; }
+  .booklet-spotlight { grid-template-columns:1fr; }
+}
+@media (max-width: 650px) {
+  .result-pulse { padding:14px; border-radius:20px; }
+  .pulse-stats { grid-template-columns:repeat(2,1fr); }
+  .pulse-stats div:nth-child(3) { border-inline-start:0; border-top:1px solid var(--border); }
+  .pulse-stats div:nth-child(4) { border-top:1px solid var(--border); }
+  .dna-heading { align-items:flex-start; flex-direction:column; }
+  .spotlight-podium { grid-template-columns:1fr; }
+  .booklet-score-orb { position:relative; width:60px; height:60px; flex-basis:60px; }
+  .booklet-score-orb::before { width:50px; height:50px; }
 }
 </style>
