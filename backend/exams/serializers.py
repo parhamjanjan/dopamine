@@ -1,5 +1,4 @@
 from django.conf import settings
-
 from rest_framework import serializers
 
 from .models import (
@@ -12,7 +11,9 @@ from .models import (
 )
 
 
-class ExamBookletSerializer(serializers.ModelSerializer):
+class ExamBookletSerializer(
+    serializers.ModelSerializer
+):
     end_question = serializers.IntegerField(
         read_only=True
     )
@@ -39,12 +40,14 @@ class ExamBookletSerializer(serializers.ModelSerializer):
             return ""
 
         return (
-            f"{obj.start_question} تا "
-            f"{obj.end_question}"
+            f"{obj.start_question} "
+            f"تا {obj.end_question}"
         )
 
 
-class ExamListSerializer(serializers.ModelSerializer):
+class ExamListSerializer(
+    serializers.ModelSerializer
+):
     category_label = serializers.CharField(
         source="get_category_display",
         read_only=True,
@@ -52,22 +55,42 @@ class ExamListSerializer(serializers.ModelSerializer):
 
     status = serializers.SerializerMethodField()
 
-    questions_pdf_url = serializers.SerializerMethodField()
-    answer_pdf_url = serializers.SerializerMethodField()
+    questions_pdf_url = (
+        serializers.SerializerMethodField()
+    )
 
-    has_attempt = serializers.SerializerMethodField()
-    attempt_id = serializers.SerializerMethodField()
-    attempt_status = serializers.SerializerMethodField()
+    answer_pdf_url = (
+        serializers.SerializerMethodField()
+    )
 
-    result_available = serializers.SerializerMethodField()
-    can_start = serializers.SerializerMethodField()
+    has_attempt = (
+        serializers.SerializerMethodField()
+    )
+
+    attempt_id = (
+        serializers.SerializerMethodField()
+    )
+
+    attempt_status = (
+        serializers.SerializerMethodField()
+    )
+
+    result_available = (
+        serializers.SerializerMethodField()
+    )
+
+    can_start = (
+        serializers.SerializerMethodField()
+    )
 
     booklets = ExamBookletSerializer(
         many=True,
         read_only=True,
     )
 
-    booklet_count = serializers.SerializerMethodField()
+    booklet_count = (
+        serializers.SerializerMethodField()
+    )
 
     class Meta:
         model = Exam
@@ -76,28 +99,21 @@ class ExamListSerializer(serializers.ModelSerializer):
             "id",
             "title",
             "description",
-
             "category",
             "category_label",
-
             "start_at",
             "end_at",
             "duration_minutes",
-
             "total_questions",
             "booklet_count",
             "booklets",
-
             "questions_pdf_url",
             "answer_pdf_url",
-
             "status",
             "is_active",
-
             "has_attempt",
             "attempt_id",
             "attempt_status",
-
             "result_available",
             "can_start",
         ]
@@ -229,9 +245,15 @@ class ExamListSerializer(serializers.ModelSerializer):
         )
 
 
-class ExamDetailSerializer(ExamListSerializer):
-    class Meta(ExamListSerializer.Meta):
-        fields = ExamListSerializer.Meta.fields
+class ExamDetailSerializer(
+    ExamListSerializer
+):
+    class Meta(
+        ExamListSerializer.Meta
+    ):
+        fields = (
+            ExamListSerializer.Meta.fields
+        )
 
 
 class ExamAttemptSerializer(
@@ -253,21 +275,16 @@ class ExamAttemptSerializer(
             "id",
             "exam",
             "exam_title",
-
             "started_at",
             "expires_at",
             "submitted_at",
-
             "status",
             "answers",
-
             "score",
             "raw_score",
-
             "correct_count",
             "wrong_count",
             "unanswered_count",
-
             "remaining_seconds",
         ]
 
@@ -314,32 +331,24 @@ class ExamBookletResultSerializer(
 
         fields = [
             "id",
-
             "booklet",
             "booklet_title",
             "subject",
             "booklet_order",
             "booklet_factor",
-
             "total_questions",
             "correct_count",
             "wrong_count",
             "unanswered_count",
-
             "score",
             "raw_score",
-
             "decile",
-
             "national_rank",
             "national_participants",
-
             "provincial_rank",
             "provincial_participants",
-
             "national_average",
             "provincial_average",
-
             "performance_title",
             "performance_message",
         ]
@@ -397,37 +406,28 @@ class ExamResultSerializer(
 
         fields = [
             "id",
-
             "exam",
             "exam_title",
             "exam_category",
             "exam_category_label",
-
             "user",
             "username",
             "user_first_name",
             "user_last_name",
             "user_province",
-
             "is_final",
             "finalized_at",
-
             "total_questions",
             "correct_count",
             "wrong_count",
             "unanswered_count",
-
             "score",
             "raw_score",
-
             "national_rank",
             "national_participants",
-
             "provincial_rank",
             "provincial_participants",
-
             "booklet_results",
-
             "created_at",
             "updated_at",
         ]

@@ -67,7 +67,9 @@ class ExamAdmin(admin.ModelAdmin):
         "description",
     )
 
-    ordering = ("-start_at",)
+    ordering = (
+        "-start_at",
+    )
 
     readonly_fields = (
         "created_at",
@@ -199,9 +201,12 @@ class ExamAdmin(admin.ModelAdmin):
                 request,
                 (
                     "تصحیح و رتبه‌بندی از صفر انجام شد. "
-                    f'شرکت‌کنندگان: {result["participants"]} نفر. '
-                    f'کارنامه جدید: {result["results_created"]}. '
-                    f'کارنامه به‌روزشده: {result["results_updated"]}.'
+                    f'شرکت‌کنندگان: '
+                    f'{result["participants"]} نفر. '
+                    f'کارنامه جدید: '
+                    f'{result["results_created"]}. '
+                    f'کارنامه به‌روزشده: '
+                    f'{result["results_updated"]}.'
                 ),
                 level=messages.SUCCESS,
             )
@@ -210,8 +215,8 @@ class ExamAdmin(admin.ModelAdmin):
             self.message_user(
                 request,
                 (
-                    "در فرایند تصحیح و رتبه‌بندی خطایی رخ داد: "
-                    f"{error}"
+                    "در فرایند تصحیح و رتبه‌بندی "
+                    f"خطایی رخ داد: {error}"
                 ),
                 level=messages.ERROR,
             )

@@ -10,7 +10,7 @@ from .models import (
 )
 
 from .result_service import (
-    calculate_attempt_stats,
+    calculate_weighted_exam_stats,
 )
 
 
@@ -123,7 +123,9 @@ def start_exam(*, user, exam_id):
         exam=exam,
         expires_at=real_expires_at,
         answers={},
-        status=ExamAttemptStatus.IN_PROGRESS,
+        status=(
+            ExamAttemptStatus.IN_PROGRESS
+        ),
     )
 
 
@@ -138,14 +140,15 @@ def normalize_answers(
 
     normalized = {}
 
-    for question_number, answer in (
-        answers.items()
-    ):
+    for question_number, answer in answers.items():
         try:
             question_number = int(
                 question_number
             )
-        except (TypeError, ValueError):
+        except (
+            TypeError,
+            ValueError,
+        ):
             continue
 
         if not (
@@ -165,7 +168,10 @@ def normalize_answers(
 
         try:
             answer = int(answer)
-        except (TypeError, ValueError):
+        except (
+            TypeError,
+            ValueError,
+        ):
             continue
 
         if answer not in {
@@ -262,7 +268,6 @@ def submit_attempt(
         ExamAttempt.objects
         .select_for_update()
         .select_related("exam")
-        .prefetch_related("exam__booklets")
         .filter(
             id=attempt_id,
             user=user,
@@ -298,28 +303,18 @@ def submit_attempt(
         else ExamAttemptStatus.SUBMITTED
     )
 
-    # ---------------------------------------------------------
-    # آمار مستقیم کل سوالات
-    # ---------------------------------------------------------
-
-    stats = calculate_attempt_stats(
-        attempt
-    )
-
-    # ---------------------------------------------------------
-    # درصد کل وزنی دفترچه‌ها
-    # ---------------------------------------------------------
+    # =========================================================
+    # محاسبه رسمی با ضریب دفترچه‌ها
+    # =========================================================
 
     booklets = list(
         attempt.exam.booklets.all()
         .order_by("order")
     )
 
-    weighted = (
-        calculate_weighted_exam_scores(
-            attempt,
-            booklets,
-        )
+    stats = calculate_weighted_exam_stats(
+        attempt,
+        booklets,
     )
 
     attempt.correct_count = stats[
@@ -334,13 +329,13 @@ def submit_attempt(
         "unanswered"
     ]
 
-    # درصد رسمی کل آزمون
-    attempt.score = weighted[
+    # درصد کل ضریب‌دار
+    attempt.score = stats[
         "score"
     ]
 
-    # درصد خام کل آزمون
-    attempt.raw_score = weighted[
+    # درصد خام کل ضریب‌دار
+    attempt.raw_score = stats[
         "raw_score"
     ]
 
@@ -359,8 +354,5 @@ def submit_attempt(
             "updated_at",
         ]
     )
-
-    # نتیجه نهایی بعداً توسط finalize_exam
-    # یا build_exam_result ساخته/به‌روزرسانی می‌شود.
 
     return attempt

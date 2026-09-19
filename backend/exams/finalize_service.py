@@ -12,7 +12,8 @@ from .models import (
 )
 
 from .result_service import (
-    calculate_attempt_stats,
+    calculate_weighted_exam_stats,
+    calculate_booklet_stats,
     competition_rank,
     calculate_decile,
     get_performance_text,
@@ -33,7 +34,13 @@ def finalize_exam(exam_id):
 
     attempts = list(
         ExamAttempt.objects
-        .select_related("user", "exam")
+        .select_related(
+            "user",
+            "exam",
+        )
+        .prefetch_related(
+            "exam__booklets"
+        )
         .filter(
             exam=exam,
             status__in=[
@@ -52,37 +59,38 @@ def finalize_exam(exam_id):
             "results_updated": 0,
         }
 
-    # ---------------------------------------------------------
-    # محاسبه تمام آمار از صفر
-    # ---------------------------------------------------------
+    # =========================================================
+    # محاسبه همه شرکت‌کنندگان
+    # =========================================================
 
     attempt_data = {}
 
     for attempt in attempts:
-        direct_stats = calculate_attempt_stats(
-            attempt
-        )
-
-        weighted_stats = (
-            calculate_weighted_exam_scores(
-                attempt,
-                booklets,
-            )
-        )
-
         attempt_data[attempt.id] = {
             "attempt": attempt,
-            "stats": direct_stats,
-            "weighted": weighted_stats,
+
+            # درصد کل ضریب‌دار
+            "stats": calculate_weighted_exam_stats(
+                attempt,
+                booklets,
+            ),
+
+            # درصد تک تک دفترچه‌ها
+            "booklets": {
+                booklet.id: calculate_booklet_stats(
+                    attempt,
+                    booklet,
+                )
+                for booklet in booklets
+            },
         }
 
-    # ---------------------------------------------------------
-    # درصد کل وزنی تمام شرکت‌کنندگان
-    # این مقادیر مبنای رتبه کشوری هستند.
-    # ---------------------------------------------------------
+    # =========================================================
+    # رتبه کلی فقط بر اساس درصد کل ضریب‌دار
+    # =========================================================
 
     overall_scores = [
-        data["weighted"]["score"]
+        data["stats"]["score"]
         for data in attempt_data.values()
     ]
 
@@ -96,22 +104,21 @@ def finalize_exam(exam_id):
     results_created = 0
     results_updated = 0
 
-    # ---------------------------------------------------------
-    # ساخت / به‌روزرسانی کارنامه هر شرکت‌کننده
-    # ---------------------------------------------------------
+    # =========================================================
+    # ساخت / بروزرسانی کارنامه‌ها
+    # =========================================================
 
     for attempt in attempts:
         data = attempt_data[attempt.id]
 
         stats = data["stats"]
-        weighted = data["weighted"]
 
         # -----------------------------------------------------
-        # Attempt از صفر آپدیت می‌شود
+        # Attempt
         # -----------------------------------------------------
 
-        attempt.score = weighted["score"]
-        attempt.raw_score = weighted["raw_score"]
+        attempt.score = stats["score"]
+        attempt.raw_score = stats["raw_score"]
 
         attempt.correct_count = stats[
             "correct"
@@ -137,17 +144,13 @@ def finalize_exam(exam_id):
         )
 
         # -----------------------------------------------------
-        # رتبه کشوری بر اساس درصد وزنی
+        # رتبه کشوری
         # -----------------------------------------------------
 
         national_rank = competition_rank(
             overall_scores_sorted,
-            weighted["score"],
+            stats["score"],
         )
-
-        # -----------------------------------------------------
-        # رتبه استانی بر اساس درصد وزنی
-        # -----------------------------------------------------
 
         province = (
             getattr(
@@ -158,8 +161,12 @@ def finalize_exam(exam_id):
             or ""
         ).strip()
 
+        # -----------------------------------------------------
+        # درصد کل ضریب‌دار شرکت‌کنندگان استان
+        # -----------------------------------------------------
+
         province_scores = [
-            other["weighted"]["score"]
+            other["stats"]["score"]
             for other in attempt_data.values()
             if (
                 province
@@ -175,10 +182,14 @@ def finalize_exam(exam_id):
             )
         ]
 
+        # -----------------------------------------------------
+        # رتبه استانی
+        # -----------------------------------------------------
+
         provincial_rank = (
             competition_rank(
                 province_scores,
-                weighted["score"],
+                stats["score"],
             )
             if province_scores
             else None
@@ -225,15 +236,17 @@ def finalize_exam(exam_id):
             "unanswered"
         ]
 
-        # درصد کل وزنی
-        result.score = weighted["score"]
+        # درصد کل ضریب‌دار
+        result.score = stats["score"]
 
-        # درصد خام کل وزنی
-        result.raw_score = weighted[
+        # درصد خام کل ضریب‌دار
+        result.raw_score = stats[
             "raw_score"
         ]
 
+        # رتبه بر اساس درصد کل ضریب‌دار
         result.national_rank = national_rank
+
         result.national_participants = len(
             overall_scores
         )
@@ -249,30 +262,29 @@ def finalize_exam(exam_id):
         result.save()
 
         # -----------------------------------------------------
-        # نتایج قبلی دفترچه‌ها حذف می‌شوند
-        # تا همه‌چیز از صفر ساخته شود.
+        # پاک کردن نتایج قبلی دفترچه‌ها
         # -----------------------------------------------------
 
         result.booklet_results.all().delete()
 
-        # -----------------------------------------------------
+        # =====================================================
         # ساخت نتایج دفترچه‌ها
-        # -----------------------------------------------------
+        # =====================================================
 
         for booklet in booklets:
-            booklet_stats = weighted[
+            booklet_stats = data[
                 "booklets"
             ][booklet.id]
 
             national_values = [
-                other["weighted"]["booklets"][
+                other["booklets"][
                     booklet.id
                 ]["score"]
                 for other in attempt_data.values()
             ]
 
             province_values = [
-                other["weighted"]["booklets"][
+                other["booklets"][
                     booklet.id
                 ]["score"]
                 for other in attempt_data.values()
@@ -294,6 +306,7 @@ def finalize_exam(exam_id):
                 "score"
             ]
 
+            # دهک دفترچه بر اساس درصد همان دفترچه
             decile = calculate_decile(
                 current_score,
                 national_values,
@@ -325,35 +338,33 @@ def finalize_exam(exam_id):
                 result=result,
                 booklet=booklet,
 
-                total_questions=(
-                    booklet_stats["total"]
-                ),
+                total_questions=booklet_stats[
+                    "total"
+                ],
 
-                correct_count=(
-                    booklet_stats["correct"]
-                ),
+                correct_count=booklet_stats[
+                    "correct"
+                ],
 
-                wrong_count=(
-                    booklet_stats["wrong"]
-                ),
+                wrong_count=booklet_stats[
+                    "wrong"
+                ],
 
-                unanswered_count=(
-                    booklet_stats["unanswered"]
-                ),
+                unanswered_count=booklet_stats[
+                    "unanswered"
+                ],
 
                 score=current_score,
 
-                raw_score=(
-                    booklet_stats["raw_score"]
-                ),
+                raw_score=booklet_stats[
+                    "raw_score"
+                ],
 
                 decile=decile,
 
-                national_rank=(
-                    competition_rank(
-                        national_values,
-                        current_score,
-                    )
+                national_rank=competition_rank(
+                    national_values,
+                    current_score,
                 ),
 
                 national_participants=len(
