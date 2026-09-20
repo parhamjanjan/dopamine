@@ -149,6 +149,23 @@
 
         <button
           type="button" class="result-tab"
+          :class="{ active: activeTab === 'league' }"
+          @click="activeTab = 'league'"
+
+        >
+          <span class="tab-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <rect x="3" y="3" width="7" height="7" rx="1"/>
+              <rect x="14" y="3" width="7" height="7" rx="1"/>
+              <rect x="3" y="14" width="7" height="7" rx="1"/>
+              <rect x="14" y="14" width="7" height="7" rx="1"/>
+            </svg>
+          </span>
+          <span>لیگ مطالعاتی</span>
+        </button>
+
+        <button
+          type="button" class="result-tab"
           :class="{ active: activeTab === 'booklets' }"
           @click="activeTab = 'booklets'"
         >
@@ -194,263 +211,8 @@
       </nav>
 
       <!-- TAB: OVERVIEW -->
-      <section v-if="activeTab === 'overview'" class="tab-content">
-
-        <!-- Performance Signal -->
-        <section class="signal-panel" :class="`signal-${performanceSignal.key}`">
-          <div class="signal-radar">
-            <span class="radar-ring r1"></span>
-            <span class="radar-ring r2"></span>
-            <span class="radar-ring r3"></span>
-            <span class="radar-sweep"></span>
-            <span class="radar-dot"></span>
-          </div>
-
-          <div class="signal-content">
-            <span class="signal-label">سیگنال عملکرد</span>
-            <h3 class="signal-title">{{ performanceSignal.title }}</h3>
-            <p class="signal-desc">{{ performanceSignal.description }}</p>
-
-            <div class="signal-bars">
-              <span
-                v-for="(bar, i) in 5"
-                :key="i"
-                class="signal-bar"
-                :class="{ active: i < performanceSignal.strength }"
-              ></span>
-            </div>
-          </div>
-
-          <div class="signal-meta">
-            <div class="signal-percent">
-              <strong>{{ formatPercent(result.summary?.percentage) }}٪</strong>
-              <span>درصد</span>
-            </div>
-            <div class="signal-rank">
-              <strong>{{ formatRank(result.ranking?.national_rank) }}</strong>
-              <span>رتبه</span>
-            </div>
-          </div>
-        </section>
-
-        <!-- Summary stats -->
-        <div class="summary-grid">
-          <div class="metric-card score-metric">
-            <div class="metric-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path d="M12 3v18"/><path d="M5 8h14"/><path d="M5 16h14"/>
-              </svg>
-            </div>
-            <div class="metric-content">
-              <span>درصد نهایی</span>
-              <strong>{{ formatPercent(result.summary?.percentage) }}٪</strong>
-              <small>با نمره منفی</small>
-            </div>
-          </div>
-
-          <div class="metric-card">
-            <div class="metric-icon correct">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path d="m5 12 4 4L19 6"/>
-              </svg>
-            </div>
-            <div class="metric-content">
-              <span>پاسخ درست</span>
-              <strong>{{ toPersianNumber(result.summary?.correct_count || 0) }}</strong>
-              <small>سؤال</small>
-            </div>
-          </div>
-
-          <div class="metric-card">
-            <div class="metric-icon wrong">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path d="m7 7 10 10"/><path d="m17 7-10 10"/>
-              </svg>
-            </div>
-            <div class="metric-content">
-              <span>پاسخ غلط</span>
-              <strong>{{ toPersianNumber(result.summary?.wrong_count || 0) }}</strong>
-              <small>سؤال</small>
-            </div>
-          </div>
-
-          <div class="metric-card">
-            <div class="metric-icon unanswered">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <circle cx="12" cy="12" r="9"/><path d="M8 12h8"/>
-              </svg>
-            </div>
-            <div class="metric-content">
-              <span>نزده</span>
-              <strong>{{ toPersianNumber(result.summary?.unanswered_count || 0) }}</strong>
-              <small>سؤال</small>
-            </div>
-          </div>
-        </div>
-
-        <!-- SMART INSIGHTS -->
-        <section class="smart-insights">
-          <div class="smart-insight accent-purple">
-            <span class="smart-insight-icon">◈</span>
-            <div><span>صدک عملکرد</span><strong>{{ formatPercent(percentile) }}٪</strong><small>بالاتر از {{ formatPercent(percentile) }}٪ شرکت‌کننده‌ها</small></div>
-          </div>
-          <div class="smart-insight accent-cyan">
-            <span class="smart-insight-icon">✓</span>
-            <div><span>دقت پاسخ‌ها</span><strong>{{ formatPercent(answerAccuracy) }}٪</strong><small>از پاسخ‌های داده‌شده</small></div>
-          </div>
-          <div class="smart-insight accent-orange">
-            <span class="smart-insight-icon">!</span>
-            <div><span>فرصت رشد</span><strong>{{ toPersianNumber(unansweredCount) }}</strong><small>سؤال نزده برای بررسی</small></div>
-          </div>
-          <div class="smart-insight accent-pink">
-            <span class="smart-insight-icon">↑</span>
-            <div><span>فاصله تا هدف</span><strong>{{ formatPercent(targetGap) }}٪</strong><small>تا هدف ۷۵٪ عملکرد</small></div>
-          </div>
-        </section>
-
-        <!-- PERFORMANCE DNA -->
-        <section class="performance-dna">
-          <div class="dna-heading">
-            <div>
-              <span>DNA کارنامه</span>
-              <h2>این نتیجه دقیقاً چه چیزی درباره عملکردت می‌گوید؟</h2>
-            </div>
-            <div class="dna-live"><i></i>تحلیل زنده</div>
-          </div>
-
-          <div class="dna-grid">
-            <article class="dna-card dna-purple">
-              <div class="dna-icon">↗</div>
-              <div class="dna-copy"><span>قدرت حل سؤال</span><strong>{{ formatPercent(answerAccuracy) }}٪</strong><p>از سؤال‌هایی که جواب دادی، این درصد درست بوده.</p></div>
-              <div class="dna-meter"><i :style="{ width: clampPercent(answerAccuracy) + '%' }"></i></div>
-            </article>
-            <article class="dna-card dna-cyan">
-              <div class="dna-icon">◌</div>
-              <div class="dna-copy"><span>کنترل ریسک</span><strong>{{ formatPercent(riskControl) }}٪</strong><p>{{ riskControlText }}</p></div>
-              <div class="dna-meter"><i :style="{ width: clampPercent(riskControl) + '%' }"></i></div>
-            </article>
-            <article class="dna-card dna-orange">
-              <div class="dna-icon">✦</div>
-              <div class="dna-copy"><span>پتانسیل رشد</span><strong>{{ formatPercent(growthPotential) }}٪</strong><p>{{ growthPotentialText }}</p></div>
-              <div class="dna-meter"><i :style="{ width: clampPercent(growthPotential) + '%' }"></i></div>
-            </article>
-          </div>
-        </section>
-
-        <!-- Performance Peak -->
-        <section class="panel peak-panel">
-          <div class="panel-heading">
-            <div>
-              <span>قله عملکرد</span>
-              <h2>جایگاه شما در رقابت</h2>
-            </div>
-            <div class="peak-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path d="m3 20 5-9 4 5 5-11 4 15"/>
-                <path d="M3 20h18"/>
-              </svg>
-            </div>
-          </div>
-
-          <div class="peak-chart">
-            <div class="peak-top-label">
-              <span class="peak-badge">🏆 بالاترین</span>
-              <span class="peak-badge-label">۱۰۰٪</span>
-            </div>
-
-            <div class="peak-track-wrap">
-              <div class="peak-track"></div>
-              <div class="peak-fill" :style="{ width: peakPosition + '%' }"></div>
-
-              <div class="peak-marker" :style="{ right: peakPosition + '%' }">
-                <div class="peak-marker-pulse"></div>
-                <div class="peak-marker-dot">
-                  <span>{{ formatPercent(result.summary?.percentage) }}٪</span>
-                </div>
-                <div class="peak-marker-arrow"></div>
-              </div>
-
-              <div class="peak-tick" style="right: 0%"><span>۰</span></div>
-              <div class="peak-tick" style="right: 25%"><span>۲۵</span></div>
-              <div class="peak-tick" style="right: 50%"><span>۵۰</span></div>
-              <div class="peak-tick" style="right: 75%"><span>۷۵</span></div>
-              <div class="peak-tick" style="right: 100%"><span>۱۰۰</span></div>
-            </div>
-
-            <div class="peak-bottom">
-              <div class="peak-stat">
-                <span>میانگین کشور</span>
-                <strong>{{ formatPercent(nationalAverage) }}٪</strong>
-                <div class="peak-stat-bar">
-                  <div class="peak-stat-fill" :style="{ width: clampPercent(nationalAverage) + '%' }"></div>
-                </div>
-              </div>
-              <div class="peak-stat">
-                <span>بهترین دفترچه</span>
-                <strong>{{ bestBooklet?.title || '—' }}</strong>
-                <small v-if="bestBooklet">{{ formatPercent(bestBooklet.percentage) }}٪</small>
-              </div>
-              <div class="peak-stat">
-                <span>ضعیف‌ترین دفترچه</span>
-                <strong>{{ weakestBooklet?.title || '—' }}</strong>
-                <small v-if="weakestBooklet">{{ formatPercent(weakestBooklet.percentage) }}٪</small>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <!-- Ranking -->
-        <section class="panel ranking-panel">
-          <div class="panel-heading">
-            <div>
-              <span>جایگاه شما</span>
-              <h2>رتبه‌بندی</h2>
-            </div>
-            <div class="ranking-crown">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path d="m3 6 4 4 5-7 5 7 4-4-2 13H5L3 6Z"/>
-                <path d="M5 19h14"/>
-              </svg>
-            </div>
-          </div>
-
-          <div class="ranking-grid">
-            <div class="rank-card national">
-              <div class="rank-card-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <circle cx="12" cy="12" r="9"/>
-                  <path d="M3 12h18"/>
-                  <path d="M12 3c2.5 2.5 2.5 15.5 0 18"/>
-                  <path d="M12 3c-2.5 2.5-2.5 15.5 0 18"/>
-                </svg>
-              </div>
-              <div class="rank-card-copy">
-                <span>رتبه کشوری</span>
-                <strong>{{ formatRank(result.ranking?.national_rank) }}</strong>
-                <small>از {{ toPersianNumber(result.ranking?.national_participants || 0) }} شرکت‌کننده</small>
-              </div>
-            </div>
-
-            <div class="rank-card province">
-              <div class="rank-card-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <path d="M12 21s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12Z"/>
-                  <circle cx="12" cy="9" r="2.5"/>
-                </svg>
-              </div>
-              <div class="rank-card-copy">
-                <span>
-                  رتبه استانی
-                  <template v-if="result.ranking?.province">— {{ result.ranking.province }}</template>
-                </span>
-                <strong>{{ formatRank(result.ranking?.provincial_rank) }}</strong>
-                <small>از {{ toPersianNumber(result.ranking?.provincial_participants || 0) }} شرکت‌کننده</small>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <!-- League -->
+             <section v-if="activeTab === 'league'" class="tab-content">
+                      <!-- League -->
         <section class="league-panel" :class="`league-${performanceLeague.key}`">
           <div class="league-bg-grid"></div>
           <div class="league-particles">
@@ -583,6 +345,273 @@
             </div>
           </div>
         </section>
+
+                      <!-- Performance Signal -->
+        <section class="signal-panel" :class="`signal-${performanceSignal.key}`">
+          <div class="signal-radar">
+            <span class="radar-ring r1"></span>
+            <span class="radar-ring r2"></span>
+            <span class="radar-ring r3"></span>
+            <span class="radar-sweep"></span>
+            <span class="radar-dot"></span>
+          </div>
+
+          <div class="signal-content">
+            <span class="signal-label">سیگنال عملکرد</span>
+            <h3 class="signal-title">{{ performanceSignal.title }}</h3>
+            <p class="signal-desc">{{ performanceSignal.description }}</p>
+
+            <div class="signal-bars">
+              <span
+                v-for="(bar, i) in 5"
+                :key="i"
+                class="signal-bar"
+                :class="{ active: i < performanceSignal.strength }"
+              ></span>
+            </div>
+          </div>
+
+          <div class="signal-meta">
+            <div class="signal-percent">
+              <strong>{{ formatPercent(result.summary?.percentage) }}٪</strong>
+              <span>درصد</span>
+            </div>
+            <div class="signal-rank">
+              <strong>{{ formatRank(result.ranking?.national_rank) }}</strong>
+              <span>رتبه</span>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- SMART INSIGHTS -->
+        <section class="smart-insights">
+          <div class="smart-insight accent-purple">
+            <span class="smart-insight-icon">◈</span>
+            <div><span>صدک عملکرد</span><strong>{{ formatPercent(percentile) }}٪</strong><small>بالاتر از {{ formatPercent(percentile) }}٪ شرکت‌کننده‌ها</small></div>
+          </div>
+          <div class="smart-insight accent-cyan">
+            <span class="smart-insight-icon">✓</span>
+            <div><span>دقت پاسخ‌ها</span><strong>{{ formatPercent(answerAccuracy) }}٪</strong><small>از پاسخ‌های داده‌شده</small></div>
+          </div>
+          <div class="smart-insight accent-orange">
+            <span class="smart-insight-icon">!</span>
+            <div><span>فرصت رشد</span><strong>{{ toPersianNumber(unansweredCount) }}</strong><small>سؤال نزده برای بررسی</small></div>
+          </div>
+          <div class="smart-insight accent-pink">
+            <span class="smart-insight-icon">↑</span>
+            <div><span>فاصله تا هدف</span><strong>{{ formatPercent(targetGap) }}٪</strong><small>تا هدف ۷۵٪ عملکرد</small></div>
+          </div>
+        </section>
+
+        <!-- PERFORMANCE DNA -->
+
+        <section class="performance-dna">
+          <div class="dna-heading">
+            <div>
+              <span>DNA کارنامه</span>
+              <h2>این نتیجه دقیقاً چه چیزی درباره عملکردت می‌گوید؟</h2>
+            </div>
+            <div class="dna-live"><i></i>تحلیل زنده</div>
+          </div>
+
+          <div class="dna-grid">
+            <article class="dna-card dna-purple">
+              <div class="dna-icon">↗</div>
+              <div class="dna-copy"><span>قدرت حل سؤال</span><strong>{{ formatPercent(answerAccuracy) }}٪</strong><p>از سؤال‌هایی که جواب دادی، این درصد درست بوده.</p></div>
+              <div class="dna-meter"><i :style="{ width: clampPercent(answerAccuracy) + '%' }"></i></div>
+            </article>
+            <article class="dna-card dna-cyan">
+              <div class="dna-icon">◌</div>
+              <div class="dna-copy"><span>کنترل ریسک</span><strong>{{ formatPercent(riskControl) }}٪</strong><p>{{ riskControlText }}</p></div>
+              <div class="dna-meter"><i :style="{ width: clampPercent(riskControl) + '%' }"></i></div>
+            </article>
+            <article class="dna-card dna-orange">
+              <div class="dna-icon">✦</div>
+              <div class="dna-copy"><span>پتانسیل رشد</span><strong>{{ formatPercent(growthPotential) }}٪</strong><p>{{ growthPotentialText }}</p></div>
+              <div class="dna-meter"><i :style="{ width: clampPercent(growthPotential) + '%' }"></i></div>
+            </article>
+          </div>
+        </section>
+
+        <!-- Performance Peak -->
+        <section class="panel peak-panel">
+          <div class="panel-heading">
+            <div>
+              <span>قله عملکرد</span>
+              <h2>جایگاه شما در رقابت</h2>
+            </div>
+            <div class="peak-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="m3 20 5-9 4 5 5-11 4 15"/>
+                <path d="M3 20h18"/>
+              </svg>
+            </div>
+          </div>
+
+          <div class="peak-chart">
+            <div class="peak-top-label">
+              <span class="peak-badge">🏆 بالاترین</span>
+              <span class="peak-badge-label">۱۰۰٪</span>
+            </div>
+
+            <div class="peak-track-wrap">
+              <div class="peak-track"></div>
+              <div class="peak-fill" :style="{ width: peakPosition + '%' }"></div>
+
+              <div class="peak-marker" :style="{ right: peakPosition + '%' }">
+                <div class="peak-marker-pulse"></div>
+                <div class="peak-marker-dot">
+                  <span>{{ formatPercent(result.summary?.percentage) }}٪</span>
+                </div>
+                <div class="peak-marker-arrow"></div>
+              </div>
+
+              <div class="peak-tick" style="right: 0%"><span>۰</span></div>
+              <div class="peak-tick" style="right: 25%"><span>۲۵</span></div>
+              <div class="peak-tick" style="right: 50%"><span>۵۰</span></div>
+              <div class="peak-tick" style="right: 75%"><span>۷۵</span></div>
+              <div class="peak-tick" style="right: 100%"><span>۱۰۰</span></div>
+            </div>
+
+            <div class="peak-bottom">
+              <div class="peak-stat">
+                <span>میانگین کشور</span>
+                <strong>{{ formatPercent(nationalAverage) }}٪</strong>
+                <div class="peak-stat-bar">
+                  <div class="peak-stat-fill" :style="{ width: clampPercent(nationalAverage) + '%' }"></div>
+                </div>
+              </div>
+              <div class="peak-stat">
+                <span>بهترین دفترچه</span>
+                <strong>{{ bestBooklet?.title || '—' }}</strong>
+                <small v-if="bestBooklet">{{ formatPercent(bestBooklet.percentage) }}٪</small>
+              </div>
+              <div class="peak-stat">
+                <span>ضعیف‌ترین دفترچه</span>
+                <strong>{{ weakestBooklet?.title || '—' }}</strong>
+                <small v-if="weakestBooklet">{{ formatPercent(weakestBooklet.percentage) }}٪</small>
+              </div>
+            </div>
+          </div>
+        </section>
+
+
+
+
+
+             </section>
+      <section v-if="activeTab === 'overview'" class="tab-content">
+
+
+        <!-- Summary stats -->
+        <div class="summary-grid">
+          <div class="metric-card score-metric">
+            <div class="metric-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M12 3v18"/><path d="M5 8h14"/><path d="M5 16h14"/>
+              </svg>
+            </div>
+            <div class="metric-content">
+              <span>درصد نهایی</span>
+              <strong>{{ formatPercent(result.summary?.percentage) }}٪</strong>
+              <small>با نمره منفی</small>
+            </div>
+          </div>
+
+          <div class="metric-card">
+            <div class="metric-icon correct">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="m5 12 4 4L19 6"/>
+              </svg>
+            </div>
+            <div class="metric-content">
+              <span>پاسخ درست</span>
+              <strong>{{ toPersianNumber(result.summary?.correct_count || 0) }}</strong>
+              <small>سؤال</small>
+            </div>
+          </div>
+
+          <div class="metric-card">
+            <div class="metric-icon wrong">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="m7 7 10 10"/><path d="m17 7-10 10"/>
+              </svg>
+            </div>
+            <div class="metric-content">
+              <span>پاسخ غلط</span>
+              <strong>{{ toPersianNumber(result.summary?.wrong_count || 0) }}</strong>
+              <small>سؤال</small>
+            </div>
+          </div>
+
+          <div class="metric-card">
+            <div class="metric-icon unanswered">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <circle cx="12" cy="12" r="9"/><path d="M8 12h8"/>
+              </svg>
+            </div>
+            <div class="metric-content">
+              <span>نزده</span>
+              <strong>{{ toPersianNumber(result.summary?.unanswered_count || 0) }}</strong>
+              <small>سؤال</small>
+            </div>
+          </div>
+        </div>
+
+
+
+        <!-- Ranking -->
+        <section class="panel ranking-panel">
+          <div class="panel-heading">
+            <div>
+              <span>جایگاه شما</span>
+              <h2>رتبه‌بندی</h2>
+            </div>
+            <div class="ranking-crown">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="m3 6 4 4 5-7 5 7 4-4-2 13H5L3 6Z"/>
+                <path d="M5 19h14"/>
+              </svg>
+            </div>
+          </div>
+
+          <div class="ranking-grid">
+            <div class="rank-card national">
+              <div class="rank-card-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <circle cx="12" cy="12" r="9"/>
+                  <path d="M3 12h18"/>
+                  <path d="M12 3c2.5 2.5 2.5 15.5 0 18"/>
+                  <path d="M12 3c-2.5 2.5-2.5 15.5 0 18"/>
+                </svg>
+              </div>
+              <div class="rank-card-copy">
+                <span>رتبه کشوری</span>
+                <strong>{{ formatRank(result.ranking?.national_rank) }}</strong>
+                <small>از {{ toPersianNumber(result.ranking?.national_participants || 0) }} شرکت‌کننده</small>
+              </div>
+            </div>
+
+            <div class="rank-card province">
+              <div class="rank-card-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path d="M12 21s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12Z"/>
+                  <circle cx="12" cy="9" r="2.5"/>
+                </svg>
+              </div>
+              <div class="rank-card-copy">
+                <span>
+                  رتبه استانی
+                  <template v-if="result.ranking?.province">— {{ result.ranking.province }}</template>
+                </span>
+                <strong>{{ formatRank(result.ranking?.provincial_rank) }}</strong>
+                <small>از {{ toPersianNumber(result.ranking?.provincial_participants || 0) }} شرکت‌کننده</small>
+              </div>
+            </div>
+          </div>
+        </section>
+
 
         <!-- Raw score -->
         <section class="panel raw-score-panel">
