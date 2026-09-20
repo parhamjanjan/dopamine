@@ -1030,6 +1030,9 @@ def build_exam_result(
             "question_pdf_url": (
                 exam.questions_pdf_url
             ),
+            "answer_pdf_url": (
+                            exam.answer_pdf_url
+                        ),
         },
 
         "user": {

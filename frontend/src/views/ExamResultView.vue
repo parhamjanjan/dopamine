@@ -1049,38 +1049,85 @@
             <div class="question-paper">
               <div class="question-paper-heading">
                 <div>
-                  <span>صورت سؤال</span>
+                  <span>{{ reviewPdfState(question.question_number).flipped ? 'پاسخ تشریحی' : 'صورت سؤال' }}</span>
                   <strong>صفحه {{ toPersianNumber(question.question_number) }}</strong>
                 </div>
-                <a
-                  class="paper-open-link"
-                  :href="questionPdfUrl(question.question_number)"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  مشاهده PDF
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <path d="M14 5h5v5"/><path d="M19 5 10 14"/>
-                    <path d="M19 13v5a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h5"/>
-                  </svg>
-                </a>
+
+                <div class="paper-actions">
+                  <button
+                    type="button"
+                    class="answer-flip-button"
+                    :class="{ active: reviewPdfState(question.question_number).flipped }"
+                    :disabled="reviewPdfState(question.question_number).busy"
+                    :title="question.answer_pdf_url ? (reviewPdfState(question.question_number).flipped ? 'بازگشت به صورت سؤال' : 'مشاهده پاسخ') : 'پاسخ این سؤال در دسترس نیست'"
+                    @click="toggleAnswerFlip(question)"
+                  >
+                    <span v-if="reviewPdfState(question.question_number).busy" class="button-spinner"></span>
+                    <svg v-else-if="!reviewPdfState(question.question_number).flipped" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                      <path d="M4 7h16"/><path d="M7 4 4 7l3 3"/>
+                      <path d="M20 17H4"/><path d="m17 14 3 3-3 3"/>
+                    </svg>
+                    <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                      <path d="M19 12H5"/><path d="m11 6-6 6 6 6"/>
+                    </svg>
+                    <span>{{ reviewPdfState(question.question_number).busy ? 'در حال آماده‌سازی...' : reviewPdfState(question.question_number).flipped ? 'بازگشت به سؤال' : 'مشاهده پاسخ' }}</span>
+                  </button>
+
+                  <a
+                    class="paper-open-link"
+                    :href="reviewPdfState(question.question_number).flipped ? question.answer_pdf_url : questionPdfUrl(question.question_number)"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {{ reviewPdfState(question.question_number).flipped ? 'مشاهده پاسخ PDF' : 'مشاهده PDF' }}
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                      <path d="M14 5h5v5"/><path d="M19 5 10 14"/>
+                      <path d="M19 13v5a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h5"/>
+                    </svg>
+                  </a>
+                </div>
               </div>
 
-              <div class="question-pdf-frame">
-                <div v-if="questionPdfLoading && !renderedQuestionPages.has(Number(question.question_number))" class="question-pdf-state">
-                  <span class="pdf-loader"></span>
-                  <span>در حال آماده‌سازی صفحه سؤال...</span>
+              <div
+                class="question-pdf-frame answer-flip-scene"
+                :class="{ 'is-flipped': reviewPdfState(question.question_number).flipped }"
+                :style="pdfFlipStyle(question.question_number)"
+              >
+                <div class="answer-flip-card">
+                  <div class="pdf-flip-face pdf-flip-front">
+                    <div v-if="questionPdfLoading && !renderedQuestionPages.has(Number(question.question_number))" class="question-pdf-state">
+                      <span class="pdf-loader"></span>
+                      <span>در حال آماده‌سازی صفحه سؤال...</span>
+                    </div>
+                    <div v-if="questionPdfError" class="question-pdf-state error">
+                      <strong>نمایش PDF ممکن نیست</strong>
+                      <span>{{ questionPdfError }}</span>
+                    </div>
+                    <canvas
+                      :ref="el => setQuestionCanvasRef(question.question_number, el)"
+                      class="question-pdf-canvas"
+                      :data-question="question.question_number"
+                      :aria-label="`صفحه ${question.question_number} از PDF آزمون`"
+                    ></canvas>
+                  </div>
+
+                  <div class="pdf-flip-face pdf-flip-back">
+                    <div v-if="reviewPdfState(question.question_number).answerLoading" class="question-pdf-state">
+                      <span class="pdf-loader"></span>
+                      <span>در حال آماده‌سازی پاسخ...</span>
+                    </div>
+                    <div v-else-if="reviewPdfState(question.question_number).answerError" class="question-pdf-state error">
+                      <strong>نمایش پاسخ ممکن نیست</strong>
+                      <span>{{ reviewPdfState(question.question_number).answerError }}</span>
+                    </div>
+                    <canvas
+                      :ref="el => setAnswerCanvasRef(question.question_number, el)"
+                      class="question-pdf-canvas answer-pdf-canvas"
+                      :data-answer-question="question.question_number"
+                      :aria-label="`پاسخ سؤال ${question.question_number}`"
+                    ></canvas>
+                  </div>
                 </div>
-                <div v-if="questionPdfError" class="question-pdf-state error">
-                  <strong>نمایش PDF ممکن نیست</strong>
-                  <span>{{ questionPdfError }}</span>
-                </div>
-                <canvas
-                  :ref="el => setQuestionCanvasRef(question.question_number, el)"
-                  class="question-pdf-canvas"
-                  :data-question="question.question_number"
-                  :aria-label="`صفحه ${question.question_number} از PDF آزمون`"
-                ></canvas>
               </div>
             </div>
 
@@ -1178,6 +1225,7 @@ import {
   onBeforeUnmount,
   onMounted,
   ref,
+  reactive,
   shallowRef,
   watch,
 } from 'vue'
@@ -1416,6 +1464,14 @@ const questionPdfError = ref('')
 const questionCanvasRefs = new Map()
 const questionRenderTasks = new Map()
 const renderedQuestionPages = new Set()
+
+// وضعیت مستقل PDF سؤال/پاسخ برای هر کارت مرور
+const reviewPdfStates = reactive({})
+const answerCanvasRefs = new Map()
+const answerPdfDocuments = new Map()
+const answerPdfLoadPromises = new Map()
+const answerRenderTasks = new Map()
+const renderedAnswerPages = new Set()
 
 let questionPdfLoadPromise = null
 
@@ -1914,6 +1970,217 @@ function questionPdfUrl(questionNumber) {
   return `${result.value.exam.question_pdf_url}#page=${number}`
 }
 
+function getReviewQuestion(questionNumber) {
+  const number = Number(questionNumber)
+  return (result.value?.personalized_review || []).find(
+    item => Number(item.question_number) === number
+  ) || null
+}
+
+function reviewPdfState(questionNumber) {
+  const key = String(Number(questionNumber))
+  if (!reviewPdfStates[key]) {
+    reviewPdfStates[key] = {
+      flipped: false,
+      busy: false,
+      answerLoading: false,
+      answerError: '',
+      answerReady: false,
+      questionHeight: 0,
+      answerHeight: 0,
+    }
+  }
+  return reviewPdfStates[key]
+}
+
+function pdfFlipStyle(questionNumber) {
+  const state = reviewPdfState(questionNumber)
+  const height = state.flipped ? state.answerHeight : state.questionHeight
+  return height > 0 ? { minHeight: `${height}px` } : undefined
+}
+
+function setAnswerCanvasRef(questionNumber, element) {
+  const number = Number(questionNumber)
+  if (!Number.isInteger(number) || number < 1) return
+
+  if (element) {
+    answerCanvasRefs.set(number, element)
+  } else {
+    answerCanvasRefs.delete(number)
+  }
+}
+
+function getAnswerPdfUrl(question) {
+  return result.value.exam.answer_pdf_url
+}
+
+async function loadAnswerPdf(question) {
+  const number = Number(question.question_number)
+  const url = getAnswerPdfUrl(question)
+
+  if (!Number.isInteger(number) || number < 1) {
+    throw new Error('شماره سؤال نامعتبر است.')
+  }
+  if (!url) {
+    throw new Error('برای این سؤال فایل PDF پاسخ ثبت نشده است.')
+  }
+
+  if (answerPdfDocuments.has(number)) {
+    return answerPdfDocuments.get(number)
+  }
+  if (answerPdfLoadPromises.has(number)) {
+    return answerPdfLoadPromises.get(number)
+  }
+
+  const state = reviewPdfState(number)
+  state.answerLoading = true
+  state.answerError = ''
+
+  const promise = pdfjsLib.getDocument({
+    url,
+    withCredentials: false,
+  }).promise
+    .then(pdf => {
+      answerPdfDocuments.set(number, pdf)
+      return pdf
+    })
+    .catch(error => {
+      console.error(`ANSWER PDF LOAD ERROR ${number}:`, error)
+      state.answerError = 'فایل PDF پاسخ بارگذاری نشد. آدرس فایل یا تنظیمات CORS سرور را بررسی کنید.'
+      throw error
+    })
+    .finally(() => {
+      state.answerLoading = false
+      answerPdfLoadPromises.delete(number)
+    })
+
+  answerPdfLoadPromises.set(number, promise)
+  return promise
+}
+
+async function renderAnswerPage(question, force = false) {
+  const number = Number(question.question_number)
+  const canvas = answerCanvasRefs.get(number)
+  const state = reviewPdfState(number)
+
+  if (!Number.isInteger(number) || number < 1 || !canvas) return false
+
+  if (!force && renderedAnswerPages.has(number) && canvas.width > 0 && canvas.height > 0) {
+    state.answerHeight = canvas.clientHeight || Number.parseFloat(canvas.style.height) || state.answerHeight
+    return true
+  }
+
+  const previousTask = answerRenderTasks.get(number)
+  if (previousTask) {
+    try { previousTask.cancel() } catch { /* ignore */ }
+  }
+
+  try {
+    const pdf = await loadAnswerPdf(question)
+    if (!pdf.numPages) throw new Error('فایل پاسخ صفحه‌ای ندارد.')
+
+    const page = await pdf.getPage(number)
+    const container = canvas.parentElement
+    if (!container) return false
+
+    const baseViewport = page.getViewport({ scale: 1 })
+    const availableWidth = Math.max(280, container.clientWidth - 2)
+    const scale = Math.min(1.75, availableWidth / baseViewport.width)
+    const viewport = page.getViewport({ scale })
+    const outputScale = Math.min(window.devicePixelRatio || 1, 2)
+
+    canvas.width = Math.floor(viewport.width * outputScale)
+    canvas.height = Math.floor(viewport.height * outputScale)
+    canvas.style.width = `${Math.floor(viewport.width)}px`
+    canvas.style.height = `${Math.floor(viewport.height)}px`
+
+    const context = canvas.getContext('2d', { alpha: false })
+    if (!context) throw new Error('Canvas 2D context is unavailable.')
+
+    context.setTransform(outputScale, 0, 0, outputScale, 0, 0)
+    context.fillStyle = '#ffffff'
+    context.fillRect(0, 0, viewport.width, viewport.height)
+
+    const renderTask = page.render({ canvasContext: context, viewport })
+    answerRenderTasks.set(number, renderTask)
+    await renderTask.promise
+
+    renderedAnswerPages.add(number)
+    state.answerReady = true
+    state.answerError = ''
+    state.answerHeight = canvas.clientHeight || Math.floor(viewport.height)
+    return true
+  } catch (error) {
+    if (error?.name === 'RenderingCancelledException') return false
+    console.error(`ANSWER PDF PAGE ${number} RENDER ERROR:`, error)
+    state.answerError = 'نمایش صفحه پاسخ با خطا مواجه شد.'
+    state.answerReady = false
+    return false
+  } finally {
+    answerRenderTasks.delete(number)
+  }
+}
+
+async function toggleAnswerFlip(question) {
+  const number = Number(question.question_number)
+  if (!Number.isInteger(number) || number < 1) return
+
+  const state = reviewPdfState(number)
+  if (state.busy) return
+
+  if (state.flipped) {
+    state.busy = true
+    // اجازه می‌دهیم انیمیشن برگشت کامل شود و سپس قفل برداشته شود.
+    state.flipped = false
+    window.setTimeout(() => {
+      state.busy = false
+    }, 760)
+    return
+  }
+
+  if (!getAnswerPdfUrl(question)) {
+    state.answerError = 'برای این سؤال فایل PDF پاسخ ثبت نشده است.'
+    return
+  }
+
+  state.busy = true
+  state.answerError = ''
+
+  try {
+    await nextTick()
+    const rendered = await renderAnswerPage(question)
+    if (!rendered) return
+
+    await nextTick()
+    state.flipped = true
+  } catch (error) {
+    console.error(`ANSWER FLIP ERROR ${number}:`, error)
+  } finally {
+    window.setTimeout(() => {
+      state.busy = false
+    }, 760)
+  }
+}
+
+function resetAnswerRendering() {
+  for (const task of answerRenderTasks.values()) {
+    try { task.cancel() } catch { /* ignore */ }
+  }
+  answerRenderTasks.clear()
+  renderedAnswerPages.clear()
+
+  for (const pdf of answerPdfDocuments.values()) {
+    try { pdf.destroy() } catch { /* ignore */ }
+  }
+  answerPdfDocuments.clear()
+  answerPdfLoadPromises.clear()
+  answerCanvasRefs.clear()
+
+  for (const key of Object.keys(reviewPdfStates)) {
+    delete reviewPdfStates[key]
+  }
+}
+
 function setQuestionCanvasRef(questionNumber, element) {
   const number = Number(questionNumber)
   if (!Number.isInteger(number) || number < 1) return
@@ -2009,6 +2276,8 @@ async function renderQuestionPage(questionNumber, force = false) {
     questionRenderTasks.set(number, renderTask)
     await renderTask.promise
     renderedQuestionPages.add(number)
+    const state = reviewPdfState(number)
+    state.questionHeight = canvas.clientHeight || Math.floor(viewport.height)
   } catch (error) {
     if (error?.name === 'RenderingCancelledException') return
     console.error(`QUESTION PDF PAGE ${number} RENDER ERROR:`, error)
@@ -2235,6 +2504,7 @@ onBeforeUnmount(() => {
   questionRenderTasks.clear()
   questionCanvasRefs.clear()
   renderedQuestionPages.clear()
+  resetAnswerRendering()
 
   if (questionPdfDocument.value) {
     questionPdfDocument.value.destroy()
@@ -5233,6 +5503,141 @@ onBeforeUnmount(() => {
   height: auto;
   margin: 0 auto;
   background: #fff;
+}
+
+.paper-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.answer-flip-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 34px;
+  padding: 8px 12px;
+  border: 1px solid rgba(101,103,241,.20);
+  border-radius: 11px;
+  color: #fff;
+  background: linear-gradient(135deg, #6567f1, #4d4fd8);
+  box-shadow: 0 8px 20px rgba(101,103,241,.18);
+  cursor: pointer;
+  font: inherit;
+  font-size: 9px;
+  font-weight: 900;
+  transition: transform .22s ease, box-shadow .22s ease, opacity .22s ease;
+}
+
+.answer-flip-button svg {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 15px;
+}
+
+.answer-flip-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 26px rgba(101,103,241,.27);
+}
+
+.answer-flip-button.active {
+  background: linear-gradient(135deg, #18a88b, #128a74);
+  border-color: rgba(24,168,139,.22);
+  box-shadow: 0 8px 22px rgba(24,168,139,.18);
+}
+
+.answer-flip-button:disabled {
+  cursor: not-allowed;
+  opacity: .52;
+  transform: none;
+  box-shadow: none;
+}
+
+.button-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255,255,255,.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: answerSpin .7s linear infinite;
+}
+
+@keyframes answerSpin {
+  to { transform: rotate(360deg); }
+}
+
+.answer-flip-scene {
+  perspective: 1800px;
+  overflow: visible;
+  transition: min-height .76s cubic-bezier(.22,.61,.36,1);
+  transform-style: preserve-3d;
+}
+
+.answer-flip-card {
+  position: relative;
+  width: 100%;
+  min-height: 260px;
+  transform-style: preserve-3d;
+  transition: transform .76s cubic-bezier(.22,.61,.36,1);
+}
+
+.answer-flip-scene.is-flipped .answer-flip-card {
+  transform: rotateY(180deg);
+}
+
+.pdf-flip-face {
+  position: relative;
+  width: 100%;
+  min-height: 260px;
+  overflow: hidden;
+  border-radius: 14px;
+  background: #fff;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform-style: preserve-3d;
+}
+
+.pdf-flip-front {
+  z-index: 2;
+}
+
+.pdf-flip-back {
+  height: fit-content;
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  transform: rotateY(180deg);
+}
+
+.answer-pdf-canvas {
+  min-height: 0;
+}
+
+.exam-result-page.is-dark .answer-flip-button {
+  box-shadow: 0 10px 28px rgba(0,0,0,.28);
+}
+
+.exam-result-page.is-dark .pdf-flip-face {
+  background: #fff;
+}
+
+@media (max-width: 650px) {
+  .paper-actions {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .paper-actions > * {
+    flex: 1 1 150px;
+  }
+
+  .answer-flip-button,
+  .paper-open-link {
+    justify-content: center;
+  }
 }
 
 .question-pdf-state {
