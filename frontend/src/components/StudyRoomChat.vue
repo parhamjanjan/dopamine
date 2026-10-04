@@ -39,7 +39,7 @@
         class="messages custom-scrollbar"
         role="log"
         aria-live="polite"
-        style="max-height: min(42vh, 390px);"
+        style="max-height: 75vh;"
       >
         <!-- Loading -->
 
