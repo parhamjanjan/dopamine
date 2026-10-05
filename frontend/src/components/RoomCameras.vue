@@ -20,7 +20,34 @@
         </div>
 
         <div class="camera-actions">
-          
+          <button
+            class="camera-toggle"
+            :class="{ active: cameraOn }"
+            type="button"
+            :disabled="cameraLoading"
+            :aria-pressed="cameraOn"
+            @click="toggleCamera"
+          >
+            <span class="action-icon">{{ cameraOn ? '📷' : '🚫' }}</span>
+            <span class="action-copy">
+              <strong>{{ cameraOn ? 'دوربین روشن' : 'روشن کردن دوربین' }}</strong>
+              <small>{{ cameraOn ? 'نمایش پیش‌نمایش شخصی' : 'فعال‌سازی وبکم' }}</small>
+            </span>
+          </button>
+
+          <button
+            v-if="cameraOn"
+            class="camera-toggle"
+            :class="{ active: !microphoneOn }"
+            type="button"
+            @click="toggleMicrophone"
+          >
+            <span class="action-icon">{{ microphoneOn ? '🎙️' : '🔇' }}</span>
+            <span class="action-copy">
+              <strong>{{ microphoneOn ? 'میکروفون روشن' : 'میکروفون خاموش' }}</strong>
+              <small>صدای وبکم</small>
+            </span>
+          </button>
 
           <button
             v-if="cameraOn"
@@ -51,14 +78,21 @@
           class="camera-card"
           :class="{ 'is-local': camera.isLocal, 'is-shared': !camera.isLocal }"
         >
-          <div class="video-wrapper">
+          <div class="video-wrapper" :class="{ 'is-pinned': pinnedUserId === String(camera.userId) }">
             <video
               :ref="el => setVideoRef(el, camera.userId)"
               :class="{ 'local-video': camera.isLocal }"
               autoplay
               playsinline
-              muted
+              :muted="camera.isLocal"
             ></video>
+
+            <div class="video-tools">
+              <button type="button" @click.stop="pinCamera(camera.userId)" :title="pinnedUserId === String(camera.userId) ? 'برداشتن سنجاق' : 'سنجاق کردن'">
+                {{ pinnedUserId === String(camera.userId) ? '📌' : '☆' }}
+              </button>
+              <button type="button" @click.stop="toggleFullscreen(camera.userId)" title="تمام صفحه">⛶</button>
+            </div>
 
             <div class="video-topbar">
               <span v-if="camera.isLocal" class="camera-badge local">
@@ -72,7 +106,7 @@
 
               <span class="quality-badge">
                 <span class="quality-dot"></span>
-                LIVE
+                {{ camera.isLocal ? (sharing ? 'LIVE' : 'PREVIEW') : 'LIVE' }}
               </span>
             </div>
 
@@ -82,6 +116,7 @@
                 <span class="user-name">
                   {{ camera.isLocal ? (localUsername || 'شما') : (camera.username || 'کاربر') }}
                 </span>
+                <span class="media-state">{{ camera.microphoneEnabled ? '🎙️' : '🔇' }}</span>
               </div>
             </div>
           </div>
@@ -188,6 +223,8 @@ function startThemeObserver() {
  * -------------------------------------------------------------------------- */
 const cameraOn = ref(false)
 const sharing = ref(false)
+const microphoneOn = ref(false)
+const pinnedUserId = ref(null)
 const cameraLoading = ref(false)
 const localStream = shallowRef(null)
 const localUserId = ref(null)
@@ -238,6 +275,7 @@ const cameras = computed(() => {
       username: localUsername.value,
       stream: localStream.value,
       isLocal: true,
+      microphoneEnabled: microphoneOn.value,
     })
   }
 
@@ -251,6 +289,7 @@ const cameras = computed(() => {
       username: peer.username,
       stream: peer.stream,
       isLocal: false,
+      microphoneEnabled: peer.microphoneEnabled === true,
     })
   }
 
@@ -368,7 +407,7 @@ async function attachVideoStream(userId, stream) {
    */
   video.autoplay = true
   video.playsInline = true
-  video.muted = true
+  video.muted = String(userId) === String(localUserId.value)
 
   if (video.srcObject !== stream) {
     video.srcObject = stream
@@ -412,6 +451,7 @@ function upsertRemotePeer(
           sharingState === null
             ? peer.sharing
             : sharingState,
+        microphoneEnabled: peer.microphoneEnabled === true,
       }
     })
   } else {
@@ -422,6 +462,7 @@ function upsertRemotePeer(
         username: username || 'کاربر',
         stream,
         sharing: sharingState === true,
+        microphoneEnabled: false,
       },
     ]
   }
@@ -446,6 +487,7 @@ function setRemoteSharingState(userId, sharingState) {
         username: 'کاربر',
         stream: null,
         sharing: sharingState,
+        microphoneEnabled: false,
       },
     ]
     return
@@ -556,6 +598,21 @@ async function replaceLocalTrack(remoteUserId) {
 
     transceiver.direction = 'sendrecv'
 
+    const audioTransceiver = pc.getTransceivers().find(
+      item => item.sender && item.receiver?.track?.kind === 'audio'
+    )
+
+    if (audioTransceiver) {
+      const audioTrack = sharing.value
+        ? localStream.value?.getAudioTracks()?.find(item => item.readyState === 'live') || null
+        : null
+      await audioTransceiver.sender.replaceTrack(audioTrack)
+      audioTransceiver.direction = 'sendrecv'
+      try {
+        if (audioTrack && localStream.value) audioTransceiver.sender.setStreams(localStream.value)
+      } catch {}
+    }
+
     console.log('WEBRTC LOCAL TRACK SYNC:', {
       remoteUserId,
       sharing: sharing.value,
@@ -606,6 +663,10 @@ function ensurePeerConnection(remoteUserId, username = '') {
    * روشن/خاموش شدن دوربین فقط replaceTrack است و مذاکره جدید لازم ندارد.
    */
   const transceiver = pc.addTransceiver('video', {
+    direction: 'sendrecv',
+  })
+
+  const audioTransceiver = pc.addTransceiver('audio', {
     direction: 'sendrecv',
   })
 
@@ -1050,6 +1111,47 @@ function handleCameraStateResponse(data) {
   setRemoteSharingState(remoteUserId, true)
 }
 
+function handleRemoteMediaState(data) {
+  const id = String(data.user_id)
+  if (id === String(localUserId.value)) return
+  remotePeers.value = remotePeers.value.map(peer =>
+    String(peer.userId) === id
+      ? { ...peer, microphoneEnabled: data.microphone_enabled === true }
+      : peer
+  )
+}
+
+function pinCamera(userId) {
+  const id = String(userId)
+  pinnedUserId.value = pinnedUserId.value === id ? null : id
+}
+
+async function toggleFullscreen(userId) {
+  const video = videoElements.get(String(userId))
+  const target = video?.closest('.video-wrapper')
+  if (!target) return
+  try {
+    if (document.fullscreenElement) await document.exitFullscreen()
+    else await target.requestFullscreen()
+  } catch (error) {
+    console.warn('Fullscreen unavailable:', error)
+  }
+}
+
+async function toggleMicrophone() {
+  if (!localStream.value) return
+  const tracks = localStream.value.getAudioTracks()
+  if (!tracks.length) return
+  microphoneOn.value = !microphoneOn.value
+  tracks.forEach(track => { track.enabled = microphoneOn.value })
+  sendSocketMessage({
+    type: 'camera_media_state',
+    camera_enabled: cameraOn.value,
+    microphone_enabled: microphoneOn.value,
+  })
+  emit('camera-stream', localStream.value)
+}
+
 /* --------------------------------------------------------------------------
  * Socket router / connection
  * -------------------------------------------------------------------------- */
@@ -1101,6 +1203,10 @@ function handleSocketMessage(data) {
 
     case 'camera_state_response':
       handleCameraStateResponse(data)
+      break
+
+    case 'camera_media_state':
+      handleRemoteMediaState(data)
       break
 
     case 'webrtc_offer':
@@ -1201,6 +1307,7 @@ function connectSocket() {
   }
 }
 
+
 function disconnectSocket() {
   stopRankingPing()
 
@@ -1246,11 +1353,16 @@ async function startCamera() {
         height: { ideal: 480 },
         facingMode: 'user',
       },
-      audio: false,
+      audio: {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+      },
     })
 
     localStream.value = stream
     cameraOn.value = true
+    microphoneOn.value = stream.getAudioTracks().some(track => track.enabled)
     sharing.value = false
 
     emit('camera-stream', stream)
@@ -1292,6 +1404,11 @@ async function startSharing() {
   sendSocketMessage({
     type: 'camera_share_started',
   })
+  sendSocketMessage({
+    type: 'camera_media_state',
+    camera_enabled: true,
+    microphone_enabled: microphoneOn.value,
+  })
 
   const ids = [...peerConnections.keys()]
 
@@ -1311,6 +1428,11 @@ async function stopSharing() {
 
   sendSocketMessage({
     type: 'camera_share_stopped',
+  })
+  sendSocketMessage({
+    type: 'camera_media_state',
+    camera_enabled: false,
+    microphone_enabled: false,
   })
 
   const ids = [...peerConnections.keys()]
@@ -1341,6 +1463,7 @@ async function stopCamera() {
 
   localStream.value = null
   cameraOn.value = false
+  microphoneOn.value = false
   sharing.value = false
 
   if (localUserId.value !== null) {
@@ -2295,4 +2418,11 @@ defineExpose({
   to { transform: rotate(360deg); }
 }
 
+
+.video-tools { position:absolute; top:12px; left:12px; display:flex; gap:6px; z-index:4; }
+.video-tools button { width:34px; height:34px; border:1px solid rgba(255,255,255,.16); border-radius:11px; color:#fff; background:rgba(2,6,23,.58); backdrop-filter:blur(12px); cursor:pointer; transition:.2s ease; }
+.video-tools button:hover { transform:translateY(-2px); background:rgba(2,6,23,.82); }
+.video-wrapper.is-pinned { outline:2px solid var(--camera-primary); outline-offset:-2px; }
+.media-state { opacity:.9; margin-inline-start:4px; }
+@media (max-width:720px){ .camera-shell{padding:14px;border-radius:20px}.cameras-header{align-items:flex-start;flex-direction:column}.camera-actions{width:100%;display:grid;grid-template-columns:1fr 1fr}.camera-actions>*{width:100%}.camera-grid{grid-template-columns:1fr 1fr;gap:8px}.camera-card{border-radius:14px}.video-wrapper{aspect-ratio:4/3}.action-copy small{display:none}.camera-toggle,.share-toggle{min-height:44px;padding:8px 10px}.heading-icon{width:44px;height:44px;flex-basis:44px}}
 </style>

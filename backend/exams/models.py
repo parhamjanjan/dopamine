@@ -74,6 +74,33 @@ class Exam(models.Model):
     updated_at = models.DateTimeField(
         auto_now=True,
     )
+    GRADE_CHOICES = [
+        ('10', 'دهم'),
+        ('11', 'یازدهم'),
+        ('12', 'دوازدهم'),
+    ]
+
+    FIELD_CHOICES = [
+        ('experimental', 'تجربی'),
+        ('mathematics', 'ریاضی'),
+        ('humanities', 'انسانی'),
+    ]
+
+    grade = models.CharField(
+        max_length=2,
+        choices=GRADE_CHOICES,
+        null=True,
+        blank=True,
+        verbose_name='پایه تحصیلی'
+    )
+
+    field = models.CharField(
+        max_length=20,
+        choices=FIELD_CHOICES,
+        null=True,
+        blank=True,
+        verbose_name='رشته تحصیلی'
+    )
 
     class Meta:
         ordering = ["-start_at"]

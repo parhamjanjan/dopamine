@@ -51,6 +51,8 @@ class ExamAdmin(admin.ModelAdmin):
         "title",
         "category",
         "start_at",
+        "field",
+        "grade",
         "end_at",
         "duration_minutes",
         "total_questions",
@@ -89,6 +91,8 @@ class ExamAdmin(admin.ModelAdmin):
                     "description",
                     "category",
                     "is_active",
+                    "field",
+                    "grade"
                 )
             },
         ),

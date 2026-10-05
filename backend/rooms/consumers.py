@@ -501,6 +501,41 @@ class StudyRoomConsumer(
             )
 
         # =================================================
+        # CAMERA MEDIA STATE
+        # =================================================
+
+        elif message_type == 'camera_media_state':
+
+            camera_enabled = bool(content.get('camera_enabled', True))
+            microphone_enabled = bool(content.get('microphone_enabled', False))
+
+            await self.channel_layer.group_send(
+                self.room_group_name,
+                {
+                    'type': 'camera_media_state',
+                    'user_id': self.user_id,
+                    'username': self.username,
+                    'camera_enabled': camera_enabled,
+                    'microphone_enabled': microphone_enabled,
+                }
+            )
+
+        # =================================================
+        # PRESENCE / TYPING
+        # =================================================
+
+        elif message_type == 'room_typing':
+            await self.channel_layer.group_send(
+                self.room_group_name,
+                {
+                    'type': 'room_typing',
+                    'user_id': self.user_id,
+                    'username': self.username,
+                    'is_typing': bool(content.get('is_typing', False)),
+                }
+            )
+
+        # =================================================
         # CHAT HISTORY
         # =================================================
 
@@ -758,6 +793,10 @@ class StudyRoomConsumer(
                 'heart',
                 'like',
                 'dislike',
+                'fire',
+                'brain',
+                'target',
+                'wow',
             }
 
             if reaction not in valid_reactions:
@@ -1082,6 +1121,37 @@ class StudyRoomConsumer(
 
             'candidate':
                 event['candidate'],
+        })
+
+    # =====================================================
+    # Camera Media State
+    # =====================================================
+
+    async def camera_media_state(self, event):
+        if event.get('user_id') == self.user_id:
+            return
+
+        await self.send_json({
+            'type': 'camera_media_state',
+            'user_id': event.get('user_id'),
+            'username': event.get('username', 'کاربر'),
+            'camera_enabled': bool(event.get('camera_enabled', True)),
+            'microphone_enabled': bool(event.get('microphone_enabled', False)),
+        })
+
+    # =====================================================
+    # Typing
+    # =====================================================
+
+    async def room_typing(self, event):
+        if event.get('user_id') == self.user_id:
+            return
+
+        await self.send_json({
+            'type': 'room_typing',
+            'user_id': event.get('user_id'),
+            'username': event.get('username', 'کاربر'),
+            'is_typing': bool(event.get('is_typing', False)),
         })
 
     # =====================================================

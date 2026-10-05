@@ -32,7 +32,7 @@ class ExamListView(ListAPIView):
 
         return (
             Exam.objects
-            .filter(is_active=True)
+            .filter(is_active=True , field =self.request.user.field , grade =self.request.user.grade)
             .prefetch_related(
                 "booklets",
                 Prefetch(
@@ -56,7 +56,7 @@ class ExamDetailView(RetrieveAPIView):
 
         return (
             Exam.objects
-            .filter(is_active=True)
+            .filter(is_active=True , field =self.request.user.field , grade =self.request.user.grade )
             .prefetch_related(
                 "booklets",
                 Prefetch(

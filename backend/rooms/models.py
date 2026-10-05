@@ -367,6 +367,11 @@ class RoomChatReaction(models.Model):
 
         DISLIKE = 'dislike', 'دیسلایک'
 
+        FIRE = 'fire', 'آتش'
+        BRAIN = 'brain', 'مغز'
+        TARGET = 'target', 'هدف'
+        WOW = 'wow', 'واو'
+
     message = models.ForeignKey(
         RoomChatMessage,
         on_delete=models.CASCADE,

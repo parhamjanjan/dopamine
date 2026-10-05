@@ -275,9 +275,6 @@
 
 /* Tabs */
 .room-tabs {
-  position: sticky;
-  top: 12px;
-  z-index: 20;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 4px;
