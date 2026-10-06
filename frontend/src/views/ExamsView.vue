@@ -890,7 +890,11 @@
       class="start-button"
       @click.stop="startExam(exam)"
     >
-      <span class="start-button-content">
+      <span style="
+    display: flex;
+    direction: ltr;
+    align-items: center;
+" class="start-button-content">
         <span>
           {{ isInProgress(exam) ? 'ادامه آزمون' : 'شروع آزمون' }}
         </span>
