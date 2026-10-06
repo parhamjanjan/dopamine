@@ -629,9 +629,6 @@
 
           <!-- Card title -->
           <div class="exam-heading">
-            <div class="exam-index">
-              <span>#</span>{{ toPersianNumber(exam.id) }}
-            </div>
             <h2>{{ exam.title }}</h2>
             <p v-if="exam.description">{{ exam.description }}</p>
           </div>
