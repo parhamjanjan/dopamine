@@ -64,6 +64,7 @@ INSTALLED_APPS = [
     'planner',
     'channels',
     'exams',
+    'notes',
 ]
 
 
