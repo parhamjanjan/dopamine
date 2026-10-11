@@ -100,12 +100,18 @@
               <path d="M9 15h4" />
             </template>
 
-            <template v-else-if="item.icon === 'messages'">
+            <template v-else-if="item.icon === 'notes'">
+              <path d="M6 3.5h9l4 4V20a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 5 20V5A1.5 1.5 0 0 1 6.5 3.5Z" />
+              <path d="M14.5 3.5V8H19" />
+              <path d="M8 12h8M8 16h8" />
+            </template>
+
+            <!-- <template v-else-if="item.icon === 'messages'">
               <path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5H8l-4 2v-5.2A7.5 7.5 0 1 1 20 11.5Z" />
               <circle cx="8.5" cy="11.5" r=".7" fill="currentColor" stroke="none" />
               <circle cx="12" cy="11.5" r=".7" fill="currentColor" stroke="none" />
               <circle cx="15.5" cy="11.5" r=".7" fill="currentColor" stroke="none" />
-            </template>
+            </template> -->
 
             <template v-else-if="item.icon === 'profile'">
               <circle cx="12" cy="12" r="9" />
@@ -129,10 +135,11 @@ const isNavVisible = ref(true)
 
 const navItems = [
   { name: 'home', label: 'خانه', icon: 'home' },
-  { name: 'planner', label: 'برنامه‌ریز', icon: 'planner' },
+  { name: 'notes', label: 'جزوه‌ها', icon: 'notes' },
   { name: 'rooms', label: 'سالن‌ها', icon: 'rooms' },
   { name: 'exams', label: 'آزمون‌ها', icon: 'exams' },
-  { name: 'messages', label: 'پیام‌ها', icon: 'messages', notification: true },
+  { name: 'planner', label: 'برنامه‌ریز', icon: 'planner' },
+  // { name: 'messages', label: 'پیام‌ها', icon: 'messages', notification: true },
   { name: 'profile', label: 'پروفایل', icon: 'profile' }
 ]
 </script>

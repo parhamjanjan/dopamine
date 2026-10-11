@@ -2,7 +2,8 @@ import axios from 'axios'
 import { useAuthStore } from '../stores/auth'
 
 const api = axios.create({
-  baseURL: 'https://dopamine-backend-3vbz.onrender.com/api',
+  baseURL:'http://127.0.0.1:8000/api' || 'https://dopamine-backend-3vbz.onrender.com/api',
+  
 })
 
 
@@ -31,6 +32,7 @@ api.interceptors.request.use(
       config.headers.Authorization =
         `Bearer ${auth.accessToken}`
     }
+
     if (config.data instanceof FormData) {
   delete config.headers['Content-Type']
 }
@@ -95,6 +97,8 @@ api.interceptors.response.use(
     ) {
       return Promise.reject(error)
     }
+
+    
 
     // درخواست refresh خودش نباید دوباره refresh شود
     if (
@@ -178,7 +182,7 @@ api.interceptors.response.use(
     try {
 
       const response = await axios.post(
-        'https://dopamine-backend-3vbz.onrender.com/api/accounts/token/refresh/',
+        'http://127.0.0.1:8000/api/accounts/token/refresh/',
         {
           refresh: auth.refreshToken
         }

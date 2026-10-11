@@ -35,6 +35,10 @@ urlpatterns = [
         'api/exams/', 
         include('exams.urls')
     ),
+    path(
+        'api/notes/',
+        include('notes.urls')
+    ),
     
 ]
 

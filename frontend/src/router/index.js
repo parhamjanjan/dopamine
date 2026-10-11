@@ -15,6 +15,9 @@ import ExamsView from '../views/ExamsView.vue'
 
 import ExamTakingView from '../views/ExamTakingView.vue'
 import ExamResultView from '../views/ExamResultView.vue'
+import NotesView from '../views/NotesView.vue'
+import NoteStudyView from '../views/NoteStudyView.vue'
+import NoteEditorView from '../views/NoteEditorView.vue'
 
 
 /* =========================================================
@@ -134,6 +137,11 @@ const router = createRouter({
           name: 'exams',
           component: ExamsView
         },
+
+        { path: 'notes', name: 'notes', component: NotesView },
+        { path: 'notes/:id', name: 'note-study', component: NoteStudyView },
+        { path: 'notes/admin/new', name: 'note-create', component: NoteEditorView },
+        { path: 'notes/admin/:id/edit', name: 'note-edit', component: NoteEditorView },
 
         {
           path: 'messages',
