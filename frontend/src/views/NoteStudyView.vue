@@ -1,5 +1,5 @@
 <template>
-  <div class="quest" dir="rtl">
+  <div class="quest" style="overflow: hidden;" dir="rtl">
     <div class="bg-stars"></div><div class="aurora a1"></div><div class="aurora a2"></div><div class="aurora a3"></div>
     <div class="confetti" aria-hidden="true"><i v-for="c in confetti" :key="c.id" :style="{ '--x': c.x, '--d': c.d + 's', '--t': c.t + 's', '--r': c.r + 'deg', '--c': c.c, width: c.s + 'px', height: c.s * 1.6 + 'px' }"></i></div>
 
