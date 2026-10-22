@@ -285,6 +285,7 @@ class ExamAttemptAdmin(admin.ModelAdmin):
         "submitted_at",
         "score",
         "raw_score",
+        "scaled_score"
     )
 
     list_filter = (
@@ -307,6 +308,7 @@ class ExamAttemptAdmin(admin.ModelAdmin):
         "answers",
         "score",
         "raw_score",
+        "scaled_score",
         "correct_count",
         "wrong_count",
         "unanswered_count",
@@ -323,6 +325,7 @@ class ExamResultAdmin(admin.ModelAdmin):
         "is_final",
         "score",
         "raw_score",
+        "scaled_score",
         "national_rank",
         "provincial_rank",
         "finalized_at",

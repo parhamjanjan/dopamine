@@ -5,7 +5,7 @@ from rest_framework.views import APIView
 from rest_framework.generics import ListAPIView, RetrieveAPIView
 from django.db.models import Prefetch
 
-from .models import Exam, ExamAttempt, ExamAttemptStatus
+from .models import Exam, ExamAttempt, ExamAttemptStatus, ExamResult
 from .serializers import (
     ExamListSerializer,
     ExamDetailSerializer,

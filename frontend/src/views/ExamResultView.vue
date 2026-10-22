@@ -86,11 +86,11 @@
                 />
               </svg>
               <div class="score-center">
-                <strong>{{ formatPercent(result.summary?.percentage) }}</strong>
-                <span>درصد</span>
+                <strong>{{ formatPercent(result.summary?.scaled_score) }}</strong>
+                <span>تراز آزمون شما</span>
               </div>
             </div>
-            <div class="score-caption">درصد با نمره منفی</div>
+            <div class="score-caption">نمره واقعی عملکرد شما</div>
           </div>
         </div>
 
@@ -880,7 +880,7 @@
               <h2>روند عملکردت در آزمون‌ها</h2>
             </div>
             <div v-if="previousChange !== null" class="trend-chip" :class="changeClass(previousChange)">
-              {{ signedPercent(previousChange) }}٪
+              {{ signedPercent(previousChange) }}
             </div>
           </div>
           <div v-if="progressData.length" class="chartjs-wrap progress-chartjs-wrap">
@@ -891,11 +891,11 @@
           <div class="progress-summary">
             <div>
               <span>اولین عملکرد</span>
-              <strong>{{ formatPercent(firstProgressScore) }}٪</strong>
+              <strong>{{ formatPercent(firstProgressScore) }}</strong>
             </div>
             <div>
               <span>آخرین عملکرد</span>
-              <strong>{{ formatPercent(lastProgressScore) }}٪</strong>
+              <strong>{{ formatPercent(lastProgressScore) }}</strong>
             </div>
             <div>
               <span>تعداد آزمون‌ها</span>
@@ -1402,8 +1402,8 @@ async function initCharts() {
       data: {
         labels: progressData.value.map((item, index) => truncate(item.exam_title || `آزمون ${index + 1}`, 14)),
         datasets: [{
-          label: 'درصد عملکرد',
-          data: progressData.value.map(item => Number(item.percentage || 0)),
+          label: 'تراز آزمون شما',
+          data: progressData.value.map(item => Number(item.scaled_score || 0)),
           borderColor: palette.user,
           backgroundColor: gradient || 'rgba(101,103,241,.12)',
           fill: true,
@@ -1427,7 +1427,7 @@ async function initCharts() {
             titleFont: { ...font, weight: '700' },
             bodyFont: { ...font },
             callbacks: {
-              label: ctx => ` درصد: ${formatPercent(ctx.raw)}٪`,
+              label: ctx => ` تراز: ${formatPercent(ctx.raw)}`,
             },
           },
         },
@@ -1439,11 +1439,11 @@ async function initCharts() {
           },
           y: {
             beginAtZero: true,
-            max: 100,
+            max: 15000,
             ticks: {
               color: palette.text,
               font: { ...font, size: 9 },
-              callback: value => `${value}٪`,
+              callback: value => `${value}`,
             },
             grid: { color: palette.grid },
             border: { display: false },
@@ -1827,12 +1827,12 @@ const progressData = computed(() => {
 
 const firstProgressScore = computed(() => {
   if (!progressData.value.length) return 0
-  return Number(progressData.value[0].percentage || 0)
+  return Number(progressData.value[0].scaled_score || 0)
 })
 
 const lastProgressScore = computed(() => {
   if (!progressData.value.length) return 0
-  return Number(progressData.value[progressData.value.length - 1].percentage || 0)
+  return Number(progressData.value[progressData.value.length - 1].scaled_score || 0)
 })
 
 const previousChange = computed(() => {

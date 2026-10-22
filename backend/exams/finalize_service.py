@@ -132,10 +132,15 @@ def finalize_exam(exam_id):
             "unanswered"
         ]
 
+        attempt.scaled_score = stats[
+            "scaled_score"
+        ]
+
         attempt.save(
             update_fields=[
                 "score",
                 "raw_score",
+                "scaled_score"
                 "correct_count",
                 "wrong_count",
                 "unanswered_count",

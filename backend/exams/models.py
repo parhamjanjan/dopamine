@@ -290,9 +290,6 @@ class ExamAttempt(models.Model):
     )
 
     # درصد رسمی با نمره منفی
-    #
-    # اگر آزمون چند دفترچه داشته باشد،
-    # این مقدار درصد کل ضریب‌دار آزمون است.
     score = models.DecimalField(
         max_digits=8,
         decimal_places=2,
@@ -304,6 +301,11 @@ class ExamAttempt(models.Model):
         max_digits=8,
         decimal_places=2,
         default=0,
+    )
+
+    # نمره مقیاس‌بندی‌شده ذخیره‌شده در دیتابیس
+    scaled_score = models.IntegerField(
+        default=3567,
     )
 
     correct_count = models.PositiveIntegerField(
@@ -382,6 +384,9 @@ class ExamAttempt(models.Model):
                 "زمان انقضای آزمون نامعتبر است."
             )
 
+        # محاسبه خودکار نمره مقیاس‌بندی‌شده
+        self.scaled_score = int(self.score * 107) + 3567
+
         super().save(*args, **kwargs)
 
 
@@ -429,16 +434,23 @@ class ExamResult(models.Model):
         default=0,
     )
 
+    # درصد رسمی با نمره منفی
     score = models.DecimalField(
         max_digits=8,
         decimal_places=2,
         default=0,
     )
 
+    # درصد خام ضریب‌دار بدون نمره منفی
     raw_score = models.DecimalField(
         max_digits=8,
         decimal_places=2,
         default=0,
+    )
+
+    # نمره مقیاس‌بندی‌شده ذخیره‌شده در دیتابیس
+    scaled_score = models.IntegerField(
+        default=3567,
     )
 
     national_rank = models.PositiveIntegerField(
@@ -491,7 +503,13 @@ class ExamResult(models.Model):
             f"{self.exam.title} - کارنامه"
         )
 
+    def save(self, *args, **kwargs):
+        # محاسبه خودکار نمره مقیاس‌بندی‌شده
+        self.scaled_score = int(self.score * 107) + 3567
 
+        super().save(*args, **kwargs)
+
+        
 class ExamBookletResult(models.Model):
     result = models.ForeignKey(
         ExamResult,

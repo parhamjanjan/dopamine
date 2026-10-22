@@ -654,7 +654,6 @@ def build_exam_result(
 
     # درصد خام = درصد خام کل ضریب‌دار
     result.raw_score = current["raw_score"]
-
     # رتبه کشوری بر اساس درصد کل ضریب‌دار
     result.national_rank = competition_rank(
         country_scores,
@@ -949,6 +948,11 @@ def build_exam_result(
                 "score": float(
                     stats["score"]
                 ),
+                "scaled_score" : int(
+                                float(
+                                stats["score"]
+                                ) * 107 + 3567
+                            ),
                 "raw_percentage": float(
                     stats["raw_score"]
                 ),
@@ -1097,7 +1101,11 @@ def build_exam_result(
             "score": float(
                 current["score"]
             ),
-
+            "scaled_score" : int(
+                float(
+                current["score"]
+                ) * 107 + 3567
+            ),
             "percentage": float(
                 current["score"]
             ),
@@ -1110,6 +1118,8 @@ def build_exam_result(
             "raw_percentage": float(
                 current["raw_score"]
             ),
+
+            
 
             "negative_marking": True,
 
