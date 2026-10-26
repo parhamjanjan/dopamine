@@ -139,7 +139,6 @@ const router = createRouter({
         },
 
         { path: 'notes', name: 'notes', component: NotesView },
-        { path: 'notes/:id', name: 'note-study', component: NoteStudyView },
         { path: 'notes/admin/new', name: 'note-create', component: NoteEditorView },
         { path: 'notes/admin/:id/edit', name: 'note-edit', component: NoteEditorView },
 
@@ -189,7 +188,15 @@ const router = createRouter({
       path: '/exams/result/:id',
       name: 'ExamResult',
       component: ExamResultView
-    }
+    },
+
+            
+    { 
+      path: '/notes/:id', 
+      name: 'note-study', 
+      component: NoteStudyView 
+    },
+
   ]
 })
 
