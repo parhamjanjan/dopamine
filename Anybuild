@@ -7,6 +7,7 @@ config = python_config(
     schema = 1,
     python_version = "3.13",
     python_framework = "django",
+    python_server = "daphne",
     asgi_application = "config.asgi:application",
     commands = {
         "start": "python manage.py migrate --noinput && python manage.py shell -c \"import os; from django.contrib.auth import get_user_model; U=get_user_model(); username=os.environ['DJANGO_ADMIN_USERNAME']; exists=U.objects.filter(username=username).exists(); print('Admin already exists' if exists else 'Creating admin'); U.objects.create_superuser(username=username,email=os.environ['DJANGO_ADMIN_EMAIL'],password=os.environ['DJANGO_ADMIN_PASSWORD'],first_name=os.environ.get('DJANGO_ADMIN_FIRST_NAME','Admin'),last_name=os.environ.get('DJANGO_ADMIN_LAST_NAME','Admin')) if not exists else None\" && exec daphne -b 0.0.0.0 -p $PORT config.asgi:application",
@@ -19,7 +20,6 @@ python_serve(
     config,
     build,
     name = "dopamine",
-    cwd = "backend",
     build_post = [
         run("python manage.py collectstatic --noinput", group = "build"),
     ],
